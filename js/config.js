@@ -1,5 +1,11 @@
-export const SUPABASE_URL = "https://jnlexemtrjgwskzwybim.supabase.co";
-export const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_7HEaDz5-UlRVC938PKwFPA_Gnyk8qa2";
+const env = window.RUN_NERDS_ENV;
+
+if (!env?.SUPABASE_URL || !env?.SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error("Missing RUN_NERDS_ENV. Create env.js from env.example.js before starting the app.");
+}
+
+export const SUPABASE_URL = env.SUPABASE_URL;
+export const SUPABASE_PUBLISHABLE_KEY = env.SUPABASE_PUBLISHABLE_KEY;
 export const ONBOARDING_TEMP_DISABLED = true;
 
 export const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
