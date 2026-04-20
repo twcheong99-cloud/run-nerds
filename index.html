@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>run-nerds</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <section id="authGate" class="auth-gate">
+      <div class="auth-stage panel">
+        <div class="auth-brand">
+          <p class="eyebrow">WELCOME TO THE GRID</p>
+          <h1>run-nerds</h1>
+          <p class="hero-copy">
+            먼저 로그인하고, 그다음부터는 이 러너의 훈련 기록과 코치 메모가 이어집니다.
+          </p>
+        </div>
+
+        <div class="auth-console">
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab active" data-auth-tab="login">로그인</button>
+            <button type="button" class="auth-tab" data-auth-tab="signup">회원가입</button>
+          </div>
+
+          <form id="loginForm" class="auth-form">
+            <label>
+              이메일
+              <input name="email" type="email" placeholder="runner@run-nerds.ai" required />
+            </label>
+            <label>
+              비밀번호
+              <input name="password" type="password" placeholder="••••••••" required />
+            </label>
+            <button type="submit">로그인</button>
+          </form>
+
+          <form id="signupForm" class="auth-form hidden">
+            <label>
+              러너 이름
+              <input name="name" placeholder="예: 태우" required />
+            </label>
+            <label>
+              이메일
+              <input name="email" type="email" placeholder="runner@run-nerds.ai" required />
+            </label>
+            <label>
+              비밀번호
+              <input name="password" type="password" placeholder="6자 이상" required />
+            </label>
+            <button type="submit">회원가입하고 시작</button>
+          </form>
+
+          <div id="authFeedback" class="auth-feedback">
+            Supabase 계정으로 로그인하면 이 러너의 기록이 안전하게 이어집니다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="appShell" class="app-shell hidden">
+      <header class="hero panel">
+        <div>
+          <p class="eyebrow">AI RUNNING COACH</p>
+          <h1>run-nerds</h1>
+          <p class="hero-copy">
+            픽셀 감성 안에, 인간 코치처럼 묻고 설명하고 재조정하는 러닝 훈련 앱.
+          </p>
+        </div>
+        <div class="hero-meta">
+          <div class="meta-chip">MVP Prototype</div>
+          <div class="meta-chip">Coach-first UX</div>
+          <div class="meta-chip">Safety aware</div>
+        </div>
+      </header>
+
+      <section id="onboardingShell" class="onboarding-shell hidden">
+        <div class="panel onboarding-panel">
+          <div class="section-head onboarding-head">
+            <div>
+              <p class="section-kicker">FIRST CONSULTATION</p>
+              <h2>첫 목표 설정</h2>
+            </div>
+            <span id="onboardingStepBadge" class="badge warning">step 1 / 6</span>
+          </div>
+
+          <div class="onboarding-progress">
+            <div class="onboarding-progress-bar">
+              <div id="onboardingProgressFill" class="onboarding-progress-fill"></div>
+            </div>
+            <div id="onboardingProgressText" class="small">
+              코치가 목표와 현재 상태를 먼저 이해하는 단계입니다.
+            </div>
+          </div>
+
+          <div class="onboarding-layout">
+            <aside class="onboarding-aside">
+              <div class="coach-summary">
+                <strong>코치 메모</strong><br />
+                첫 플랜을 바로 뽑기보다, 지금의 목표와 현실을 먼저 맞추겠습니다. 이 단계는 상담 기록처럼 저장됩니다.
+              </div>
+              <div id="onboardingCoachPrompt" class="feedback-box">
+                어떤 방향으로 달리고 싶은지부터 가볍게 잡아봅시다.
+              </div>
+            </aside>
+
+            <form id="onboardingForm" class="onboarding-form">
+              <div id="onboardingStepTitle" class="onboarding-title">이번 러닝의 가장 큰 목표는 무엇인가요?</div>
+              <div id="onboardingStepBody" class="onboarding-step-body"></div>
+              <div id="onboardingSummary" class="onboarding-summary hidden"></div>
+
+              <div class="onboarding-actions">
+                <button type="button" id="onboardingBackBtn" class="ghost-btn hidden">이전</button>
+                <button type="button" id="onboardingNextBtn" class="secondary">다음</button>
+                <button type="submit" id="onboardingCompleteBtn" class="hidden">상담 완료</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <main id="dashboard" class="home-dashboard">
+        <section class="panel topbar-panel">
+          <div class="auth-inline">
+            <span id="workspaceBadge" class="badge neutral">guest workspace</span>
+            <span id="planSource" class="badge success">source: local-coach-engine</span>
+            <span id="planFallback" class="badge neutral">fallback: none</span>
+            <button type="button" id="logoutBtn" class="ghost-btn">로그아웃</button>
+          </div>
+        </section>
+
+        <section class="panel goal-panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">GOAL</p>
+              <h2>최종 목표</h2>
+            </div>
+          </div>
+          <div id="goalSummaryCard" class="goal-summary-card"></div>
+        </section>
+
+        <section class="panel today-panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">TODAY</p>
+              <h2>오늘 할 훈련</h2>
+            </div>
+            <span id="todayFocusBadge" class="badge warning">today focus</span>
+          </div>
+          <div id="todayWorkoutCard" class="today-workout-card"></div>
+        </section>
+
+        <section class="panel week-panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">WEEK</p>
+              <h2>주간 체크</h2>
+            </div>
+            <span id="weekSummaryBadge" class="badge neutral">weekly view</span>
+          </div>
+          <div id="weekMiniCalendar" class="week-mini-calendar"></div>
+        </section>
+
+        <section class="hidden">
+          <form id="profileForm" class="grid-form">
+            <label>러너 이름<input name="name" /></label>
+            <label>이메일<input name="email" type="email" /></label>
+            <label>목표 대회<input name="goalRace" /></label>
+            <label>목표 기록<input name="goalTime" /></label>
+            <label>최근 주간 거리(km)<input name="weeklyMileage" type="number" /></label>
+            <label>주간 러닝 가능 횟수<select name="availableDays"><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>선호 훈련 요일<input name="preferredDays" /></label>
+            <label>롱런 선호 요일<select name="longRunDay"><option value="sat">토</option><option value="sun">일</option></select></label>
+            <label>목표 종목<select name="raceType"><option value="10k">10K</option><option value="half">Half</option><option value="full">Full</option></select></label>
+            <label>핵심 세션 선호<select name="qualityFocus"><option value="tempo">tempo</option><option value="interval">interval</option><option value="steady">steady</option></select></label>
+            <label>최근 컨디션<select name="fatigue"><option value="fresh">fresh</option><option value="normal">normal</option><option value="tired">tired</option><option value="heavy">heavy</option></select></label>
+            <label>통증 상태<select name="pain"><option value="none">none</option><option value="light">light</option><option value="sharp">sharp</option></select></label>
+            <label class="full">코치 메모<textarea name="notes"></textarea></label>
+          </form>
+          <button type="button" id="generatePlanBtn">generate</button>
+          <div id="coachSummary"></div>
+          <div id="planStats"></div>
+          <div id="calendar"></div>
+          <form id="checkinForm">
+            <select name="fatigue"><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select>
+            <select name="pain"><option value="none">none</option><option value="light">light</option><option value="worrying">worrying</option></select>
+            <select name="sleep"><option value="good">good</option><option value="okay">okay</option><option value="poor">poor</option></select>
+            <select name="schedule"><option value="stable">stable</option><option value="tight">tight</option><option value="chaotic">chaotic</option></select>
+            <select name="confidence"><option value="high">high</option><option value="steady">steady</option><option value="low">low</option></select>
+            <textarea name="comment"></textarea>
+          </form>
+          <div id="checkinFeedback"></div>
+          <span id="selectedSessionBadge"></span>
+          <div id="sessionDetail"></div>
+          <form id="debriefForm">
+            <select name="rpe"><option value="easy">easy</option><option value="target">target</option><option value="hard">hard</option></select>
+            <select name="pain"><option value="none">none</option><option value="light">light</option><option value="sharp">sharp</option></select>
+            <textarea name="reflection"></textarea>
+          </form>
+          <form id="replanForm"><textarea name="message"></textarea></form>
+          <div id="replanResults"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

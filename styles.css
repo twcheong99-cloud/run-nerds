@@ -1,0 +1,761 @@
+:root {
+  --bg: #040706;
+  --bg-soft: #0a100c;
+  --panel: rgba(8, 18, 11, 0.96);
+  --panel-soft: rgba(12, 24, 15, 0.98);
+  --line: rgba(122, 255, 152, 0.16);
+  --line-strong: rgba(122, 255, 152, 0.3);
+  --text: #ebffef;
+  --muted: #98b79d;
+  --muted-2: #6f8874;
+  --accent: #7aff98;
+  --accent-soft: rgba(122, 255, 152, 0.12);
+  --success: #deffe0;
+  --warning: #dfff96;
+  --danger: #ff9f9f;
+  --info: #d9ffdf;
+  --shadow: 10px 10px 0 rgba(0, 0, 0, 0.28);
+  --pixel-font: "Press Start 2P", "VT323", "IBM Plex Mono", "Menlo", monospace;
+  --display-font: "VT323", "Press Start 2P", monospace;
+  --body-font: "IBM Plex Sans KR", "Pretendard", "Noto Sans KR", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #020403;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--body-font);
+  background:
+    radial-gradient(circle at top, rgba(122, 255, 152, 0.08), transparent 20%),
+    linear-gradient(180deg, #020403 0%, #071009 50%, #09130c 100%);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgba(122, 255, 152, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 255, 152, 0.05) 1px, transparent 1px),
+    radial-gradient(circle, rgba(122, 255, 152, 0.12) 1px, transparent 1.2px);
+  background-size: 28px 28px, 28px 28px, 14px 14px;
+  background-position: center;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(122, 255, 152, 0.04) 0 1px,
+    transparent 1px 4px
+  );
+  opacity: 0.12;
+  mix-blend-mode: screen;
+}
+
+.hidden {
+  display: none !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  width: min(1320px, calc(100vw - 32px));
+  margin: 20px auto 40px;
+}
+
+.panel {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(11, 22, 14, 0.98), rgba(8, 18, 11, 0.98)),
+    var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(122, 255, 152, 0.04), transparent 22%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 22px,
+      rgba(122, 255, 152, 0.025) 22px 23px
+    );
+}
+
+.panel::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(122, 255, 152, 0.08);
+  pointer-events: none;
+}
+
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-gate {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-stage {
+  width: min(1040px, 100%);
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+  padding: 20px;
+}
+
+.auth-brand,
+.auth-console {
+  min-height: 500px;
+}
+
+.auth-brand {
+  padding: 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background:
+    linear-gradient(180deg, rgba(122, 255, 152, 0.05), transparent 18%),
+    #08110b;
+  border: 2px solid rgba(122, 255, 152, 0.12);
+}
+
+.auth-brand::after {
+  content: "";
+  width: 92px;
+  height: 92px;
+  margin-bottom: auto;
+  border: 2px solid rgba(122, 255, 152, 0.22);
+  box-shadow:
+    inset 0 0 0 12px rgba(122, 255, 152, 0.04),
+    inset 0 0 0 24px rgba(122, 255, 152, 0.03);
+}
+
+.auth-console {
+  padding: 22px;
+  background:
+    linear-gradient(180deg, rgba(122, 255, 152, 0.04), rgba(122, 255, 152, 0.02)),
+    #0a110d;
+  border: 2px solid rgba(122, 255, 152, 0.12);
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.auth-tab,
+.ghost-btn,
+.status-btn,
+button.secondary,
+button {
+  min-height: 44px;
+  padding: 11px 14px;
+  border: 2px solid var(--line);
+  background: rgba(122, 255, 152, 0.04);
+  color: var(--text);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.auth-tab:hover,
+.ghost-btn:hover,
+.status-btn:hover,
+button.secondary:hover,
+button:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+}
+
+.auth-tab {
+  color: var(--muted);
+}
+
+.auth-tab.active,
+button.secondary {
+  background: rgba(122, 255, 152, 0.12);
+  color: var(--text);
+  border-color: rgba(122, 255, 152, 0.28);
+}
+
+button,
+.status-btn.active.complete {
+  background: rgba(122, 255, 152, 0.84);
+  color: #041009;
+  border-color: rgba(122, 255, 152, 0.9);
+}
+
+.ghost-btn {
+  background: rgba(122, 255, 152, 0.025);
+  color: var(--muted);
+}
+
+.auth-form,
+.onboarding-step-body,
+.onboarding-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form label,
+.grid-form label,
+.onboarding-grid label,
+.onboarding-stack label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  background: rgba(122, 255, 152, 0.03);
+  color: var(--text);
+  outline: none;
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(122, 255, 152, 0.34);
+  box-shadow: 0 0 0 3px rgba(122, 255, 152, 0.08);
+}
+
+.auth-feedback,
+.feedback-box,
+.coach-summary,
+.session-detail,
+.goal-summary-card,
+.today-workout-card,
+.onboarding-summary {
+  border: 2px solid rgba(122, 255, 152, 0.1);
+  background: rgba(122, 255, 152, 0.03);
+}
+
+.auth-feedback {
+  margin-top: 16px;
+  padding: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.auth-feedback.success {
+  border-color: rgba(222, 255, 224, 0.22);
+  color: var(--success);
+}
+
+.auth-feedback.warning {
+  border-color: rgba(255, 159, 159, 0.24);
+  background: rgba(255, 159, 159, 0.08);
+  color: var(--danger);
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: stretch;
+  padding: 24px 26px;
+  margin-bottom: 20px;
+}
+
+.hero h1,
+.section-head h2,
+.today-title,
+.onboarding-title,
+.goal-main {
+  font-family: var(--display-font);
+  letter-spacing: 0.04em;
+}
+
+.hero h1 {
+  margin: 4px 0 14px;
+  font-size: clamp(2.2rem, 3vw, 4rem);
+  line-height: 0.95;
+}
+
+.hero-copy,
+.goal-copy,
+.today-subtitle,
+.mini-day-copy,
+.choice-copy,
+.small {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.eyebrow,
+.section-kicker,
+.choice-title,
+.today-metric-label,
+.stat-label,
+.mini-day-name {
+  font-family: var(--pixel-font);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hero-meta,
+.auth-inline,
+.source-box,
+.session-meta,
+.row-actions,
+.today-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.meta-chip,
+.badge,
+.mini-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 2px solid var(--line);
+  background: rgba(122, 255, 152, 0.03);
+  font-family: var(--pixel-font);
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.badge.success {
+  color: var(--success);
+}
+
+.badge.warning {
+  color: var(--warning);
+}
+
+.badge.alert {
+  color: var(--danger);
+}
+
+.badge.neutral,
+.mini-chip {
+  color: var(--info);
+}
+
+.onboarding-shell {
+  margin-bottom: 20px;
+}
+
+.onboarding-panel {
+  padding: 26px;
+}
+
+.onboarding-progress {
+  margin-bottom: 18px;
+}
+
+.onboarding-progress-bar {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  background: rgba(122, 255, 152, 0.05);
+  border: 2px solid rgba(122, 255, 152, 0.14);
+  margin-bottom: 8px;
+}
+
+.onboarding-progress-fill {
+  height: 100%;
+  width: 16%;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(122, 255, 152, 1) 0 12px,
+    rgba(122, 255, 152, 0.72) 12px 16px
+  );
+  transition: width 160ms ease;
+}
+
+.onboarding-layout {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 18px;
+}
+
+.onboarding-aside {
+  display: grid;
+  gap: 14px;
+}
+
+.onboarding-form {
+  padding: 18px;
+  border: 2px solid rgba(122, 255, 152, 0.1);
+  background: rgba(122, 255, 152, 0.02);
+}
+
+.onboarding-title {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+
+.onboarding-grid,
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.choice-card {
+  text-align: left;
+  padding: 16px;
+  min-height: 120px;
+}
+
+.choice-card.selected {
+  border-color: rgba(122, 255, 152, 0.3);
+  background: rgba(122, 255, 152, 0.08);
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(122, 255, 152, 0.08);
+}
+
+.summary-line strong,
+.coach-summary strong,
+.feedback-box strong,
+.session-detail strong {
+  color: var(--text);
+}
+
+.home-dashboard {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.topbar-panel {
+  padding: 14px 18px;
+}
+
+.goal-panel,
+.today-panel,
+.week-panel {
+  padding: 22px;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.section-head h2 {
+  margin: 6px 0 0;
+  font-size: 1rem;
+}
+
+.goal-summary-card,
+.today-workout-card {
+  padding: 20px;
+}
+
+.goal-main {
+  font-size: 1rem;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+.today-title {
+  margin: 0 0 8px;
+  font-size: 1.36rem;
+  line-height: 1.2;
+}
+
+.today-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.today-metric,
+.stat-card {
+  padding: 14px;
+  border: 2px solid rgba(122, 255, 152, 0.1);
+  background: rgba(122, 255, 152, 0.03);
+}
+
+.today-metric-value,
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.session-detail,
+.coach-summary,
+.feedback-box {
+  padding: 16px;
+  line-height: 1.75;
+}
+
+.block-list {
+  margin: 10px 0 16px;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.block-list li {
+  margin-bottom: 6px;
+}
+
+.week-mini-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(126px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.mini-day-card {
+  min-height: 186px;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 2px solid rgba(122, 255, 152, 0.1);
+  background: rgba(122, 255, 152, 0.025);
+}
+
+.mini-day-card.today {
+  border-color: rgba(122, 255, 152, 0.36);
+  box-shadow: inset 0 0 0 1px rgba(122, 255, 152, 0.14);
+}
+
+.mini-day-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mini-day-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.mini-status-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.status-btn {
+  justify-content: center;
+  font-family: var(--pixel-font);
+  font-size: 0.52rem;
+  color: var(--muted);
+}
+
+.status-btn.active.failed {
+  background: rgba(255, 159, 159, 0.1);
+  color: var(--danger);
+  border-color: rgba(255, 159, 159, 0.24);
+}
+
+.status-btn.active.skipped {
+  background: rgba(223, 255, 150, 0.08);
+  color: var(--warning);
+  border-color: rgba(223, 255, 150, 0.22);
+}
+
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.grid-form label.full,
+.grid-form .full {
+  grid-column: 1 / -1;
+}
+
+.plan-stats,
+.calendar,
+.replan-results {
+  display: grid;
+  gap: 14px;
+}
+
+.calendar {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.replan-results {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.day-card,
+.replan-option {
+  padding: 14px;
+  border: 2px solid rgba(122, 255, 152, 0.1);
+  background: rgba(122, 255, 152, 0.03);
+}
+
+.day-card.selected {
+  border-color: rgba(122, 255, 152, 0.28);
+}
+
+.day-card.rest {
+  opacity: 0.82;
+}
+
+.day-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.session-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.session-sub {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.status-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.day-note {
+  min-height: 58px;
+}
+
+.safety-box {
+  border-color: rgba(255, 159, 159, 0.24);
+  background: rgba(255, 159, 159, 0.08);
+}
+
+.empty {
+  color: var(--muted-2);
+}
+
+@media (max-width: 1120px) {
+  .auth-stage,
+  .onboarding-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .today-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .week-mini-calendar {
+    grid-template-columns: repeat(7, minmax(110px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    width: min(100vw - 18px, 100%);
+    margin: 10px auto 28px;
+  }
+
+  .hero,
+  .section-head,
+  .auth-inline,
+  .row-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero,
+  .goal-panel,
+  .today-panel,
+  .week-panel,
+  .onboarding-panel,
+  .topbar-panel {
+    padding: 18px;
+  }
+
+  .grid-form,
+  .calendar,
+  .replan-results,
+  .plan-stats,
+  .onboarding-grid,
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-brand,
+  .auth-console {
+    min-height: auto;
+  }
+}
