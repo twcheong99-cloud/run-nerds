@@ -1,20 +1,30 @@
 import { formatStatus } from "./plan.js";
+import { renderCoachTab } from "./coach.js";
 
 export function getTodayDayId() {
   return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()];
 }
 
 export function renderHome(ctx) {
+  renderTabs(ctx);
   renderHeader(ctx);
   renderGoalSummary(ctx);
   renderTodayWorkout(ctx);
   renderWeekMiniCalendar(ctx);
+  renderCoachTab(ctx);
+}
+
+function renderTabs({ dom, state }) {
+  const activeTab = state.activeTab || "home";
+  dom.coachView.classList.toggle("hidden", activeTab !== "coach");
+  dom.homeView.classList.toggle("hidden", activeTab !== "home");
+  dom.profileView.classList.toggle("hidden", activeTab !== "profile");
+  dom.tabButtons.forEach((button) => button.classList.toggle("active", button.dataset.tab === activeTab));
 }
 
 function renderHeader({ dom, state }) {
-  dom.workspaceBadge.textContent = `${state.profile.email || "no-user"} workspace`;
-  dom.planSource.textContent = `source: ${state.planMeta.source}`;
-  dom.planFallback.textContent = `fallback: ${state.planMeta.fallbackReason}`;
+  dom.profileEmail.textContent = state.profile.email || "no-user";
+  dom.profilePlanSource.textContent = `source: ${state.planMeta.source} · fallback: ${state.planMeta.fallbackReason}`;
 }
 
 export function renderGoalSummary({ dom, state }) {

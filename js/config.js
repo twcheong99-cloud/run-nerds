@@ -6,7 +6,7 @@ if (!env?.SUPABASE_URL || !env?.SUPABASE_PUBLISHABLE_KEY) {
 
 export const SUPABASE_URL = env.SUPABASE_URL;
 export const SUPABASE_PUBLISHABLE_KEY = env.SUPABASE_PUBLISHABLE_KEY;
-export const ONBOARDING_TEMP_DISABLED = true;
+export const ONBOARDING_TEMP_DISABLED = false;
 
 export const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 export const DAY_LABELS = {

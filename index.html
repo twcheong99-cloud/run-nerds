@@ -122,46 +122,92 @@
       </section>
 
       <main id="dashboard" class="home-dashboard">
-        <section class="panel topbar-panel">
-          <div class="auth-inline">
-            <span id="workspaceBadge" class="badge neutral">guest workspace</span>
-            <span id="planSource" class="badge success">source: local-coach-engine</span>
-            <span id="planFallback" class="badge neutral">fallback: none</span>
-            <button type="button" id="logoutBtn" class="ghost-btn">로그아웃</button>
-          </div>
+        <section id="coachView" class="tab-view hidden">
+          <section class="panel coach-panel">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">COACH ROOM</p>
+                <h2>상담</h2>
+              </div>
+              <span class="badge warning">plan changes after consult</span>
+            </div>
+            <div class="coach-layout">
+              <div>
+                <div class="coach-calendar-head">
+                  <strong id="coachMonthLabel">이번 달</strong>
+                  <span class="mini-chip">training days</span>
+                </div>
+                <div id="coachCalendar" class="coach-calendar"></div>
+              </div>
+              <div class="coach-chat">
+                <div id="coachMessages" class="coach-messages"></div>
+                <div id="coachProposal" class="coach-proposal hidden"></div>
+                <form id="coachForm" class="coach-form">
+                  <textarea name="message" rows="3" placeholder="오늘 몸 상태, 일정 변경, 불안한 점을 코치에게 말해보세요."></textarea>
+                  <button type="submit">상담 보내기</button>
+                </form>
+              </div>
+            </div>
+          </section>
         </section>
 
-        <section class="panel goal-panel">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">GOAL</p>
-              <h2>최종 목표</h2>
+        <section id="homeView" class="tab-view">
+          <section class="panel goal-panel">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">GOAL</p>
+                <h2>최종 목표</h2>
+              </div>
             </div>
-          </div>
-          <div id="goalSummaryCard" class="goal-summary-card"></div>
+            <div id="goalSummaryCard" class="goal-summary-card"></div>
+          </section>
+
+          <section class="panel today-panel">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">TODAY</p>
+                <h2>오늘 할 훈련</h2>
+              </div>
+              <span id="todayFocusBadge" class="badge warning">today focus</span>
+            </div>
+            <div id="todayWorkoutCard" class="today-workout-card"></div>
+          </section>
+
+          <section class="panel week-panel">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">WEEK</p>
+                <h2>주간 체크</h2>
+              </div>
+              <span id="weekSummaryBadge" class="badge neutral">weekly view</span>
+            </div>
+            <div id="weekMiniCalendar" class="week-mini-calendar"></div>
+          </section>
         </section>
 
-        <section class="panel today-panel">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">TODAY</p>
-              <h2>오늘 할 훈련</h2>
+        <section id="profileView" class="tab-view hidden">
+          <section class="panel profile-panel">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">MY PAGE</p>
+                <h2>마이페이지</h2>
+              </div>
+              <span class="badge neutral">account</span>
             </div>
-            <span id="todayFocusBadge" class="badge warning">today focus</span>
-          </div>
-          <div id="todayWorkoutCard" class="today-workout-card"></div>
+            <div class="profile-card">
+              <span class="mini-day-name">workspace</span>
+              <strong id="profileEmail">no-user</strong>
+              <p id="profilePlanSource">source: local-coach-engine</p>
+            </div>
+            <button type="button" id="logoutBtn" class="ghost-btn profile-logout">로그아웃</button>
+          </section>
         </section>
 
-        <section class="panel week-panel">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">WEEK</p>
-              <h2>주간 체크</h2>
-            </div>
-            <span id="weekSummaryBadge" class="badge neutral">weekly view</span>
-          </div>
-          <div id="weekMiniCalendar" class="week-mini-calendar"></div>
-        </section>
+        <nav class="bottom-tabs" aria-label="앱 탭">
+          <button type="button" class="tab-btn" data-tab="coach">상담</button>
+          <button type="button" class="tab-btn active" data-tab="home">홈</button>
+          <button type="button" class="tab-btn" data-tab="profile">마이</button>
+        </nav>
 
         <section class="hidden">
           <form id="profileForm" class="grid-form">

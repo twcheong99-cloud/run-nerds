@@ -1,7 +1,8 @@
 import { createDefaultOnboarding, defaultCheckin, defaultProfile, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./config.js";
 import { buildPlan, mergePreviousProgress } from "./plan.js";
-import { buildInitialPlanningProfileFromOnboarding, getOnboardingSteps, renderOnboarding, shouldShowOnboarding } from "./onboarding.js";
+import { buildInitialPlanningProfileFromOnboarding, getOnboardingSteps, renderOnboarding, shouldShowOnboarding, validateOnboardingStep } from "./onboarding.js";
 import { renderHome } from "./home.js";
+import { buildCoachReply, createDefaultCoachChat } from "./coach.js";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true },
@@ -30,9 +31,17 @@ const dom = {
   onboardingCompleteBtn: document.querySelector("#onboardingCompleteBtn"),
   profileForm: document.querySelector("#profileForm"),
   generatePlanBtn: document.querySelector("#generatePlanBtn"),
-  workspaceBadge: document.querySelector("#workspaceBadge"),
-  planSource: document.querySelector("#planSource"),
-  planFallback: document.querySelector("#planFallback"),
+  coachView: document.querySelector("#coachView"),
+  homeView: document.querySelector("#homeView"),
+  profileView: document.querySelector("#profileView"),
+  tabButtons: document.querySelectorAll("[data-tab]"),
+  coachMonthLabel: document.querySelector("#coachMonthLabel"),
+  coachCalendar: document.querySelector("#coachCalendar"),
+  coachMessages: document.querySelector("#coachMessages"),
+  coachProposal: document.querySelector("#coachProposal"),
+  coachForm: document.querySelector("#coachForm"),
+  profileEmail: document.querySelector("#profileEmail"),
+  profilePlanSource: document.querySelector("#profilePlanSource"),
   todayFocusBadge: document.querySelector("#todayFocusBadge"),
   todayWorkoutCard: document.querySelector("#todayWorkoutCard"),
   weekSummaryBadge: document.querySelector("#weekSummaryBadge"),
@@ -47,6 +56,7 @@ let state = {};
 let authSession = null;
 let saveTimer = null;
 let isBootstrapping = false;
+let isFirstConsultationActive = false;
 
 function baseState() {
   return {
@@ -55,6 +65,8 @@ function baseState() {
     plan: [],
     planMeta: { source: "local-coach-engine", fallbackReason: "none", summary: "", safety: null, stats: {} },
     selectedDayId: null,
+    activeTab: "home",
+    coachChat: createDefaultCoachChat(),
     onboarding: createDefaultOnboarding(),
   };
 }
@@ -93,8 +105,26 @@ function showAuthGate() {
   dom.authGate.classList.remove("hidden");
 }
 
+function hasCompletedFirstConsultation(nextState) {
+  return Boolean(nextState.onboarding?.completedAt && nextState.onboarding?.initialPlanningProfile);
+}
+
+function normalizeAppTab(tab) {
+  if (tab === "coach" || tab === "home" || tab === "profile") return tab;
+  if (tab === "records") return "profile";
+  return "home";
+}
+
 function initializeState(loaded) {
-  state = loaded || baseState();
+  const stateDefaults = baseState();
+  state = {
+    ...stateDefaults,
+    ...(loaded || {}),
+    planMeta: loaded?.planMeta || loaded?.plan_meta || stateDefaults.planMeta,
+    selectedDayId: loaded?.selectedDayId || loaded?.selected_day_id || stateDefaults.selectedDayId,
+    activeTab: normalizeAppTab(loaded?.activeTab || loaded?.active_tab || stateDefaults.activeTab),
+    coachChat: loaded?.coachChat || loaded?.coach_chat || stateDefaults.coachChat,
+  };
   const defaults = createDefaultOnboarding();
   state.onboarding = {
     ...defaults,
@@ -127,9 +157,10 @@ function syncUI() {
   fillForm(dom.checkinForm, state.checkin);
   const emailField = dom.profileForm?.elements?.namedItem("email");
   if (emailField) emailField.readOnly = true;
-  dom.onboardingShell.classList.toggle("hidden", !shouldShowOnboarding(state, authSession));
-  dom.dashboard.classList.toggle("hidden", shouldShowOnboarding(state, authSession));
-  renderHome({ dom, state, updateSession });
+  const showOnboarding = isFirstConsultationActive || shouldShowOnboarding(state, authSession);
+  dom.onboardingShell.classList.toggle("hidden", !showOnboarding);
+  dom.dashboard.classList.toggle("hidden", showOnboarding);
+  renderHome({ dom, state, updateSession, switchAppTab, sendCoachMessage, applyCoachPlan });
   renderOnboarding({ dom, state, persistWorkspaceSoon });
 }
 
@@ -145,8 +176,8 @@ async function saveProfileToSupabase() {
   if (error) throw error;
 }
 
-async function persistWorkspace() {
-  if (!authSession?.user || isBootstrapping) return;
+async function persistWorkspace(options = {}) {
+  if (!authSession?.user || (isBootstrapping && !options.force)) return;
   const { error } = await supabase.from("runner_workspaces").upsert({
     user_id: authSession.user.id,
     payload: {
@@ -156,6 +187,8 @@ async function persistWorkspace() {
       plan: state.plan,
       plan_meta: state.planMeta,
       selected_day_id: state.selectedDayId,
+      active_tab: state.activeTab,
+      coach_chat: state.coachChat,
       onboarding: state.onboarding,
     },
   });
@@ -185,13 +218,15 @@ async function bootstrapWorkspaceForUser(user) {
       setAuthFeedback(formatErrorMessage(error, "워크스페이스를 불러오지 못했습니다."), "warning");
     }
     initializeState(remoteWorkspace);
+    isFirstConsultationActive = !hasCompletedFirstConsultation(state);
+    if (!isFirstConsultationActive) state.activeTab = "home";
     state.profile.email = normalizeEmail(user.email);
     state.profile.name = state.profile.name && state.profile.name !== "Runner" ? state.profile.name : user.user_metadata?.name || user.email?.split("@")[0] || "Runner";
     state.selectedDayId = state.selectedDayId || state.plan.find((session) => session.type === "quality")?.id || state.plan[0]?.id || null;
     syncUI();
     try {
       await saveProfileToSupabase();
-      await persistWorkspace();
+      await persistWorkspace({ force: true });
     } catch (error) {
       setAuthFeedback(formatErrorMessage(error, "초기 저장 중 오류가 발생했습니다."), "warning");
     }
@@ -217,6 +252,47 @@ function rebuildPlanKeepingProgress(nextSelectedId) {
 
 function updateSession(dayId, patch) {
   state.plan = state.plan.map((session) => (session.id === dayId ? { ...session, ...patch } : session));
+  syncUI();
+  persistWorkspaceSoon();
+}
+
+function switchAppTab(tab) {
+  state.activeTab = tab;
+  syncUI();
+  persistWorkspaceSoon();
+}
+
+function sendCoachMessage(message) {
+  state.coachChat = {
+    ...(state.coachChat || createDefaultCoachChat()),
+    messages: [...(state.coachChat?.messages || []), { role: "user", text: message }],
+  };
+  const result = buildCoachReply({ message, state });
+  state.coachChat = {
+    ...state.coachChat,
+    stage: result.stage,
+    pendingPlan: result.pendingPlan,
+    messages: [...state.coachChat.messages, { role: "coach", text: result.reply }],
+  };
+  syncUI();
+  persistWorkspaceSoon();
+}
+
+function applyCoachPlan() {
+  const pendingPlan = state.coachChat?.pendingPlan;
+  if (!pendingPlan) return;
+  state.profile = { ...state.profile, ...(pendingPlan.profile || {}) };
+  state.checkin = { ...state.checkin, ...(pendingPlan.checkin || {}) };
+  rebuildPlanKeepingProgress(state.selectedDayId);
+  state.coachChat = {
+    ...state.coachChat,
+    stage: "idle",
+    pendingPlan: null,
+    messages: [
+      ...(state.coachChat?.messages || []),
+      { role: "coach", text: "좋아, 방금 대화 기준으로 이번 주 캘린더를 다시 짰어. 오늘은 계획을 이기는 날이 아니라 몸과 약속을 다시 맞추는 날이야." },
+    ],
+  };
   syncUI();
   persistWorkspaceSoon();
 }
@@ -275,6 +351,7 @@ async function handleLogout() {
   const { error } = await supabase.auth.signOut();
   if (error) return setAuthFeedback(error.message, "warning");
   authSession = null;
+  isFirstConsultationActive = false;
   initializeState(null);
   showAuthGate();
   switchAuthTab("login");
@@ -288,6 +365,7 @@ function handleOnboardingBack() {
 }
 
 function handleOnboardingNext() {
+  if (!validateOnboardingStep(state, setAuthFeedback)) return;
   const steps = getOnboardingSteps(state);
   state.onboarding.step = Math.min(state.onboarding.step + 1, steps.length - 1);
   renderOnboarding({ dom, state, persistWorkspaceSoon });
@@ -298,6 +376,7 @@ async function handleOnboardingComplete(event) {
   event.preventDefault();
   const initialPlanningProfile = buildInitialPlanningProfileFromOnboarding(state);
   state.onboarding = { ...state.onboarding, completedAt: new Date().toISOString(), initialPlanningProfile };
+  isFirstConsultationActive = false;
   state.profile = {
     ...state.profile,
     goalRace: initialPlanningProfile.race?.name || state.profile.goalRace,
@@ -341,6 +420,7 @@ export function initApp() {
   dom.loginForm.addEventListener("submit", (event) => handleLogin(event).catch((error) => setAuthFeedback(formatErrorMessage(error, "로그인 처리 중 오류"), "warning")));
   dom.signupForm.addEventListener("submit", (event) => handleSignup(event).catch((error) => setAuthFeedback(formatErrorMessage(error, "회원가입 처리 중 오류"), "warning")));
   dom.logoutBtn.addEventListener("click", () => handleLogout().catch((error) => setAuthFeedback(formatErrorMessage(error, "로그아웃 오류"), "warning")));
+  dom.tabButtons.forEach((button) => button.addEventListener("click", () => switchAppTab(button.dataset.tab)));
   dom.onboardingBackBtn.addEventListener("click", handleOnboardingBack);
   dom.onboardingNextBtn.addEventListener("click", handleOnboardingNext);
   dom.onboardingForm.addEventListener("submit", (event) => handleOnboardingComplete(event).catch((error) => setAuthFeedback(formatErrorMessage(error, "온보딩 완료 오류"), "warning")));
