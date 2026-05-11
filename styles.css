@@ -356,6 +356,95 @@ textarea:focus {
   align-items: center;
 }
 
+.activity-log-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 2px solid rgba(122, 255, 152, 0.1);
+  background: rgba(122, 255, 152, 0.03);
+  color: var(--muted);
+}
+
+.activity-log-summary strong {
+  color: var(--text);
+}
+
+.activity-log-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(2, 4, 3, 0.94);
+  backdrop-filter: blur(8px);
+}
+
+.activity-log-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  position: relative;
+  z-index: 51;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 2px solid rgba(122, 255, 152, 0.18);
+  background: #071009;
+  box-shadow: var(--shadow);
+}
+
+.activity-log-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.activity-log-head strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.compact-btn {
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+.activity-log-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.activity-log-grid label,
+.coach-note-field label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.coach-note-field {
+  display: grid;
+  gap: 10px;
+}
+
+.coach-note-field label {
+  padding: 12px;
+  border: 2px solid rgba(223, 255, 150, 0.2);
+  background: rgba(223, 255, 150, 0.05);
+}
+
+.coach-note-field label span {
+  font-family: var(--pixel-font);
+  font-size: 0.5rem;
+  color: var(--warning);
+}
+
 .meta-chip,
 .badge,
 .mini-chip {
@@ -369,6 +458,43 @@ textarea:focus {
   font-size: 0.56rem;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.system-pulse {
+  position: fixed;
+  left: 50%;
+  bottom: 84px;
+  z-index: 60;
+  width: min(420px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  padding: 12px 14px;
+  border: 2px solid rgba(122, 255, 152, 0.22);
+  background: rgba(4, 7, 6, 0.96);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.26);
+}
+
+.pulse-lines {
+  display: grid;
+  gap: 5px;
+}
+
+.pulse-lines span,
+.pulse-done {
+  font-family: var(--pixel-font);
+  font-size: 0.5rem;
+  line-height: 1.8;
+}
+
+.pulse-lines span {
+  color: var(--accent);
+}
+
+.pulse-done {
+  color: var(--success);
+}
+
+.system-pulse.done {
+  border-color: rgba(222, 255, 224, 0.24);
 }
 
 .badge.success {
@@ -498,6 +624,11 @@ textarea:focus {
 .today-panel,
 .week-panel {
   padding: 22px;
+}
+
+.today-panel {
+  overflow: visible;
+  z-index: 3;
 }
 
 .section-head {
@@ -786,12 +917,22 @@ textarea:focus {
   background: var(--accent);
 }
 
+.profile-summary {
+  display: grid;
+  gap: 10px;
+}
+
 .profile-card {
   display: grid;
   gap: 8px;
   padding: 16px;
   border: 2px solid rgba(122, 255, 152, 0.1);
   background: rgba(122, 255, 152, 0.03);
+}
+
+.hero-profile-card {
+  border-color: rgba(122, 255, 152, 0.22);
+  background: rgba(122, 255, 152, 0.06);
 }
 
 .profile-card strong {
@@ -875,7 +1016,7 @@ textarea:focus {
 .bottom-tabs {
   position: sticky;
   bottom: 10px;
-  z-index: 5;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
@@ -943,6 +1084,7 @@ textarea:focus {
   .plan-stats,
   .onboarding-grid,
   .choice-grid,
+  .activity-log-grid,
   .coach-layout {
     grid-template-columns: 1fr;
   }

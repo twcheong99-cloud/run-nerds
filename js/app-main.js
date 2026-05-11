@@ -15,6 +15,7 @@ const dom = {
   signupForm: document.querySelector("#signupForm"),
   authTabs: document.querySelectorAll("[data-auth-tab]"),
   authFeedback: document.querySelector("#authFeedback"),
+  systemPulse: document.querySelector("#systemPulse"),
   logoutBtn: document.querySelector("#logoutBtn"),
   onboardingShell: document.querySelector("#onboardingShell"),
   dashboard: document.querySelector("#dashboard"),
@@ -40,8 +41,7 @@ const dom = {
   coachMessages: document.querySelector("#coachMessages"),
   coachProposal: document.querySelector("#coachProposal"),
   coachForm: document.querySelector("#coachForm"),
-  profileEmail: document.querySelector("#profileEmail"),
-  profilePlanSource: document.querySelector("#profilePlanSource"),
+  profileSummary: document.querySelector("#profileSummary"),
   todayFocusBadge: document.querySelector("#todayFocusBadge"),
   todayWorkoutCard: document.querySelector("#todayWorkoutCard"),
   weekSummaryBadge: document.querySelector("#weekSummaryBadge"),
@@ -57,6 +57,7 @@ let authSession = null;
 let saveTimer = null;
 let isBootstrapping = false;
 let isFirstConsultationActive = false;
+let pulseTimer = null;
 
 function baseState() {
   return {
@@ -64,6 +65,7 @@ function baseState() {
     checkin: { ...defaultCheckin },
     plan: [],
     planMeta: { source: "local-coach-engine", fallbackReason: "none", summary: "", safety: null, stats: {} },
+    activityLogs: {},
     selectedDayId: null,
     activeTab: "home",
     coachChat: createDefaultCoachChat(),
@@ -87,6 +89,32 @@ function formatErrorMessage(error, fallback) {
 function setAuthFeedback(message, tone = "info") {
   dom.authFeedback.textContent = message;
   dom.authFeedback.className = `auth-feedback ${tone}`.trim();
+}
+
+function runSystemPulse(lines, doneMessage = "", options = {}) {
+  if (!dom.systemPulse) return Promise.resolve();
+  clearTimeout(pulseTimer);
+  const duration = options.duration ?? 1400;
+  const doneDuration = options.doneDuration ?? 1200;
+  const terminalLines = lines.map((line) => `<span>&gt; ${line}</span>`).join("");
+  dom.systemPulse.innerHTML = `<div class="pulse-lines">${terminalLines}</div>`;
+  dom.systemPulse.className = "system-pulse";
+  return new Promise((resolve) => {
+    pulseTimer = window.setTimeout(() => {
+      options.onBeforeDone?.();
+      if (!doneMessage) {
+        dom.systemPulse.classList.add("hidden");
+        resolve();
+        return;
+      }
+      dom.systemPulse.innerHTML = `<div class="pulse-done">${doneMessage}</div>`;
+      dom.systemPulse.className = "system-pulse done";
+      pulseTimer = window.setTimeout(() => {
+        dom.systemPulse.classList.add("hidden");
+        resolve();
+      }, doneDuration);
+    }, duration);
+  });
 }
 
 function switchAuthTab(tab) {
@@ -121,6 +149,7 @@ function initializeState(loaded) {
     ...stateDefaults,
     ...(loaded || {}),
     planMeta: loaded?.planMeta || loaded?.plan_meta || stateDefaults.planMeta,
+    activityLogs: loaded?.activityLogs || loaded?.activity_logs || stateDefaults.activityLogs,
     selectedDayId: loaded?.selectedDayId || loaded?.selected_day_id || stateDefaults.selectedDayId,
     activeTab: normalizeAppTab(loaded?.activeTab || loaded?.active_tab || stateDefaults.activeTab),
     coachChat: loaded?.coachChat || loaded?.coach_chat || stateDefaults.coachChat,
@@ -160,7 +189,7 @@ function syncUI() {
   const showOnboarding = isFirstConsultationActive || shouldShowOnboarding(state, authSession);
   dom.onboardingShell.classList.toggle("hidden", !showOnboarding);
   dom.dashboard.classList.toggle("hidden", showOnboarding);
-  renderHome({ dom, state, updateSession, switchAppTab, sendCoachMessage, applyCoachPlan });
+  renderHome({ dom, state, updateSession, saveActivityLog, switchAppTab, sendCoachMessage, applyCoachPlan, runSystemPulse });
   renderOnboarding({ dom, state, persistWorkspaceSoon });
 }
 
@@ -186,6 +215,7 @@ async function persistWorkspace(options = {}) {
       checkin: state.checkin,
       plan: state.plan,
       plan_meta: state.planMeta,
+      activity_logs: state.activityLogs,
       selected_day_id: state.selectedDayId,
       active_tab: state.activeTab,
       coach_chat: state.coachChat,
@@ -250,16 +280,44 @@ function rebuildPlanKeepingProgress(nextSelectedId) {
   state.selectedDayId = nextSelectedId || state.plan.find((session) => session.type === "quality")?.id || state.plan[0]?.id || null;
 }
 
-function updateSession(dayId, patch) {
-  state.plan = state.plan.map((session) => (session.id === dayId ? { ...session, ...patch } : session));
-  syncUI();
-  persistWorkspaceSoon();
+function updateSession(dayId, patch, options = {}) {
+  const applyUpdate = () => {
+    state.plan = state.plan.map((session) => (session.id === dayId ? { ...session, ...patch } : session));
+    syncUI();
+    persistWorkspaceSoon();
+  };
+  if (options.silent) {
+    applyUpdate();
+    return;
+  }
+  runSystemPulse(["parsing check-in...", "syncing coach state..."], "상태가 반영됐어요", { onBeforeDone: applyUpdate });
+}
+
+function saveActivityLog(activityDate, log) {
+  runSystemPulse(["parsing workout log...", "evaluating recovery load...", "syncing coach state..."], "훈련 기록을 저장했어요", {
+    onBeforeDone: () => {
+      state.activityLogs = {
+        ...(state.activityLogs || {}),
+        [activityDate]: {
+          ...log,
+          date: activityDate,
+          source: "manual",
+          savedAt: new Date().toISOString(),
+        },
+      };
+      updateSession(log.dayId, { status: "complete" }, { silent: true });
+    },
+  });
 }
 
 function switchAppTab(tab) {
-  state.activeTab = tab;
-  syncUI();
-  persistWorkspaceSoon();
+  runSystemPulse(["loading workspace pane...", "syncing coach state..."], "화면을 전환했어요", {
+    onBeforeDone: () => {
+      state.activeTab = tab;
+      syncUI();
+      persistWorkspaceSoon();
+    },
+  });
 }
 
 function sendCoachMessage(message) {
@@ -267,34 +325,43 @@ function sendCoachMessage(message) {
     ...(state.coachChat || createDefaultCoachChat()),
     messages: [...(state.coachChat?.messages || []), { role: "user", text: message }],
   };
-  const result = buildCoachReply({ message, state });
-  state.coachChat = {
-    ...state.coachChat,
-    stage: result.stage,
-    pendingPlan: result.pendingPlan,
-    messages: [...state.coachChat.messages, { role: "coach", text: result.reply }],
-  };
   syncUI();
-  persistWorkspaceSoon();
+  runSystemPulse(["parsing check-in...", "evaluating recovery load...", "drafting coach response..."], "코치가 확인했어요", {
+    onBeforeDone: () => {
+      const result = buildCoachReply({ message, state });
+      state.coachChat = {
+        ...state.coachChat,
+        stage: result.stage,
+        pendingPlan: result.pendingPlan,
+        messages: [...state.coachChat.messages, { role: "coach", text: result.reply }],
+      };
+      syncUI();
+      persistWorkspaceSoon();
+    },
+  });
 }
 
 function applyCoachPlan() {
   const pendingPlan = state.coachChat?.pendingPlan;
   if (!pendingPlan) return;
-  state.profile = { ...state.profile, ...(pendingPlan.profile || {}) };
-  state.checkin = { ...state.checkin, ...(pendingPlan.checkin || {}) };
-  rebuildPlanKeepingProgress(state.selectedDayId);
-  state.coachChat = {
-    ...state.coachChat,
-    stage: "idle",
-    pendingPlan: null,
-    messages: [
-      ...(state.coachChat?.messages || []),
-      { role: "coach", text: "좋아, 방금 대화 기준으로 이번 주 캘린더를 다시 짰어. 오늘은 계획을 이기는 날이 아니라 몸과 약속을 다시 맞추는 날이야." },
-    ],
-  };
-  syncUI();
-  persistWorkspaceSoon();
+  runSystemPulse(["reconciling plan...", "applying adjustments...", "syncing coach state..."], "조정이 반영됐어요", {
+    onBeforeDone: () => {
+      state.profile = { ...state.profile, ...(pendingPlan.profile || {}) };
+      state.checkin = { ...state.checkin, ...(pendingPlan.checkin || {}) };
+      rebuildPlanKeepingProgress(state.selectedDayId);
+      state.coachChat = {
+        ...state.coachChat,
+        stage: "idle",
+        pendingPlan: null,
+        messages: [
+          ...(state.coachChat?.messages || []),
+          { role: "coach", text: "좋아, 방금 대화 기준으로 이번 주 캘린더를 다시 짰어. 오늘은 계획을 이기는 날이 아니라 몸과 약속을 다시 맞추는 날이야." },
+        ],
+      };
+      syncUI();
+      persistWorkspaceSoon();
+    },
+  });
 }
 
 async function handleProfileSubmit(event) {
@@ -321,9 +388,14 @@ async function handleSignup(event) {
     setAuthFeedback("회원가입에는 이름, 이메일, 6자 이상 비밀번호가 필요합니다.", "warning");
     return;
   }
+  const pulse = runSystemPulse(["creating runner profile...", "syncing workspace..."], "계정 준비가 끝났어요", { duration: 1600 });
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
-  if (error) return setAuthFeedback(error.message, "warning");
+  if (error) {
+    await pulse;
+    return setAuthFeedback(error.message, "warning");
+  }
   if (!data.session) {
+    await pulse;
     setAuthFeedback("회원가입이 생성되었습니다. 이메일 인증을 켠 프로젝트라면 메일 확인 후 로그인해 주세요.", "success");
     switchAuthTab("login");
     dom.loginForm.elements.namedItem("email").value = email;
@@ -331,70 +403,89 @@ async function handleSignup(event) {
   }
   authSession = data.session;
   await bootstrapWorkspaceForUser(data.session.user);
+  await pulse;
   showAuthenticatedApp();
 }
 
 async function handleLogin(event) {
   event.preventDefault();
+  const pulse = runSystemPulse(["authenticating runner...", "restoring workspace..."], "워크스페이스 동기화 완료", { duration: 1600 });
   const values = Object.fromEntries(new FormData(dom.loginForm).entries());
   const { data, error } = await supabase.auth.signInWithPassword({
     email: normalizeEmail(values.email),
     password: String(values.password || ""),
   });
-  if (error) return setAuthFeedback(error.message, "warning");
+  if (error) {
+    await pulse;
+    return setAuthFeedback(error.message, "warning");
+  }
   authSession = data.session;
   await bootstrapWorkspaceForUser(data.session.user);
+  await pulse;
   showAuthenticatedApp();
 }
 
 async function handleLogout() {
   const { error } = await supabase.auth.signOut();
   if (error) return setAuthFeedback(error.message, "warning");
-  authSession = null;
-  isFirstConsultationActive = false;
-  initializeState(null);
-  showAuthGate();
-  switchAuthTab("login");
+  runSystemPulse(["closing workspace...", "clearing local session..."], "로그아웃됐어요", {
+    onBeforeDone: () => {
+      authSession = null;
+      isFirstConsultationActive = false;
+      initializeState(null);
+      showAuthGate();
+      switchAuthTab("login");
+    },
+  });
 }
 
 function handleOnboardingBack() {
   if (state.onboarding.step === 0) return;
-  state.onboarding.step -= 1;
-  renderOnboarding({ dom, state, persistWorkspaceSoon });
-  persistWorkspaceSoon();
+  runSystemPulse(["loading previous prompt..."], "이전 단계로 돌아왔어요", {
+    onBeforeDone: () => {
+      state.onboarding.step -= 1;
+      renderOnboarding({ dom, state, persistWorkspaceSoon });
+      persistWorkspaceSoon();
+    },
+  });
 }
 
 function handleOnboardingNext() {
   if (!validateOnboardingStep(state, setAuthFeedback)) return;
   const steps = getOnboardingSteps(state);
-  state.onboarding.step = Math.min(state.onboarding.step + 1, steps.length - 1);
-  renderOnboarding({ dom, state, persistWorkspaceSoon });
-  persistWorkspaceSoon();
+  runSystemPulse(["parsing consultation input...", "syncing coach state..."], "다음 질문을 준비했어요", {
+    onBeforeDone: () => {
+      state.onboarding.step = Math.min(state.onboarding.step + 1, steps.length - 1);
+      renderOnboarding({ dom, state, persistWorkspaceSoon });
+      persistWorkspaceSoon();
+    },
+  });
 }
 
 async function handleOnboardingComplete(event) {
   event.preventDefault();
   const initialPlanningProfile = buildInitialPlanningProfileFromOnboarding(state);
-  state.onboarding = { ...state.onboarding, completedAt: new Date().toISOString(), initialPlanningProfile };
-  isFirstConsultationActive = false;
-  state.profile = {
-    ...state.profile,
-    goalRace: initialPlanningProfile.race?.name || state.profile.goalRace,
-    goalTime: initialPlanningProfile.race?.goalTime || state.profile.goalTime,
-    raceType: initialPlanningProfile.race?.type || state.profile.raceType,
-    weeklyMileage: initialPlanningProfile.averageMileage4Weeks || state.profile.weeklyMileage,
-    availableDays: initialPlanningProfile.availableTrainingDays || state.profile.availableDays,
-    fatigue: initialPlanningProfile.bodyCondition === "good" ? "fresh" : initialPlanningProfile.bodyCondition === "cautious" ? "tired" : "normal",
-    notes: [state.profile.notes, initialPlanningProfile.bodyConditionNote].filter(Boolean).join(" / "),
-  };
-  rebuildPlanKeepingProgress(state.selectedDayId);
-  syncUI();
-  try {
-    await saveProfileToSupabase();
-    await persistWorkspace();
-  } catch (error) {
-    setAuthFeedback(formatErrorMessage(error, "온보딩 저장에 실패했습니다."), "warning");
-  }
+  runSystemPulse(["parsing first consultation...", "reconciling plan...", "applying adjustments..."], "첫 계획이 준비됐어요", {
+    onBeforeDone: () => {
+      state.onboarding = { ...state.onboarding, completedAt: new Date().toISOString(), initialPlanningProfile };
+      isFirstConsultationActive = false;
+      state.profile = {
+        ...state.profile,
+        goalRace: initialPlanningProfile.race?.name || state.profile.goalRace,
+        goalTime: initialPlanningProfile.race?.goalTime || state.profile.goalTime,
+        raceType: initialPlanningProfile.race?.type || state.profile.raceType,
+        weeklyMileage: initialPlanningProfile.averageMileage4Weeks || state.profile.weeklyMileage,
+        availableDays: initialPlanningProfile.availableTrainingDays || state.profile.availableDays,
+        fatigue: initialPlanningProfile.bodyCondition === "good" ? "fresh" : initialPlanningProfile.bodyCondition === "cautious" ? "tired" : "normal",
+        notes: [state.profile.notes, initialPlanningProfile.bodyConditionNote].filter(Boolean).join(" / "),
+      };
+      rebuildPlanKeepingProgress(state.selectedDayId);
+      syncUI();
+      saveProfileToSupabase()
+        .then(() => persistWorkspace())
+        .catch((error) => setAuthFeedback(formatErrorMessage(error, "온보딩 저장에 실패했습니다."), "warning"));
+    },
+  });
 }
 
 async function hydrateFromSession(session) {

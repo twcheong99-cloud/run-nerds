@@ -70,11 +70,13 @@
           </p>
         </div>
         <div class="hero-meta">
-          <div class="meta-chip">MVP Prototype</div>
-          <div class="meta-chip">Coach-first UX</div>
-          <div class="meta-chip">Safety aware</div>
+          <div class="meta-chip">plan is stable</div>
+          <div class="meta-chip">워크스페이스 동기화 완료</div>
+          <div class="meta-chip">오늘 훈련 준비됨</div>
         </div>
       </header>
+
+      <div id="systemPulse" class="system-pulse hidden" aria-live="polite"></div>
 
       <section id="onboardingShell" class="onboarding-shell hidden">
         <div class="panel onboarding-panel">
@@ -192,13 +194,9 @@
                 <p class="section-kicker">MY PAGE</p>
                 <h2>마이페이지</h2>
               </div>
-              <span class="badge neutral">account</span>
+              <span class="badge neutral">runner profile</span>
             </div>
-            <div class="profile-card">
-              <span class="mini-day-name">workspace</span>
-              <strong id="profileEmail">no-user</strong>
-              <p id="profilePlanSource">source: local-coach-engine</p>
-            </div>
+            <div id="profileSummary" class="profile-summary"></div>
             <button type="button" id="logoutBtn" class="ghost-btn profile-logout">로그아웃</button>
           </section>
         </section>
