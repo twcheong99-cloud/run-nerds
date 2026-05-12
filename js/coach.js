@@ -47,10 +47,11 @@ function getCoachStyleLabel(style) {
   return "balanced";
 }
 
-export function createDefaultCoachChat() {
+export function createDefaultCoachChat(conversationDate = null) {
   return {
     stage: "idle",
     pendingPlan: null,
+    conversationDate,
     messages: [
       {
         role: "coach",

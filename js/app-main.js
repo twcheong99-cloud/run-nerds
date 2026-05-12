@@ -3,6 +3,7 @@ import { buildPlan, mergePreviousProgress } from "./plan.js";
 import { buildInitialPlanningProfileFromOnboarding, getOnboardingSteps, renderOnboarding, shouldShowOnboarding, validateOnboardingStep } from "./onboarding.js";
 import { renderHome } from "./home.js";
 import { buildCoachReply, createDefaultCoachChat } from "./coach.js";
+import { enhanceThemeSelects } from "./theme-select.js";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true },
@@ -42,6 +43,8 @@ const dom = {
   coachProposal: document.querySelector("#coachProposal"),
   coachForm: document.querySelector("#coachForm"),
   profileSummary: document.querySelector("#profileSummary"),
+  goalStripMain: document.querySelector("#goalStripMain"),
+  goalStripMeta: document.querySelector("#goalStripMeta"),
   todayFocusBadge: document.querySelector("#todayFocusBadge"),
   todayWorkoutCard: document.querySelector("#todayWorkoutCard"),
   weekSummaryBadge: document.querySelector("#weekSummaryBadge"),
@@ -58,6 +61,13 @@ let saveTimer = null;
 let isBootstrapping = false;
 let isFirstConsultationActive = false;
 let pulseTimer = null;
+const supabaseProjectRef = (() => {
+  try {
+    return new URL(SUPABASE_URL).hostname.split(".")[0];
+  } catch {
+    return "";
+  }
+})();
 
 function baseState() {
   return {
@@ -77,6 +87,23 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeCoachChatForToday(chat) {
+  const todayKey = getLocalDateKey();
+  if (!chat || chat.conversationDate !== todayKey) return createDefaultCoachChat(todayKey);
+  return {
+    ...chat,
+    conversationDate: todayKey,
+    messages: Array.isArray(chat.messages) && chat.messages.length ? chat.messages : createDefaultCoachChat(todayKey).messages,
+  };
+}
+
 function formatErrorMessage(error, fallback) {
   const message = error?.message || error?.error_description || error?.description;
   if (!message) return fallback;
@@ -89,6 +116,14 @@ function formatErrorMessage(error, fallback) {
 function setAuthFeedback(message, tone = "info") {
   dom.authFeedback.textContent = message;
   dom.authFeedback.className = `auth-feedback ${tone}`.trim();
+}
+
+function clearSupabaseAuthCache() {
+  if (!supabaseProjectRef || !window.localStorage) return;
+  const prefix = `sb-${supabaseProjectRef}`;
+  Object.keys(window.localStorage)
+    .filter((key) => key.startsWith(prefix))
+    .forEach((key) => window.localStorage.removeItem(key));
 }
 
 function runSystemPulse(lines, doneMessage = "", options = {}) {
@@ -152,7 +187,7 @@ function initializeState(loaded) {
     activityLogs: loaded?.activityLogs || loaded?.activity_logs || stateDefaults.activityLogs,
     selectedDayId: loaded?.selectedDayId || loaded?.selected_day_id || stateDefaults.selectedDayId,
     activeTab: normalizeAppTab(loaded?.activeTab || loaded?.active_tab || stateDefaults.activeTab),
-    coachChat: loaded?.coachChat || loaded?.coach_chat || stateDefaults.coachChat,
+    coachChat: normalizeCoachChatForToday(loaded?.coachChat || loaded?.coach_chat || stateDefaults.coachChat),
   };
   const defaults = createDefaultOnboarding();
   state.onboarding = {
@@ -187,10 +222,16 @@ function syncUI() {
   const emailField = dom.profileForm?.elements?.namedItem("email");
   if (emailField) emailField.readOnly = true;
   const showOnboarding = isFirstConsultationActive || shouldShowOnboarding(state, authSession);
+  const previousCoachDate = state.coachChat?.conversationDate;
+  state.coachChat = normalizeCoachChatForToday(state.coachChat);
   dom.onboardingShell.classList.toggle("hidden", !showOnboarding);
   dom.dashboard.classList.toggle("hidden", showOnboarding);
-  renderHome({ dom, state, updateSession, saveActivityLog, switchAppTab, sendCoachMessage, applyCoachPlan, runSystemPulse });
+  renderHome({ dom, state, updateSession, saveActivityLog, saveWorkoutStatusNote, switchAppTab, sendCoachMessage, applyCoachPlan, runSystemPulse });
   renderOnboarding({ dom, state, persistWorkspaceSoon });
+  enhanceThemeSelects(dom.appShell);
+  if (previousCoachDate && previousCoachDate !== state.coachChat?.conversationDate && !isBootstrapping) {
+    persistWorkspaceSoon();
+  }
 }
 
 async function saveProfileToSupabase() {
@@ -310,6 +351,36 @@ function saveActivityLog(activityDate, log) {
   });
 }
 
+function saveWorkoutStatusNote(activityDate, note) {
+  const statusLabel = note.status === "skipped" ? "미실행" : "실패";
+  runSystemPulse(["parsing coach check-in...", "updating recovery context...", "syncing coach state..."], "코칭에 반영했어요", {
+    onBeforeDone: () => {
+      state.activityLogs = {
+        ...(state.activityLogs || {}),
+        [activityDate]: {
+          ...note,
+          date: activityDate,
+          source: "coach-check-in",
+          savedAt: new Date().toISOString(),
+        },
+      };
+      const commentParts = [
+        state.checkin.comment,
+        `${activityDate} ${statusLabel}: ${note.reason || "reason"}${note.progress ? ` / ${note.progress}` : ""}${note.memo ? ` / ${note.memo}` : ""}`,
+      ].filter(Boolean);
+      state.checkin = {
+        ...state.checkin,
+        fatigue: note.reason === "fatigue" ? "high" : state.checkin.fatigue,
+        pain: note.reason === "pain" ? "worrying" : state.checkin.pain,
+        schedule: note.reason === "schedule" ? "chaotic" : state.checkin.schedule,
+        confidence: note.status === "skipped" || note.status === "failed" ? "steady" : state.checkin.confidence,
+        comment: commentParts.join(" / "),
+      };
+      updateSession(note.dayId, { status: note.status }, { silent: true });
+    },
+  });
+}
+
 function switchAppTab(tab) {
   runSystemPulse(["loading workspace pane...", "syncing coach state..."], "화면을 전환했어요", {
     onBeforeDone: () => {
@@ -321,8 +392,10 @@ function switchAppTab(tab) {
 }
 
 function sendCoachMessage(message) {
+  state.coachChat = normalizeCoachChatForToday(state.coachChat);
   state.coachChat = {
     ...(state.coachChat || createDefaultCoachChat()),
+    conversationDate: getLocalDateKey(),
     messages: [...(state.coachChat?.messages || []), { role: "user", text: message }],
   };
   syncUI();
@@ -426,8 +499,10 @@ async function handleLogin(event) {
 }
 
 async function handleLogout() {
-  const { error } = await supabase.auth.signOut();
-  if (error) return setAuthFeedback(error.message, "warning");
+  clearSupabaseAuthCache();
+  supabase.auth.signOut({ scope: "local" }).catch((error) => {
+    console.warn("Local logout cleanup failed", error);
+  });
   runSystemPulse(["closing workspace...", "clearing local session..."], "로그아웃됐어요", {
     onBeforeDone: () => {
       authSession = null;
@@ -518,6 +593,7 @@ export function initApp() {
   dom.authTabs.forEach((button) => button.addEventListener("click", () => switchAuthTab(button.dataset.authTab)));
   supabase.auth.onAuthStateChange((_event, session) => { authSession = session; });
   supabase.auth.getSession().then(({ data }) => hydrateFromSession(data.session)).catch(() => {
+    clearSupabaseAuthCache();
     initializeState(null);
     showAuthGate();
   });

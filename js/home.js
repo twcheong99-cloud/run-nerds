@@ -42,6 +42,37 @@ function formatRaceType(type) {
   return type || "-";
 }
 
+function formatBodyCondition(condition) {
+  if (condition === "good" || condition === "fresh") return "가벼움";
+  if (condition === "cautious" || condition === "tired" || condition === "heavy") return "주의 필요";
+  if (condition === "normal") return "보통";
+  return condition || "기록 없음";
+}
+
+function formatPainStatus(pain) {
+  if (!pain || pain === "none") return "통증 없음";
+  if (pain === "light") return "가벼운 불편";
+  if (pain === "sharp" || pain === "worrying") return "주의 신호";
+  return pain;
+}
+
+function formatActivityLogSummary(log) {
+  if (!log) return "";
+  if (log.source === "coach-check-in") {
+    const statusLabel = log.status === "skipped" ? "미실행" : "실패";
+    const reasonLabel = {
+      fatigue: "피로",
+      pain: "통증",
+      schedule: "일정",
+      pace: "강도/페이스",
+      weather: "날씨",
+      other: "기타",
+    }[log.reason] || "이유 기록";
+    return `${statusLabel} · ${reasonLabel}`;
+  }
+  return `${escapeHtml(log.distance || "-")}km · ${escapeHtml(log.duration || "-")} · ${escapeHtml(log.rpe || "RPE -")}`;
+}
+
 function buildPostRunCoachQuestion(values) {
   if (values.pain === "sharp") {
     return "날카로운 통증이 있었네. 어느 부위가 언제부터 아팠고, 뛰는 동안 더 심해졌는지 말해줘. 다음 훈련은 안전 쪽으로 조정할게.";
@@ -58,6 +89,23 @@ function buildPostRunCoachQuestion(values) {
   return "오늘 기록을 보면 계획 범위 안에서 끝낸 것 같아. 몸에 남은 피로와 다음 훈련 자신감을 한 줄로 말해줘.";
 }
 
+function buildStatusCoachQuestion(status, values) {
+  if (status === "failed") {
+    if (values.reason === "pain") return "통증 때문에 멈췄다면 어디가, 어느 시점부터, 뛰면서 더 심해졌는지 알려줘. 다음 훈련 강도를 안전하게 낮출게.";
+    if (values.reason === "fatigue") return "피로 때문에 끝내기 어려웠다면 다리 무거움, 호흡, 수면 중 무엇이 제일 컸는지 알려줘. 회복 쪽으로 조정할게.";
+    if (values.reason === "pace") return "페이스나 강도가 맞지 않았다면 어느 구간부터 무너졌는지 알려줘. 다음 세션의 강도 기준을 다시 잡을게.";
+    return "어디까지 했고 무엇 때문에 멈췄는지 조금만 더 말해줘. 실패 기록도 다음 조정에 중요한 입력이야.";
+  }
+  if (values.reason === "schedule") return "일정 때문에 못 했다면 이번 주 남은 날 중 현실적으로 뛸 수 있는 날을 알려줘. 계획을 압축해서 다시 맞출게.";
+  if (values.reason === "fatigue") return "피로 때문에 쉬었다면 수면, 다리 무거움, 전신 피로 중 무엇이 컸는지 알려줘. 회복을 훈련으로 계산할게.";
+  if (values.reason === "pain") return "통증 때문에 쉬었다면 부위와 통증 강도, 내일도 뛸 수 있을지 알려줘. 다음 훈련은 안전 쪽으로 볼게.";
+  return "오늘 미실행한 이유를 조금만 더 말해줘. 코칭에서는 못 뛴 이유까지 같이 보고 다음 훈련을 조정할게.";
+}
+
+function setActivityLogOpen(isOpen) {
+  document.body.classList.toggle("activity-log-open", isOpen);
+}
+
 function renderProfileSummary({ dom, state }) {
   const initial = state.onboarding?.initialPlanningProfile;
   const profile = state.profile || {};
@@ -66,6 +114,9 @@ function renderProfileSummary({ dom, state }) {
   const raceType = initial?.race?.type || profile.raceType;
   const goalTime = initial?.race?.goalTime || profile.goalTime || "기록 미정";
   const pain = initial?.painArea || profile.pain || "없음";
+  const bodyCondition = initial?.bodyCondition || profile.fatigue || state.checkin?.fatigue;
+  const bodyNote = initial?.bodyConditionNote || profile.notes || state.checkin?.comment || "몸 상태 메모가 아직 없습니다.";
+  const painStatus = initial?.painArea || profile.pain || state.checkin?.pain;
 
   dom.profileSummary.innerHTML = `
     <article class="profile-card">
@@ -81,7 +132,13 @@ function renderProfileSummary({ dom, state }) {
     <article class="profile-card">
       <span class="mini-day-name">routine</span>
       <strong>주 ${escapeHtml(availableDays)}회</strong>
-      <p>롱런 ${escapeHtml(profile.longRunDay === "sun" ? "일요일" : "토요일")} · 통증 ${escapeHtml(pain)}</p>
+      <p>롱런 ${escapeHtml(profile.longRunDay === "sun" ? "일요일" : "토요일")}</p>
+    </article>
+    <article class="profile-card physical-status-card">
+      <span class="mini-day-name">physical status</span>
+      <strong>${escapeHtml(formatBodyCondition(bodyCondition))}</strong>
+      <p>통증 상태 · ${escapeHtml(formatPainStatus(painStatus))}</p>
+      <p>${escapeHtml(bodyNote)}</p>
     </article>
   `;
 }
@@ -94,11 +151,13 @@ export function renderGoalSummary({ dom, state }) {
   const goalCopy = initial?.primaryGoalType === "race"
     ? `${initial?.race?.type?.toUpperCase?.() || state.profile.raceType?.toUpperCase?.() || ""} · ${initial?.race?.date || "날짜 미정"} · ${initial?.race?.goalTime || state.profile.goalTime || "기록 미정"}`
     : `${initial?.nonRace?.durationWeeks || "-"}주 프로그램 · 주 ${initial?.availableTrainingDays || state.profile.availableDays || "-"}회`;
+  if (dom.goalStripMain) dom.goalStripMain.textContent = goalTitle;
+  if (dom.goalStripMeta) dom.goalStripMeta.textContent = goalCopy;
   dom.goalSummaryCard.innerHTML = `<div class="goal-main">${goalTitle}</div><div class="goal-copy">${goalCopy}</div>`;
 }
 
 export function renderTodayWorkout(ctx) {
-  const { dom, state, updateSession, saveActivityLog, runSystemPulse } = ctx;
+  const { dom, state, updateSession, saveActivityLog, saveWorkoutStatusNote, runSystemPulse } = ctx;
   const todayId = getTodayDayId();
   const todayDateKey = getTodayDateKey();
   const session = state.plan.find((item) => item.id === todayId) || state.plan[0];
@@ -115,8 +174,9 @@ export function renderTodayWorkout(ctx) {
       <div class="today-metric"><div class="today-metric-label">INTENSITY</div><div class="today-metric-value">${session.intensity}</div></div>
     </div>
     <div class="session-detail">
-      <strong>오늘의 목적</strong><br />${session.purpose}<br /><br />
-      <strong>세션 구성</strong>
+      <p class="detail-kicker">SESSION DETAIL</p>
+      <strong>오늘의 목적</strong><br />${session.purpose}
+      <p class="detail-kicker">BLOCKS</p>
       <ul class="block-list">${session.blocks.map((block) => `<li>${block}</li>`).join("")}</ul>
       <strong>성공 기준</strong><br />${session.success}
     </div>
@@ -125,7 +185,7 @@ export function renderTodayWorkout(ctx) {
       <button type="button" class="status-btn ${session.status === "failed" ? "active failed" : ""}" data-status="failed">실패</button>
       <button type="button" class="status-btn ${session.status === "skipped" ? "active skipped" : ""}" data-status="skipped">미실행</button>
     </div>
-    ${activityLog ? `<div class="activity-log-summary"><strong>저장된 기록</strong><span>${escapeHtml(activityLog.distance || "-")}km · ${escapeHtml(activityLog.duration || "-")} · ${escapeHtml(activityLog.rpe || "RPE -")}</span></div>` : ""}
+    ${activityLog ? `<div class="activity-log-summary"><strong>저장된 기록</strong><span>${formatActivityLogSummary(activityLog)}</span></div>` : ""}
     <div id="activityLogModal" class="activity-log-modal hidden" role="dialog" aria-modal="true">
       <form class="activity-log-dialog" id="activityLogForm">
         <div class="activity-log-head">
@@ -156,23 +216,83 @@ export function renderTodayWorkout(ctx) {
             <textarea name="memo" rows="3" placeholder="예: 후반에 종아리가 묵직했고 호흡은 괜찮았어.">${escapeHtml(activityLog?.memo || "")}</textarea>
           </label>
         </div>
-        <button type="submit" id="activityLogSubmitBtn">${activityLog ? "기록 저장" : "코치 질문 받기"}</button>
+        <button type="submit" class="submit-pixel-btn" id="activityLogSubmitBtn">SUBMIT</button>
+      </form>
+    </div>
+    <div id="statusNoteModal" class="activity-log-modal hidden" role="dialog" aria-modal="true">
+      <form class="activity-log-dialog" id="statusNoteForm">
+        <div class="activity-log-head">
+          <div>
+            <span class="mini-day-name" id="statusNoteKicker">coach check-in</span>
+            <strong id="statusNoteTitle">훈련 체크인</strong>
+          </div>
+          <button type="button" class="ghost-btn compact-btn" id="closeStatusNoteBtn">닫기</button>
+        </div>
+        <input type="hidden" name="status" id="statusNoteStatus" />
+        <div class="activity-log-grid">
+          <label id="statusProgressField">어디까지 했나요?<input name="progress" placeholder="예: 워밍업 후 2km에서 중단" /></label>
+          <label>가장 큰 이유<select name="reason">
+            <option value="fatigue">피로</option>
+            <option value="pain">통증</option>
+            <option value="schedule">일정</option>
+            <option value="pace">강도/페이스</option>
+            <option value="weather">날씨</option>
+            <option value="other">기타</option>
+          </select></label>
+        </div>
+        <div class="coach-note-field">
+          <div class="coach-message coach">
+            <span>COACH</span>
+            <p id="statusCoachQuestion">오늘 훈련이 막힌 이유를 알려줘. 다음 조정에 반영할게.</p>
+          </div>
+          <label>
+            <span>YOU</span>
+            <textarea name="memo" rows="3" placeholder="예: 야근 후 다리가 무거워서 조깅 2km만 하고 멈췄어."></textarea>
+          </label>
+        </div>
+        <button type="submit" class="submit-pixel-btn">SUBMIT</button>
       </form>
     </div>
   `;
+  const openStatusNoteModal = (status) => {
+    const modal = dom.todayWorkoutCard.querySelector("#statusNoteModal");
+    const statusField = modal?.querySelector("#statusNoteStatus");
+    const title = modal?.querySelector("#statusNoteTitle");
+    const progressField = modal?.querySelector("#statusProgressField");
+    const question = modal?.querySelector("#statusCoachQuestion");
+    if (!modal || !statusField || !title || !progressField || !question) return;
+    statusField.value = status;
+    title.textContent = status === "failed" ? "실패 이유 기록" : "미실행 이유 기록";
+    progressField.classList.toggle("hidden", status === "skipped");
+    question.textContent = status === "failed"
+      ? "어디까지 했고 어떤 불편 때문에 멈췄는지 알려줘. 다음 훈련 조정에 반영할게."
+      : "오늘 훈련을 못 한 이유를 알려줘. 일정, 피로, 통증 중 무엇이 컸는지 보고 다음 흐름을 맞출게.";
+    setActivityLogOpen(true);
+    modal.classList.remove("hidden");
+  };
   dom.todayWorkoutCard.querySelectorAll("[data-status]").forEach((button) => {
     button.addEventListener("click", () => {
       if (button.dataset.status === "complete") {
         runSystemPulse(["opening workout log...", "preparing coach prompt..."], "훈련 기록을 열었어요", {
-          onBeforeDone: () => dom.todayWorkoutCard.querySelector("#activityLogModal")?.classList.remove("hidden"),
+          onBeforeDone: () => {
+            setActivityLogOpen(true);
+            dom.todayWorkoutCard.querySelector("#activityLogModal")?.classList.remove("hidden");
+          },
         });
         return;
       }
-      updateSession(session.id, { status: button.dataset.status });
+      runSystemPulse(["opening coach check-in...", "preparing adjustment prompt..."], "체크인을 열었어요", {
+        onBeforeDone: () => openStatusNoteModal(button.dataset.status),
+      });
     });
   });
   dom.todayWorkoutCard.querySelector("#closeActivityLogBtn")?.addEventListener("click", () => {
+    setActivityLogOpen(false);
     dom.todayWorkoutCard.querySelector("#activityLogModal")?.classList.add("hidden");
+  });
+  dom.todayWorkoutCard.querySelector("#closeStatusNoteBtn")?.addEventListener("click", () => {
+    setActivityLogOpen(false);
+    dom.todayWorkoutCard.querySelector("#statusNoteModal")?.classList.add("hidden");
   });
   dom.todayWorkoutCard.querySelector("#activityLogForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -184,11 +304,12 @@ export function renderTodayWorkout(ctx) {
         onBeforeDone: () => {
           event.currentTarget.querySelector("#postRunCoachQuestion").textContent = buildPostRunCoachQuestion(values);
           coachStep.classList.remove("hidden");
-          submitButton.textContent = "기록 저장";
+          submitButton.textContent = "SUBMIT";
         },
       });
       return;
     }
+    setActivityLogOpen(false);
     saveActivityLog(todayDateKey, {
       dayId: session.id,
       distance: values.distance,
@@ -199,12 +320,37 @@ export function renderTodayWorkout(ctx) {
       memo: values.memo,
     });
   });
+  dom.todayWorkoutCard.querySelector("#statusNoteForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const status = values.status === "skipped" ? "skipped" : "failed";
+    setActivityLogOpen(false);
+    dom.todayWorkoutCard.querySelector("#statusNoteModal")?.classList.add("hidden");
+    saveWorkoutStatusNote(todayDateKey, {
+      dayId: session.id,
+      status,
+      progress: values.progress,
+      reason: values.reason,
+      coachQuestion: buildStatusCoachQuestion(status, values),
+      memo: values.memo,
+    });
+  });
+  dom.todayWorkoutCard.querySelector("#statusNoteForm select[name='reason']")?.addEventListener("change", (event) => {
+    const form = event.currentTarget.form;
+    const values = Object.fromEntries(new FormData(form).entries());
+    form.querySelector("#statusCoachQuestion").textContent = buildStatusCoachQuestion(values.status, values);
+  });
 }
 
 export function renderWeekMiniCalendar(ctx) {
   const { dom, state, updateSession } = ctx;
   const todayId = getTodayDayId();
   const completedCount = state.plan.filter((session) => session.status === "complete").length;
+  const getCompactLabel = (session) => {
+    if (session.type === "rest") return "휴식";
+    if (session.type === "mobility") return "보강";
+    return "훈련";
+  };
   dom.weekSummaryBadge.textContent = `${completedCount}/${state.plan.length} complete`;
   dom.weekMiniCalendar.innerHTML = state.plan.map((session) => `
     <article class="mini-day-card ${session.id === todayId ? "today" : ""}">
@@ -212,7 +358,7 @@ export function renderWeekMiniCalendar(ctx) {
         <span class="mini-day-name">${session.day}</span>
         <span class="badge neutral">${formatStatus(session.status)}</span>
       </div>
-      <p class="mini-day-title">${session.title}</p>
+      <p class="mini-day-title">${getCompactLabel(session)}</p>
       <p class="mini-day-copy">${session.subtitle}</p>
       <div class="mini-status-row">
         <button type="button" class="status-btn ${session.status === "complete" ? "active complete" : ""}" data-id="${session.id}" data-status="complete">완료</button>
