@@ -157,12 +157,13 @@ export function mergePreviousProgress(nextPlan, previousPlan) {
 export function buildPlan(profile, checkin) {
   const mileage = Number(profile.weeklyMileage) || 24;
   const safety = getSafetyState(profile, checkin);
-  const tight = checkin.schedule === "chaotic" || /2번만|두 번만/.test(checkin.comment);
+  const tight = checkin.schedule === "chaotic";
   const soft = safety.level !== "green" || profile.fatigue === "heavy";
-  const availableDays = clamp(Number(profile.availableDays) || 4, 2, 5);
-  const effectiveRunDays = tight ? Math.min(availableDays, 2) : availableDays;
-  const preferredDays = parsePreferredDays(profile.preferredDays);
-  const longRunDay = profile.longRunDay || "sat";
+  const temporaryAvailableDays = Number(checkin.temporaryAvailableDays || 0);
+  const availableDays = clamp(temporaryAvailableDays || Number(profile.availableDays) || 4, 2, 5);
+  const effectiveRunDays = tight && !temporaryAvailableDays ? Math.min(availableDays, 2) : availableDays;
+  const preferredDays = parsePreferredDays(checkin.temporaryPreferredDays || profile.preferredDays);
+  const longRunDay = checkin.temporaryLongRunDay || profile.longRunDay || "sat";
   const qualityDay = preferredDays.find((day) => day !== longRunDay && !["mon", "fri"].includes(day)) || "tue";
   const longRunKm = clamp(Math.round(mileage * (soft ? 0.32 : 0.38)), 8, profile.raceType === "full" ? 28 : 22);
   const easyKm = clamp(Math.round(mileage * 0.18), 5, 10);

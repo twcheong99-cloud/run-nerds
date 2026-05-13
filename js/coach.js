@@ -41,10 +41,32 @@ function getMonthCells(plan) {
   };
 }
 
+function getTrainingLabelForWeekday(plan, weekday) {
+  const session = (plan || []).find((item) => PLAN_DAY_TO_WEEKDAY[item.id] === weekday && TRAINING_TYPES.has(item.type));
+  if (!session) return "";
+  if (session.type === "quality") return "Q";
+  if (session.type === "long") return "L";
+  if (session.type === "recovery") return "R";
+  return "E";
+}
+
 function getCoachStyleLabel(style) {
   if (style === "gentle") return "gentle";
   if (style === "direct") return "direct";
   return "balanced";
+}
+
+function getCoachSourceLabel(source) {
+  if (source === "llm-coach") return "AI Coach";
+  if (source === "llm-fallback") return "Local fallback";
+  if (source === "local-coach-engine") return "Local engine";
+  return "";
+}
+
+function getCoachSourceTitle(message) {
+  const label = getCoachSourceLabel(message.source);
+  if (!label) return "";
+  return message.sourceDetail ? `${label}: ${escapeHtml(message.sourceDetail)}` : label;
 }
 
 export function createDefaultCoachChat(conversationDate = null) {
@@ -131,10 +153,11 @@ export function renderCoachTab(ctx) {
     ...WEEKDAY_LABELS.map((label) => `<div class="month-weekday">${label}</div>`),
     ...month.cells.map((cell) => {
       if (!cell) return `<div class="month-day empty-day"></div>`;
+      const trainingLabel = getTrainingLabelForWeekday(state.plan, new Date(new Date().getFullYear(), new Date().getMonth(), cell.day).getDay());
       return `
         <div class="month-day ${cell.isToday ? "today" : ""} ${cell.hasTraining ? "has-training" : ""}">
           <span>${cell.day}</span>
-          ${cell.hasTraining ? `<i aria-label="훈련 있음"></i>` : ""}
+          ${cell.hasTraining ? `<em class="month-training-code" aria-label="훈련 있음 ${trainingLabel}">${trainingLabel}</em>` : ""}
         </div>
       `;
     }),
@@ -142,7 +165,10 @@ export function renderCoachTab(ctx) {
 
   dom.coachMessages.innerHTML = (state.coachChat?.messages || []).map((message) => `
     <div class="coach-message ${message.role}">
-      <span>${message.role === "coach" ? "COACH" : "YOU"}</span>
+      <div class="coach-message-meta">
+        <span>${message.role === "coach" ? "COACH" : "YOU"}</span>
+        ${message.role === "coach" && getCoachSourceLabel(message.source) ? `<small title="${getCoachSourceTitle(message)}">${getCoachSourceLabel(message.source)}</small>` : ""}
+      </div>
       <p>${escapeHtml(message.text)}</p>
     </div>
   `).join("");

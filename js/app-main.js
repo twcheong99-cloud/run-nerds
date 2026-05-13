@@ -2,7 +2,8 @@ import { createDefaultOnboarding, defaultCheckin, defaultProfile, SUPABASE_PUBLI
 import { buildPlan, mergePreviousProgress } from "./plan.js";
 import { buildInitialPlanningProfileFromOnboarding, getOnboardingSteps, renderOnboarding, shouldShowOnboarding, validateOnboardingStep } from "./onboarding.js";
 import { renderHome } from "./home.js";
-import { buildCoachReply, createDefaultCoachChat } from "./coach.js";
+import { createDefaultCoachChat } from "./coach.js";
+import { requestCoachReply } from "./coach-service.js";
 import { enhanceThemeSelects } from "./theme-select.js";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -135,8 +136,12 @@ function runSystemPulse(lines, doneMessage = "", options = {}) {
   dom.systemPulse.innerHTML = `<div class="pulse-lines">${terminalLines}</div>`;
   dom.systemPulse.className = "system-pulse";
   return new Promise((resolve) => {
-    pulseTimer = window.setTimeout(() => {
-      options.onBeforeDone?.();
+    pulseTimer = window.setTimeout(async () => {
+      try {
+        await options.onBeforeDone?.();
+      } catch (error) {
+        console.warn("System pulse action failed", error);
+      }
       if (!doneMessage) {
         dom.systemPulse.classList.add("hidden");
         resolve();
@@ -321,6 +326,36 @@ function rebuildPlanKeepingProgress(nextSelectedId) {
   state.selectedDayId = nextSelectedId || state.plan.find((session) => session.type === "quality")?.id || state.plan[0]?.id || null;
 }
 
+function mergeCoachMeta(meta) {
+  if (!meta) return;
+  state.planMeta = {
+    ...(state.planMeta || {}),
+    source: meta.source || state.planMeta?.source || "local-coach-engine",
+    fallbackReason: meta.fallbackReason || "none",
+    safety: meta.safety || state.planMeta?.safety || null,
+    coach: meta,
+  };
+}
+
+function isExplicitApplyRequest(message) {
+  return /반영|적용|바꿔|변경|수정|업데이트|조정해|줄여|늘려|다시 짜|다시짜|replan|apply|update|change/i.test(String(message || ""));
+}
+
+function applyPendingCoachPlan(pendingPlan) {
+  state.profile = { ...state.profile, ...(pendingPlan.profile || {}) };
+  state.checkin = { ...state.checkin, ...(pendingPlan.checkin || {}) };
+  if (pendingPlan.checkin && Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays") && pendingPlan.checkin.temporaryAvailableDays === null) {
+    state.checkin.temporaryAvailableDays = null;
+  }
+  rebuildPlanKeepingProgress(state.selectedDayId);
+  state.planMeta = {
+    ...(state.planMeta || {}),
+    source: pendingPlan.source || state.planMeta?.source || "local-coach-engine",
+    fallbackReason: pendingPlan.source === "llm-fallback" ? "used-local-coach-engine" : "none",
+    coach: pendingPlan.meta || state.planMeta?.coach || null,
+  };
+}
+
 function updateSession(dayId, patch, options = {}) {
   const applyUpdate = () => {
     state.plan = state.plan.map((session) => (session.id === dayId ? { ...session, ...patch } : session));
@@ -400,13 +435,24 @@ function sendCoachMessage(message) {
   };
   syncUI();
   runSystemPulse(["parsing check-in...", "evaluating recovery load...", "drafting coach response..."], "코치가 확인했어요", {
-    onBeforeDone: () => {
-      const result = buildCoachReply({ message, state });
+    onBeforeDone: async () => {
+      const result = await requestCoachReply({ supabase, authSession, message, state });
+      mergeCoachMeta(result.meta);
+      const shouldApplyImmediately = isExplicitApplyRequest(message) && result.stage === "proposal" && result.pendingPlan;
+      if (shouldApplyImmediately) applyPendingCoachPlan(result.pendingPlan);
       state.coachChat = {
         ...state.coachChat,
-        stage: result.stage,
-        pendingPlan: result.pendingPlan,
-        messages: [...state.coachChat.messages, { role: "coach", text: result.reply }],
+        stage: shouldApplyImmediately ? "idle" : result.stage,
+        pendingPlan: shouldApplyImmediately ? null : result.pendingPlan,
+        messages: [
+          ...state.coachChat.messages,
+          {
+            role: "coach",
+            text: shouldApplyImmediately ? `${result.reply} 요청대로 앱의 이번 주 훈련표에도 바로 반영했어.` : result.reply,
+            source: result.meta?.source || "local-coach-engine",
+            sourceDetail: result.meta?.fallbackReason || "",
+          },
+        ],
       };
       syncUI();
       persistWorkspaceSoon();
@@ -419,9 +465,7 @@ function applyCoachPlan() {
   if (!pendingPlan) return;
   runSystemPulse(["reconciling plan...", "applying adjustments...", "syncing coach state..."], "조정이 반영됐어요", {
     onBeforeDone: () => {
-      state.profile = { ...state.profile, ...(pendingPlan.profile || {}) };
-      state.checkin = { ...state.checkin, ...(pendingPlan.checkin || {}) };
-      rebuildPlanKeepingProgress(state.selectedDayId);
+      applyPendingCoachPlan(pendingPlan);
       state.coachChat = {
         ...state.coachChat,
         stage: "idle",
@@ -552,7 +596,7 @@ async function handleOnboardingComplete(event) {
         weeklyMileage: initialPlanningProfile.averageMileage4Weeks || state.profile.weeklyMileage,
         availableDays: initialPlanningProfile.availableTrainingDays || state.profile.availableDays,
         fatigue: initialPlanningProfile.bodyCondition === "good" ? "fresh" : initialPlanningProfile.bodyCondition === "cautious" ? "tired" : "normal",
-        notes: [state.profile.notes, initialPlanningProfile.bodyConditionNote].filter(Boolean).join(" / "),
+        physicalNotes: [state.profile.physicalNotes, initialPlanningProfile.bodyConditionNote].filter(Boolean).join(" / "),
       };
       rebuildPlanKeepingProgress(state.selectedDayId);
       syncUI();

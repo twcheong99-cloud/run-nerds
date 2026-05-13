@@ -56,6 +56,37 @@ function formatPainStatus(pain) {
   return pain;
 }
 
+function getPhysicalStatusLevel({ bodyCondition, painStatus, checkin }) {
+  if (painStatus === "sharp" || /날카|심한|악화|sharp|severe/.test(String(painStatus || ""))) {
+    return {
+      level: "red",
+      label: "RED",
+      summary: "중단 권장",
+    };
+  }
+  if (
+    painStatus === "light" ||
+    painStatus === "worrying" ||
+    bodyCondition === "cautious" ||
+    bodyCondition === "tired" ||
+    bodyCondition === "heavy" ||
+    checkin?.fatigue === "high" ||
+    checkin?.sleep === "poor" ||
+    checkin?.pain === "worrying"
+  ) {
+    return {
+      level: "yellow",
+      label: "YELLOW",
+      summary: "주의 필요",
+    };
+  }
+  return {
+    level: "green",
+    label: "GREEN",
+    summary: "훈련 가능",
+  };
+}
+
 function formatActivityLogSummary(log) {
   if (!log) return "";
   if (log.source === "coach-check-in") {
@@ -71,6 +102,22 @@ function formatActivityLogSummary(log) {
     return `${statusLabel} · ${reasonLabel}`;
   }
   return `${escapeHtml(log.distance || "-")}km · ${escapeHtml(log.duration || "-")} · ${escapeHtml(log.rpe || "RPE -")}`;
+}
+
+function displayProfileNote(value, kind) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/(이번 주|오늘|내일|어제|이틀만|살짝|해보려고|고민|어떻게 할까|할 수 있을|어렵겠|가능하고|가능해|못.*하|못하|바빠|아직)/.test(text)) return "";
+  if (kind === "physical" && !/(통증|불편|피로|수면|회복|부상|무릎|발목|종아리|햄스트링|허리|컨디션|몸)/.test(text)) return "";
+  if (kind === "goal" && !/(목표|대회|기록|완주|마라톤|하프|10K|10k|풀|페이스|서브|시간)/.test(text)) return "";
+  if (kind === "coach" && !/(회복|강도|볼륨|조정|유지|주의|압축|추천|우선|전략|리듬|훈련)/.test(text)) return "";
+  return summarizeProfileNote(text, kind);
+}
+
+function summarizeProfileNote(text, kind) {
+  const firstSentence = text.split(/[.!?。]| \/ /).map((item) => item.trim()).find(Boolean) || text;
+  const maxLength = kind === "physical" ? 34 : 44;
+  return firstSentence.length > maxLength ? `${firstSentence.slice(0, maxLength - 1)}…` : firstSentence;
 }
 
 function buildPostRunCoachQuestion(values) {
@@ -115,8 +162,10 @@ function renderProfileSummary({ dom, state }) {
   const goalTime = initial?.race?.goalTime || profile.goalTime || "기록 미정";
   const pain = initial?.painArea || profile.pain || "없음";
   const bodyCondition = initial?.bodyCondition || profile.fatigue || state.checkin?.fatigue;
-  const bodyNote = initial?.bodyConditionNote || profile.notes || state.checkin?.comment || "몸 상태 메모가 아직 없습니다.";
+  const bodyNote = displayProfileNote(profile.physicalNotes, "physical") || displayProfileNote(initial?.bodyConditionNote, "physical");
   const painStatus = initial?.painArea || profile.pain || state.checkin?.pain;
+  const goalNote = displayProfileNote(profile.goalNotes, "goal");
+  const physicalStatus = getPhysicalStatusLevel({ bodyCondition, painStatus, checkin: state.checkin });
 
   dom.profileSummary.innerHTML = `
     <article class="profile-card">
@@ -128,17 +177,19 @@ function renderProfileSummary({ dom, state }) {
       <span class="mini-day-name">goal</span>
       <strong>${escapeHtml(raceName)}</strong>
       <p>${escapeHtml(formatRaceType(raceType))} · ${escapeHtml(goalTime)}</p>
+      ${goalNote ? `<p>${escapeHtml(goalNote)}</p>` : ""}
     </article>
     <article class="profile-card">
       <span class="mini-day-name">routine</span>
       <strong>주 ${escapeHtml(availableDays)}회</strong>
       <p>롱런 ${escapeHtml(profile.longRunDay === "sun" ? "일요일" : "토요일")}</p>
     </article>
-    <article class="profile-card physical-status-card">
+    <article class="profile-card physical-status-card status-${physicalStatus.level}">
       <span class="mini-day-name">physical status</span>
-      <strong>${escapeHtml(formatBodyCondition(bodyCondition))}</strong>
-      <p>통증 상태 · ${escapeHtml(formatPainStatus(painStatus))}</p>
-      <p>${escapeHtml(bodyNote)}</p>
+      <strong><span class="physical-status-badge">${physicalStatus.label}</span>${escapeHtml(physicalStatus.summary)}</strong>
+      <p>컨디션 · ${escapeHtml(formatBodyCondition(bodyCondition))}</p>
+      <p>통증 · ${escapeHtml(formatPainStatus(painStatus))}</p>
+      ${bodyNote ? `<p>${escapeHtml(bodyNote)}</p>` : ""}
     </article>
   `;
 }
@@ -346,27 +397,40 @@ export function renderWeekMiniCalendar(ctx) {
   const { dom, state, updateSession } = ctx;
   const todayId = getTodayDayId();
   const completedCount = state.plan.filter((session) => session.status === "complete").length;
+  const hasTemporarySchedule = Boolean(state.checkin?.temporaryAvailableDays || state.checkin?.temporaryPreferredDays || state.checkin?.temporaryLongRunDay);
   const getCompactLabel = (session) => {
     if (session.type === "rest") return "휴식";
     if (session.type === "mobility") return "보강";
-    return "훈련";
+    return session.title;
   };
-  dom.weekSummaryBadge.textContent = `${completedCount}/${state.plan.length} complete`;
-  dom.weekMiniCalendar.innerHTML = state.plan.map((session) => `
+  const getSessionMeta = (session) => {
+    const parts = [session.distance, session.duration].filter((item) => item && item !== "-");
+    return parts.length ? parts.join(" · ") : session.subtitle;
+  };
+  dom.weekSummaryBadge.textContent = `${completedCount}/${state.plan.length} complete${hasTemporarySchedule ? " · temporary" : ""}`;
+  dom.weekMiniCalendar.innerHTML = `
+    ${hasTemporarySchedule ? `
+      <div class="week-override-note">
+        이번 주 임시 조정 적용 중
+        ${state.checkin?.temporaryAvailableDays ? `<span>주 ${escapeHtml(state.checkin.temporaryAvailableDays)}회</span>` : ""}
+      </div>
+    ` : ""}
+    ${state.plan.map((session) => `
     <article class="mini-day-card ${session.id === todayId ? "today" : ""}">
       <div class="mini-day-head">
         <span class="mini-day-name">${session.day}</span>
         <span class="badge neutral">${formatStatus(session.status)}</span>
       </div>
       <p class="mini-day-title">${getCompactLabel(session)}</p>
-      <p class="mini-day-copy">${session.subtitle}</p>
+      <p class="mini-day-copy">${getSessionMeta(session)}</p>
       <div class="mini-status-row">
         <button type="button" class="status-btn ${session.status === "complete" ? "active complete" : ""}" data-id="${session.id}" data-status="complete">완료</button>
         <button type="button" class="status-btn ${session.status === "failed" ? "active failed" : ""}" data-id="${session.id}" data-status="failed">실패</button>
         <button type="button" class="status-btn ${session.status === "skipped" ? "active skipped" : ""}" data-id="${session.id}" data-status="skipped">미실행</button>
       </div>
     </article>
-  `).join("");
+  `).join("")}
+  `;
   dom.weekMiniCalendar.querySelectorAll("[data-id]").forEach((button) => {
     button.addEventListener("click", () => updateSession(button.dataset.id, { status: button.dataset.status }));
   });

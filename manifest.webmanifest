@@ -1,0 +1,25 @@
+{
+  "name": "run-nerds",
+  "short_name": "run-nerds",
+  "description": "A mobile-first running coach for nerds who run.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#050806",
+  "theme_color": "#050806",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

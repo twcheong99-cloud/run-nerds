@@ -3,11 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050806" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="run-nerds" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>run-nerds</title>
-    <link rel="icon" href="data:," />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="./styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./env.js"></script>
+    <script src="./env.public.js"></script>
+    <script>
+      window.RUN_NERDS_ENV_READY = new Promise((resolve) => {
+        const localEnv = document.createElement("script");
+        localEnv.src = "./env.js";
+        localEnv.onload = resolve;
+        localEnv.onerror = resolve;
+        document.head.appendChild(localEnv);
+      });
+    </script>
   </head>
   <body>
     <section id="authGate" class="auth-gate">

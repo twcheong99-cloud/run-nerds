@@ -33,6 +33,9 @@ export const defaultProfile = {
   fatigue: "normal",
   pain: "none",
   notes: "",
+  physicalNotes: "",
+  goalNotes: "",
+  coachNotes: "",
 };
 
 export const defaultCheckin = {
@@ -42,6 +45,9 @@ export const defaultCheckin = {
   schedule: "stable",
   confidence: "steady",
   comment: "",
+  temporaryAvailableDays: null,
+  temporaryPreferredDays: "",
+  temporaryLongRunDay: "",
 };
 
 export function createDefaultOnboarding() {
