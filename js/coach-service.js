@@ -130,22 +130,45 @@ function normalizeBlocks(value) {
     .slice(0, 8);
 }
 
+function normalizeSessionType(value, fallback = "") {
+  const text = String(value || "").trim().toLowerCase();
+  if (ALLOWED_SESSION_TYPES.has(text)) return text;
+  if (/tempo|interval|speed|threshold|quality|workout|핵심|템포|인터벌|스피드/.test(text)) return "quality";
+  if (/long|longrun|long-run|롱런|장거리/.test(text)) return "long";
+  if (/recovery|회복/.test(text)) return "recovery";
+  if (/easy|jog|run|이지|조깅/.test(text)) return "easy";
+  if (/mobility|strength|walk|stretch|보강|걷기|스트레칭/.test(text)) return "mobility";
+  if (/rest|off|휴식|쉼/.test(text)) return "rest";
+  return ALLOWED_SESSION_TYPES.has(fallback) ? fallback : "";
+}
+
+function normalizeIntensity(value, type, fallback = "") {
+  const text = String(value || "").trim().toLowerCase();
+  if (ALLOWED_INTENSITIES.has(text)) return text;
+  if (/hard|high|fast|interval|강|빠르/.test(text)) return "hard";
+  if (/moderate|tempo|threshold|중|템포/.test(text)) return "moderate";
+  if (/steady|long|지속|스테디/.test(text)) return "steady";
+  if (/easy|low|recovery|jog|가볍|이지|회복/.test(text)) return "easy";
+  if (/rest|off|mobility|walk|stretch|휴식|보강|걷기|스트레칭/.test(text)) return "rest";
+  if (ALLOWED_INTENSITIES.has(fallback)) return fallback;
+  return type === "rest" || type === "mobility" ? "rest" : type === "long" ? "steady" : type === "quality" ? "moderate" : "easy";
+}
+
 function normalizeSession(rawSession, previousSession) {
   if (!rawSession || typeof rawSession !== "object") return null;
-  const id = normalizeDayId(rawSession.id);
+  const id = normalizeDayId(rawSession.id || rawSession.day);
   if (!id || !DAY_ORDER.includes(id)) return null;
 
-  const type = String(rawSession.type || "").trim();
-  const intensity = String(rawSession.intensity || "").trim();
-  if (!ALLOWED_SESSION_TYPES.has(type) || !ALLOWED_INTENSITIES.has(intensity)) return null;
+  const type = normalizeSessionType(rawSession.type || rawSession.kind || rawSession.category, previousSession?.type);
+  if (!type) return null;
+  const intensity = normalizeIntensity(rawSession.intensity || rawSession.effort, type, previousSession?.intensity);
 
-  const title = trimText(rawSession.title, 80);
-  const subtitle = trimText(rawSession.subtitle, 120);
-  const purpose = trimText(rawSession.purpose, 260);
-  const success = trimText(rawSession.success, 220);
-  const failure = trimText(rawSession.failure, 220);
-  const next = trimText(rawSession.next, 220);
-  if (!title || !subtitle || !purpose || !success || !failure || !next) return null;
+  const title = trimText(rawSession.title || previousSession?.title || (type === "rest" ? "휴식" : "조정 세션"), 80);
+  const subtitle = trimText(rawSession.subtitle || previousSession?.subtitle || "코치 상담으로 조정", 120);
+  const purpose = trimText(rawSession.purpose || previousSession?.purpose || "현재 상황에 맞춰 주간 흐름을 유지합니다.", 260);
+  const success = trimText(rawSession.success || previousSession?.success || "몸 상태를 해치지 않고 계획 의도를 지키면 성공입니다.", 220);
+  const failure = trimText(rawSession.failure || previousSession?.failure || "어려우면 강도나 시간을 낮춰도 괜찮습니다.", 220);
+  const next = trimText(rawSession.next || previousSession?.next || "다음 세션의 회복과 연결합니다.", 220);
 
   return {
     id,
@@ -173,7 +196,7 @@ function normalizeWeeklyPlan(rawPlan, previousPlan = []) {
   const nextByDay = new Map();
 
   rawPlan.forEach((rawSession) => {
-    const normalized = normalizeSession(rawSession, previousByDay.get(normalizeDayId(rawSession?.id)));
+    const normalized = normalizeSession(rawSession, previousByDay.get(normalizeDayId(rawSession?.id || rawSession?.day)));
     if (normalized) nextByDay.set(normalized.id, normalized);
   });
 

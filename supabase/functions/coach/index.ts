@@ -74,6 +74,8 @@ Return only JSON matching this shape:
 
 Plan editing rules:
 - If proposing a plan change, include a complete weeklyPlan with exactly 7 sessions, one for each id: mon, tue, wed, thu, fri, sat, sun.
+- weeklyPlan session type must be one of exactly: rest, mobility, easy, quality, long, recovery. Use quality for tempo, threshold, interval, hills, and other workout sessions.
+- weeklyPlan intensity must be one of exactly: rest, easy, moderate, steady, hard. Use moderate for tempo/threshold and hard only for clearly hard interval work.
 - Preserve the runner's stated race goal, date, race type, and target time unless the user explicitly asks to change those goal facts. Do not casually rewrite a November marathon into another goal.
 - For requests like "swap Tuesday and Thursday", actually swap the sessions in weeklyPlan. Do not convert two mentioned weekdays into "2 weekly run days".
 - If the user asks to move, swap, soften, shorten, replace, or remove specific sessions, modify those sessions directly in weeklyPlan.
