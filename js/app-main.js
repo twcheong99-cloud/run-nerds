@@ -348,12 +348,47 @@ function applyPendingCoachPlan(pendingPlan) {
   if (pendingPlan.checkin && Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays") && pendingPlan.checkin.temporaryAvailableDays === null) {
     state.checkin.temporaryAvailableDays = null;
   }
-  rebuildPlanKeepingProgress(state.selectedDayId);
+  if (Array.isArray(pendingPlan.weeklyPlan) && pendingPlan.weeklyPlan.length) {
+    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays")) {
+      state.checkin.temporaryAvailableDays = null;
+    }
+    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryPreferredDays")) {
+      state.checkin.temporaryPreferredDays = "";
+    }
+    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryLongRunDay")) {
+      state.checkin.temporaryLongRunDay = "";
+    }
+    state.plan = mergePreviousProgress(pendingPlan.weeklyPlan, state.plan);
+    state.planMeta = {
+      ...(state.planMeta || {}),
+      stats: buildPlanStats(state.plan),
+    };
+    state.selectedDayId = state.plan.find((session) => session.id === state.selectedDayId)?.id
+      || state.plan.find((session) => session.type === "quality")?.id
+      || state.plan[0]?.id
+      || null;
+  } else {
+    rebuildPlanKeepingProgress(state.selectedDayId);
+  }
   state.planMeta = {
     ...(state.planMeta || {}),
     source: pendingPlan.source || state.planMeta?.source || "local-coach-engine",
     fallbackReason: pendingPlan.source === "llm-fallback" ? "used-local-coach-engine" : "none",
     coach: pendingPlan.meta || state.planMeta?.coach || null,
+  };
+}
+
+function buildPlanStats(plan) {
+  const trainingTypes = new Set(["easy", "quality", "long", "recovery"]);
+  const plannedMileage = (plan || []).reduce((sum, session) => {
+    const km = Number.parseInt(session.distance, 10);
+    return sum + (Number.isFinite(km) ? km : 0);
+  }, 0);
+  return {
+    plannedMileage,
+    runDays: (plan || []).filter((session) => trainingTypes.has(session.type)).length,
+    keySession: (plan || []).find((session) => session.type === "quality")?.title || "없음",
+    longRun: (plan || []).find((session) => session.type === "long")?.title || "없음",
   };
 }
 

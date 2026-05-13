@@ -1,4 +1,5 @@
 import { buildCoachReply } from "./coach.js";
+import { DAY_LABELS, DAY_ORDER } from "./config.js";
 
 const COACH_FUNCTION_NAME = "coach";
 const COACH_TIMEOUT_MS = 60000;
@@ -7,6 +8,8 @@ const ALLOWED_PROFILE_FIELDS = new Set(["fatigue", "pain", "availableDays", "pre
 const ALLOWED_CHECKIN_FIELDS = new Set(["fatigue", "pain", "sleep", "schedule", "confidence", "comment", "temporaryAvailableDays", "temporaryPreferredDays", "temporaryLongRunDay"]);
 const ALLOWED_STAGES = new Set(["idle", "clarifying", "proposal"]);
 const ALLOWED_SAFETY_LEVELS = new Set(["green", "yellow", "red"]);
+const ALLOWED_SESSION_TYPES = new Set(["rest", "mobility", "easy", "quality", "long", "recovery"]);
+const ALLOWED_INTENSITIES = new Set(["rest", "easy", "moderate", "steady", "hard"]);
 
 function hasApplyIntent(message) {
   return /반영|적용|바꿔|변경|수정|업데이트|조정해|줄여|늘려|다시 짜|다시짜|replan|apply|update|change/i.test(String(message || ""));
@@ -69,7 +72,7 @@ function normalizeCheckinPatch(patch) {
   const next = {};
   Object.entries(picked).forEach(([key, value]) => {
     if (key === "comment") next[key] = String(value);
-    else if (key === "temporaryAvailableDays") next[key] = Math.min(5, Math.max(2, Number(value) || 0));
+    else if (key === "temporaryAvailableDays") next[key] = value === null ? null : Math.min(5, Math.max(2, Number(value) || 0));
     else if (key === "temporaryPreferredDays") next[key] = normalizePreferredDays(value);
     else if (key === "temporaryLongRunDay") next[key] = normalizeDayId(value);
     else next[key] = canonicalValue(key, value);
@@ -113,6 +116,69 @@ function normalizePreferredDays(value) {
     .map((item) => normalizeDayId(item))
     .filter(Boolean);
   return Array.from(new Set(days)).join(", ");
+}
+
+function trimText(value, maxLength = 180) {
+  return String(value ?? "").trim().slice(0, maxLength);
+}
+
+function normalizeBlocks(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => trimText(item, 120))
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function normalizeSession(rawSession, previousSession) {
+  if (!rawSession || typeof rawSession !== "object") return null;
+  const id = normalizeDayId(rawSession.id);
+  if (!id || !DAY_ORDER.includes(id)) return null;
+
+  const type = String(rawSession.type || "").trim();
+  const intensity = String(rawSession.intensity || "").trim();
+  if (!ALLOWED_SESSION_TYPES.has(type) || !ALLOWED_INTENSITIES.has(intensity)) return null;
+
+  const title = trimText(rawSession.title, 80);
+  const subtitle = trimText(rawSession.subtitle, 120);
+  const purpose = trimText(rawSession.purpose, 260);
+  const success = trimText(rawSession.success, 220);
+  const failure = trimText(rawSession.failure, 220);
+  const next = trimText(rawSession.next, 220);
+  if (!title || !subtitle || !purpose || !success || !failure || !next) return null;
+
+  return {
+    id,
+    day: DAY_LABELS[id],
+    type,
+    title,
+    subtitle,
+    purpose,
+    success,
+    failure,
+    next,
+    intensity,
+    duration: trimText(rawSession.duration || previousSession?.duration || "-", 40) || "-",
+    distance: trimText(rawSession.distance || previousSession?.distance || "-", 40) || "-",
+    blocks: normalizeBlocks(rawSession.blocks),
+    status: previousSession?.status || "planned",
+    note: previousSession?.note || "",
+    debrief: previousSession?.debrief || null,
+  };
+}
+
+function normalizeWeeklyPlan(rawPlan, previousPlan = []) {
+  if (!Array.isArray(rawPlan)) return null;
+  const previousByDay = new Map((previousPlan || []).map((session) => [session.id, session]));
+  const nextByDay = new Map();
+
+  rawPlan.forEach((rawSession) => {
+    const normalized = normalizeSession(rawSession, previousByDay.get(normalizeDayId(rawSession?.id)));
+    if (normalized) nextByDay.set(normalized.id, normalized);
+  });
+
+  if (nextByDay.size !== DAY_ORDER.length) return null;
+  return DAY_ORDER.map((dayId) => nextByDay.get(dayId));
 }
 
 function extractTrainingPreference(message) {
@@ -241,11 +307,12 @@ function normalizeCoachResponse(response, fallback, message) {
         originalMessage: raw.pendingPlan.originalMessage || fallback.pendingPlan?.originalMessage,
         checkin: normalizeCheckinPatch(raw.pendingPlan.checkin),
         profile: normalizeProfilePatch(raw.pendingPlan.profile),
+        weeklyPlan: normalizeWeeklyPlan(raw.pendingPlan.weeklyPlan || raw.weeklyPlan, fallback.currentPlan),
         meta: raw.meta || null,
         source: "llm-coach",
       }, fallback.pendingPlan)
     : fallback.pendingPlan || null;
-  const preferenceAwarePlan = mergeExplicitTrainingPreference(pendingPlan, message);
+  const preferenceAwarePlan = pendingPlan;
   const safetyLevel = ALLOWED_SAFETY_LEVELS.has(raw.safety?.level) ? raw.safety.level : "green";
 
   return {
@@ -290,7 +357,10 @@ async function describeCoachError(error) {
 }
 
 export async function requestCoachReply({ supabase, authSession, message, state }) {
-  const localFallback = buildCoachReply({ message, state });
+  const localFallback = {
+    ...buildCoachReply({ message, state }),
+    currentPlan: state.plan,
+  };
 
   try {
     const request = buildCoachRequest({ message, state });

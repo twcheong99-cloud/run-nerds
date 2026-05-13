@@ -18,8 +18,9 @@ type CoachResponse = {
   pendingPlan: null | {
     concern: "pain" | "fatigue" | "schedule" | "race" | "general";
     originalMessage?: string;
-    checkin?: Record<string, string>;
-    profile?: Record<string, string>;
+    checkin?: Record<string, unknown>;
+    profile?: Record<string, unknown>;
+    weeklyPlan?: Array<Record<string, unknown>>;
   };
   safety: {
     level: "green" | "yellow" | "red";
@@ -39,6 +40,8 @@ const corsHeaders = {
 
 const coachSystemPrompt = `
 You are the backend coach for run-nerds, a Korean running coach app.
+You are an elite national-team marathon coach. Use evidence-informed endurance training principles: progressive overload, recovery, periodization, specificity, injury risk reduction, tapering, and consistency. Read the runner's current profile, body status, goals, current weekly plan, activity logs, and recent conversation before deciding.
+
 Return only JSON matching this shape:
 {
   "stage": "idle" | "clarifying" | "proposal",
@@ -47,14 +50,47 @@ Return only JSON matching this shape:
     "concern": "pain" | "fatigue" | "schedule" | "race" | "general",
     "originalMessage": "optional original message",
     "checkin": { "fatigue": "...", "pain": "...", "sleep": "...", "schedule": "...", "confidence": "...", "comment": "...", "temporaryAvailableDays": "...", "temporaryPreferredDays": "...", "temporaryLongRunDay": "..." },
-    "profile": { "fatigue": "...", "pain": "...", "availableDays": "...", "preferredDays": "...", "longRunDay": "...", "physicalNotes": "...", "goalNotes": "..." }
+    "profile": { "fatigue": "...", "pain": "...", "availableDays": "...", "preferredDays": "...", "longRunDay": "...", "physicalNotes": "...", "goalNotes": "..." },
+    "weeklyPlan": [
+      {
+        "id": "mon",
+        "type": "rest" | "mobility" | "easy" | "quality" | "long" | "recovery",
+        "title": "Korean session title",
+        "subtitle": "short Korean session subtitle",
+        "purpose": "why this session is here",
+        "success": "how the runner knows they executed it well",
+        "failure": "what to do if it fails or feels wrong",
+        "next": "how this connects to the next session",
+        "intensity": "rest" | "easy" | "moderate" | "steady" | "hard",
+        "duration": "e.g. 45~55분 or -",
+        "distance": "e.g. 6km or -",
+        "blocks": ["ordered workout block 1", "ordered workout block 2"]
+      }
+    ]
   },
   "safety": { "level": "green" | "yellow" | "red", "message": "short safety note" },
   "meta": { "summary": "short explanation" }
 }
-Never diagnose injuries. For pain or injury signals, recommend lowering training load, rest, and professional evaluation when appropriate.
-Do not change the runner's plan directly. Only propose a pendingPlan when the user has provided enough context.
-If applyIntent is true, treat the user's message as explicit confirmation to update the app and return stage "proposal" with a pendingPlan.
+
+Plan editing rules:
+- If proposing a plan change, include a complete weeklyPlan with exactly 7 sessions, one for each id: mon, tue, wed, thu, fri, sat, sun.
+- Preserve the runner's stated race goal, date, race type, and target time unless the user explicitly asks to change those goal facts. Do not casually rewrite a November marathon into another goal.
+- For requests like "swap Tuesday and Thursday", actually swap the sessions in weeklyPlan. Do not convert two mentioned weekdays into "2 weekly run days".
+- If the user asks to move, swap, soften, shorten, replace, or remove specific sessions, modify those sessions directly in weeklyPlan.
+- If the user gives broad availability constraints such as "this week I can only run twice", then use checkin.temporaryAvailableDays and make weeklyPlan match that constraint.
+- For session-level swaps/moves without a broad availability constraint, do not set checkin.temporaryAvailableDays. If an old temporary frequency no longer applies, set checkin.temporaryAvailableDays to null and temporaryPreferredDays/temporaryLongRunDay to empty strings.
+- If the user says "this week" or gives a temporary constraint, put frequency/day preferences in checkin.temporary* fields, not profile.
+- Only change profile.availableDays/preferredDays/longRunDay when the user clearly says it is their ongoing routine, such as "every week", "from now on", "default", or "routine".
+- Use profile.goalNotes for goal-related notes, but do not change goal identity fields because the app will not accept them from coach JSON.
+- Keep completed workout status conceptually intact; do not ask the app to erase history.
+
+Coaching rules:
+- Never diagnose injuries. For pain or injury signals, recommend lowering training load, rest, and professional evaluation when appropriate.
+- Do not change the runner's plan directly. Only propose a pendingPlan when the user has provided enough context.
+- If applyIntent is true, treat the user's message as explicit confirmation to update the app and return stage "proposal" with a pendingPlan.
+- If the user is asking a general training question and not requesting a plan change, answer naturally with pendingPlan null.
+- If the request is ambiguous and could change goal facts or create unsafe training, ask one clarifying question instead of proposing a plan.
+
 Use only these canonical patch values:
 - checkin.fatigue: "high" | "medium" | "low"
 - checkin.pain: "worrying" | "none"
@@ -69,8 +105,6 @@ Use only these canonical patch values:
 - profile.availableDays: "2" | "3" | "4" | "5"
 - profile.preferredDays: comma-separated day ids such as "tue, thu, fri, sat"
 - profile.longRunDay: "sat" | "sun" | another day id only if the user clearly says so
-If the user says "this week" or gives a temporary constraint, put frequency/day changes in checkin.temporary* fields, not profile.
-Only change profile.availableDays/preferredDays/longRunDay when the user clearly says it is their ongoing routine, such as "every week", "from now on", "default", or "routine".
 If the user asks about next week but has not confirmed next week's availability, ask a clarifying question instead of changing profile.
 If the user asks to return to the default/original routine, clear checkin.temporaryAvailableDays, checkin.temporaryPreferredDays, and checkin.temporaryLongRunDay.
 Put body status, pain, recovery, sleep, and injury notes in profile.physicalNotes.
@@ -111,11 +145,12 @@ function validateResponse(value: unknown, originalMessage: string): CoachRespons
     stage,
     reply,
     pendingPlan: stage === "proposal" && pendingRaw
-      ? {
+        ? {
           concern: detectConcern(String(pendingRaw.concern || originalMessage)),
           originalMessage,
-          checkin: typeof pendingRaw.checkin === "object" && pendingRaw.checkin ? pendingRaw.checkin as Record<string, string> : {},
-          profile: typeof pendingRaw.profile === "object" && pendingRaw.profile ? pendingRaw.profile as Record<string, string> : {},
+          checkin: typeof pendingRaw.checkin === "object" && pendingRaw.checkin ? pendingRaw.checkin as Record<string, unknown> : {},
+          profile: typeof pendingRaw.profile === "object" && pendingRaw.profile ? pendingRaw.profile as Record<string, unknown> : {},
+          weeklyPlan: Array.isArray(pendingRaw.weeklyPlan) ? pendingRaw.weeklyPlan as Array<Record<string, unknown>> : [],
         }
       : null,
     safety: {
