@@ -141,6 +141,12 @@ button {
   box-shadow: 14px 14px 0 rgba(0, 0, 0, 0.24);
 }
 
+.app-shell.onboarding-active {
+  height: auto;
+  min-height: calc(100dvh - 20px);
+  overflow: visible;
+}
+
 .panel {
   position: relative;
   overflow: hidden;
@@ -1019,6 +1025,10 @@ textarea:focus {
 
 .onboarding-shell {
   margin-bottom: 20px;
+}
+
+.app-shell.onboarding-active .onboarding-shell {
+  flex: 1 1 auto;
 }
 
 .onboarding-panel {

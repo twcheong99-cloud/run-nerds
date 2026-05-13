@@ -229,6 +229,7 @@ function syncUI() {
   const showOnboarding = isFirstConsultationActive || shouldShowOnboarding(state, authSession);
   const previousCoachDate = state.coachChat?.conversationDate;
   state.coachChat = normalizeCoachChatForToday(state.coachChat);
+  dom.appShell.classList.toggle("onboarding-active", showOnboarding);
   dom.onboardingShell.classList.toggle("hidden", !showOnboarding);
   dom.dashboard.classList.toggle("hidden", showOnboarding);
   renderHome({ dom, state, updateSession, saveActivityLog, saveWorkoutStatusNote, switchAppTab, sendCoachMessage, applyCoachPlan, runSystemPulse });
