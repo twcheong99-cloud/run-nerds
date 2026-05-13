@@ -213,6 +213,13 @@ button {
   display: none;
 }
 
+.auth-brand h1 {
+  font-family: var(--pixel-font);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 10px rgba(122, 255, 152, 0.2);
+}
+
 .brand-logo {
   margin-bottom: auto;
 }
