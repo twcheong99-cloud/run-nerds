@@ -16,6 +16,16 @@
     <script src="./env.public.js"></script>
     <script>
       window.RUN_NERDS_ENV_READY = new Promise((resolve) => {
+        const shouldLoadLocalEnv =
+          location.protocol === "file:" ||
+          location.hostname === "localhost" ||
+          location.hostname === "127.0.0.1";
+
+        if (!shouldLoadLocalEnv) {
+          resolve();
+          return;
+        }
+
         const localEnv = document.createElement("script");
         localEnv.src = "./env.js";
         localEnv.onload = resolve;
