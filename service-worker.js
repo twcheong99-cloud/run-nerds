@@ -1,4 +1,4 @@
-const CACHE_NAME = "run-nerds-family-test-v2";
+const CACHE_NAME = "run-nerds-family-test-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
