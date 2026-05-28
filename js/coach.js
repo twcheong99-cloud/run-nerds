@@ -69,11 +69,33 @@ function getCoachSourceTitle(message) {
   return message.sourceDetail ? `${label}: ${escapeHtml(message.sourceDetail)}` : label;
 }
 
-function renderPlanPreview(plan) {
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+function sessionChanged(nextSession, currentSession = {}) {
+  const keys = ["type", "title", "subtitle", "purpose", "success", "failure", "next", "intensity", "duration", "distance", "blocks"];
+  return keys.some((key) => stableStringify(nextSession?.[key]) !== stableStringify(currentSession?.[key]));
+}
+
+function getChangedPlanSessions(plan, currentPlan = []) {
+  if (!Array.isArray(plan) || !plan.length) return [];
+  const currentByDay = new Map((currentPlan || []).map((session) => [session.id, session]));
+  return plan.filter((session) => sessionChanged(session, currentByDay.get(session.id)));
+}
+
+function renderPlanPreview(plan, currentPlan) {
   if (!Array.isArray(plan) || !plan.length) return "";
+  const changedSessions = getChangedPlanSessions(plan, currentPlan);
+  if (!changedSessions.length) return "";
   return `
     <div class="coach-plan-preview" aria-label="제안된 주간 훈련표">
-      ${plan.map((session) => `
+      <span>PLAN</span>
+      ${changedSessions.map((session) => `
         <div class="coach-plan-preview-row">
           <span>${escapeHtml(session.day || DAY_LABELS[session.id] || session.id)}</span>
           <strong>${escapeHtml(session.title || "조정 세션")}</strong>
@@ -256,7 +278,7 @@ export function renderCoachTab(ctx) {
         <p>캘린더는 아직 바뀌지 않았습니다. 반영하면 AI 코치가 제안한 이번 주 훈련표가 앱에 적용됩니다.</p>
         ${renderPatchPreview("PROFILE", pendingPlan.profile)}
         ${renderPatchPreview("CHECK-IN", pendingPlan.checkin)}
-        ${renderPlanPreview(pendingPlan.weeklyPlan)}
+        ${renderPlanPreview(pendingPlan.weeklyPlan, state.plan)}
       </div>
       <button type="button" id="applyCoachPlanBtn">계획 반영</button>
     `;
@@ -272,3 +294,7 @@ export function renderCoachTab(ctx) {
     sendCoachMessage(message);
   };
 }
+
+export const __coachTest = {
+  getChangedPlanSessions,
+};

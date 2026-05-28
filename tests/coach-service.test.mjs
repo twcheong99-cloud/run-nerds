@@ -10,6 +10,7 @@ globalThis.window = {
 };
 
 const { __coachServiceTest, requestCoachReply } = await import("../js/coach-service.js");
+const { __coachTest } = await import("../js/coach.js");
 const { buildPlan } = await import("../js/plan.js");
 const { mergePlanWithTrainingHistory } = await import("../js/plan.js");
 const { defaultCheckin, defaultProfile } = await import("../js/config.js");
@@ -278,6 +279,16 @@ function makeSession(id, patch = {}) {
   });
 
   assert.equal(merged.find((session) => session.id === "thu").title, "로그가 있는 이지런");
+}
+
+{
+  const nextPlan = currentPlan.map((session) => (
+    session.id === "thu" ? { ...session, title: "회복 조깅 4km", distance: "4km" } : session
+  ));
+  const changedSessions = __coachTest.getChangedPlanSessions(nextPlan, currentPlan);
+
+  assert.equal(changedSessions.length, 1);
+  assert.equal(changedSessions[0].id, "thu");
 }
 
 {

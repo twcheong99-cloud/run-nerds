@@ -1750,6 +1750,13 @@ textarea:focus {
   margin-top: 12px;
 }
 
+.coach-plan-preview > span {
+  font-family: var(--pixel-font);
+  font-size: 0.46rem;
+  color: var(--warning);
+  letter-spacing: 0.1em;
+}
+
 .coach-patch-preview {
   display: grid;
   gap: 6px;
