@@ -1714,6 +1714,13 @@ textarea:focus {
   color: var(--accent);
 }
 
+.coach-source-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
 .coach-message-meta small {
   font-family: var(--pixel-font);
   font-size: 0.45rem;
@@ -1721,6 +1728,18 @@ textarea:focus {
   border: 1px solid rgba(122, 255, 152, 0.18);
   padding: 3px 5px;
   text-transform: uppercase;
+}
+
+.coach-message-meta small.diagnostic.warning {
+  color: var(--warning);
+  border-color: rgba(223, 255, 150, 0.34);
+  background: rgba(223, 255, 150, 0.06);
+}
+
+.coach-message-meta small.diagnostic.danger {
+  color: var(--danger);
+  border-color: rgba(255, 159, 159, 0.34);
+  background: rgba(255, 159, 159, 0.06);
 }
 
 .coach-message p {

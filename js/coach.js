@@ -63,6 +63,22 @@ function getCoachSourceLabel(source) {
   return "";
 }
 
+function getCoachDiagnosticLabel(detail) {
+  if (detail === "coach-contract-unverified") return "계약 미확인";
+  if (detail === "missing-structured-change") return "변경안 없음";
+  if (detail === "no-effective-change") return "변경 없음";
+  if (detail === "used-local-coach-engine") return "로컬 대체";
+  if (detail && detail !== "none") return "진단 있음";
+  return "";
+}
+
+function getCoachDiagnosticTone(detail) {
+  if (detail === "coach-contract-unverified") return "warning";
+  if (detail === "missing-structured-change" || detail === "no-effective-change") return "danger";
+  if (detail && detail !== "none") return "neutral";
+  return "";
+}
+
 function getCoachSourceTitle(message) {
   const label = getCoachSourceLabel(message.source);
   if (!label) return "";
@@ -253,7 +269,12 @@ export function renderCoachTab(ctx) {
     <div class="coach-message ${message.role}">
       <div class="coach-message-meta">
         <span>${message.role === "coach" ? "COACH" : "YOU"}</span>
-        ${message.role === "coach" && getCoachSourceLabel(message.source) ? `<small title="${getCoachSourceTitle(message)}">${getCoachSourceLabel(message.source)}</small>` : ""}
+        ${message.role === "coach" && getCoachSourceLabel(message.source) ? `
+          <div class="coach-source-badges">
+            <small title="${getCoachSourceTitle(message)}">${getCoachSourceLabel(message.source)}</small>
+            ${getCoachDiagnosticLabel(message.sourceDetail) ? `<small class="diagnostic ${getCoachDiagnosticTone(message.sourceDetail)}" title="${escapeHtml(message.sourceDetail)}">${getCoachDiagnosticLabel(message.sourceDetail)}</small>` : ""}
+          </div>
+        ` : ""}
       </div>
       <p>${escapeHtml(message.text)}</p>
     </div>
