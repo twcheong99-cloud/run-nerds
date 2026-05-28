@@ -11,6 +11,7 @@ globalThis.window = {
 
 const { __coachServiceTest, requestCoachReply } = await import("../js/coach-service.js");
 const { __coachTest } = await import("../js/coach.js");
+const { applyCoachPlanToState } = await import("../js/coach-apply.js");
 const { buildPlan } = await import("../js/plan.js");
 const { mergePlanWithTrainingHistory } = await import("../js/plan.js");
 const { defaultCheckin, defaultProfile } = await import("../js/config.js");
@@ -293,6 +294,48 @@ function makeSession(id, patch = {}) {
 
   assert.equal(changedSessions.length, 1);
   assert.equal(changedSessions[0].id, "thu");
+}
+
+{
+  const nextPlan = currentPlan.map((session) => (
+    session.id === "thu" ? { ...session, title: "회복 조깅 4km", distance: "4km" } : session
+  ));
+  const result = applyCoachPlanToState({
+    profile: defaultProfile,
+    checkin: defaultCheckin,
+    plan: currentPlan,
+    activityLogs: {},
+    planMeta: {},
+    selectedDayId: "thu",
+  }, {
+    source: "llm-coach",
+    weeklyPlan: nextPlan,
+    profile: { weeklyMileage: 36 },
+  });
+
+  assert.equal(result.applied, true);
+  assert.equal(result.state.profile.weeklyMileage, 36);
+  assert.equal(result.state.plan.find((session) => session.id === "thu").title, "회복 조깅 4km");
+  assert.equal(result.state.selectedDayId, "thu");
+  assert.equal(result.state.planMeta.source, "llm-coach");
+}
+
+{
+  const result = applyCoachPlanToState({
+    profile: defaultProfile,
+    checkin: defaultCheckin,
+    plan: currentPlan,
+    activityLogs: {},
+    planMeta: {},
+    selectedDayId: "thu",
+  }, {
+    source: "llm-coach",
+    weeklyPlan: currentPlan,
+    profile: { weeklyMileage: defaultProfile.weeklyMileage },
+  });
+
+  assert.equal(result.applied, false);
+  assert.equal(result.state.plan.find((session) => session.id === "thu").title, currentPlan.find((session) => session.id === "thu").title);
 }
 
 {

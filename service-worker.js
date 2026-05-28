@@ -10,6 +10,7 @@ const APP_SHELL = [
   "./assets/icon-512.png",
   "./assets/apple-touch-icon.png",
   "./js/app-main.js",
+  "./js/coach-apply.js",
   "./js/coach-service.js",
   "./js/coach.js",
   "./js/config.js",

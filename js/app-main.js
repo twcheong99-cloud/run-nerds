@@ -4,6 +4,7 @@ import { buildInitialPlanningProfileFromOnboarding, getOnboardingSteps, renderOn
 import { renderHome } from "./home.js";
 import { createDefaultCoachChat } from "./coach.js";
 import { requestCoachReply } from "./coach-service.js";
+import { applyCoachPlanToState } from "./coach-apply.js";
 import { enhanceThemeSelects } from "./theme-select.js";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -342,72 +343,10 @@ function isExplicitApplyRequest(message) {
   return /반영|적용|바꿔|변경|수정|업데이트|조정해|줄여|늘려|다시 짜|다시짜|replan|apply|update|change/i.test(String(message || ""));
 }
 
-function stableStringify(value) {
-  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  if (value && typeof value === "object") {
-    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
-  }
-  return JSON.stringify(value);
-}
-
-function getCoachAppliedStateSnapshot() {
-  return stableStringify({
-    profile: state.profile,
-    checkin: state.checkin,
-    plan: state.plan,
-  });
-}
-
 function applyPendingCoachPlan(pendingPlan) {
-  const beforeSnapshot = getCoachAppliedStateSnapshot();
-  state.profile = { ...state.profile, ...(pendingPlan.profile || {}) };
-  state.checkin = { ...state.checkin, ...(pendingPlan.checkin || {}) };
-  if (pendingPlan.checkin && Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays") && pendingPlan.checkin.temporaryAvailableDays === null) {
-    state.checkin.temporaryAvailableDays = null;
-  }
-  if (Array.isArray(pendingPlan.weeklyPlan) && pendingPlan.weeklyPlan.length) {
-    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays")) {
-      state.checkin.temporaryAvailableDays = null;
-    }
-    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryPreferredDays")) {
-      state.checkin.temporaryPreferredDays = "";
-    }
-    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryLongRunDay")) {
-      state.checkin.temporaryLongRunDay = "";
-    }
-    state.plan = mergePlanWithTrainingHistory(pendingPlan.weeklyPlan, state.plan, state.activityLogs);
-    state.planMeta = {
-      ...(state.planMeta || {}),
-      stats: buildPlanStats(state.plan),
-    };
-    state.selectedDayId = state.plan.find((session) => session.id === state.selectedDayId)?.id
-      || state.plan.find((session) => session.type === "quality")?.id
-      || state.plan[0]?.id
-      || null;
-  } else {
-    rebuildPlanKeepingProgress(state.selectedDayId);
-  }
-  state.planMeta = {
-    ...(state.planMeta || {}),
-    source: pendingPlan.source || state.planMeta?.source || "local-coach-engine",
-    fallbackReason: pendingPlan.source === "llm-fallback" ? "used-local-coach-engine" : "none",
-    coach: pendingPlan.meta || state.planMeta?.coach || null,
-  };
-  return getCoachAppliedStateSnapshot() !== beforeSnapshot;
-}
-
-function buildPlanStats(plan) {
-  const trainingTypes = new Set(["easy", "quality", "long", "recovery"]);
-  const plannedMileage = (plan || []).reduce((sum, session) => {
-    const km = Number.parseInt(session.distance, 10);
-    return sum + (Number.isFinite(km) ? km : 0);
-  }, 0);
-  return {
-    plannedMileage,
-    runDays: (plan || []).filter((session) => trainingTypes.has(session.type)).length,
-    keySession: (plan || []).find((session) => session.type === "quality")?.title || "없음",
-    longRun: (plan || []).find((session) => session.type === "long")?.title || "없음",
-  };
+  const result = applyCoachPlanToState(state, pendingPlan);
+  state = result.state;
+  return result.applied;
 }
 
 function updateSession(dayId, patch, options = {}) {
