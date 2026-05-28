@@ -117,6 +117,25 @@ function makeSession(id, patch = {}) {
 
 {
   const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "clarifying",
+    reply: "목요일을 회복 조깅으로 바꾸기 전에 통증이 있는지 먼저 알려줘.",
+    pendingPlan: null,
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+    profile: defaultProfile,
+    checkin: defaultCheckin,
+  }, "목요일 훈련을 회복 조깅으로 바꿔줘");
+
+  assert.equal(response.stage, "clarifying");
+  assert.equal(response.pendingPlan, null);
+  assert.equal(response.meta.fallbackReason, "none");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
     stage: "proposal",
     reply: "그대로 반영했어.",
     pendingPlan: {

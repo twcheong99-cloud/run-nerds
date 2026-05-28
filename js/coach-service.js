@@ -543,7 +543,7 @@ function normalizeCoachResponse(response, fallback, message) {
   const safetyLevel = ALLOWED_SAFETY_LEVELS.has(raw.safety?.level) ? raw.safety.level : "green";
   const hasChanges = pendingPlanHasChanges(raceAwarePlan, fallback);
 
-  if (!hasChanges && (messageRequestsAppChange(message) || replyClaimsChange(reply))) {
+  if (!hasChanges && (replyClaimsChange(reply) || (stage === "proposal" && messageRequestsAppChange(message)))) {
     return buildUnappliedChangeResponse(reply, fallback, raceAwarePlan ? "no-effective-change" : "missing-structured-change");
   }
 
