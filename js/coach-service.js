@@ -10,6 +10,11 @@ const ALLOWED_STAGES = new Set(["idle", "clarifying", "proposal"]);
 const ALLOWED_SAFETY_LEVELS = new Set(["green", "yellow", "red"]);
 const ALLOWED_SESSION_TYPES = new Set(["rest", "mobility", "easy", "quality", "long", "recovery"]);
 const ALLOWED_INTENSITIES = new Set(["rest", "easy", "moderate", "steady", "hard"]);
+const RACE_EVENT_TYPES = {
+  half: { title: "하프마라톤 레이스", distance: "21.1km", duration: "목표 기록 기준", raceLabel: "하프마라톤" },
+  full: { title: "마라톤 레이스", distance: "42.2km", duration: "목표 기록 기준", raceLabel: "마라톤" },
+  "10k": { title: "10K 레이스", distance: "10km", duration: "목표 기록 기준", raceLabel: "10K" },
+};
 
 function hasApplyIntent(message) {
   return /반영|적용|바꿔|변경|수정|업데이트|조정해|줄여|늘려|다시 짜|다시짜|replan|apply|update|change/i.test(String(message || ""));
@@ -228,6 +233,71 @@ function extractTrainingPreference(message) {
   return { availableDays, preferredDays, longRunDay, scope, resetTemporary };
 }
 
+function extractRaceEvent(message) {
+  const text = String(message || "").toLowerCase();
+  const raceType = /하프|half/.test(text)
+    ? "half"
+    : /풀|마라톤|marathon|42\.?2/.test(text)
+      ? "full"
+      : /10\s*k|10k/.test(text)
+        ? "10k"
+        : "";
+  if (!raceType) return null;
+
+  const explicitDay = normalizeDayId((String(message || "").match(/[월화수목금토일](?=요일|에|날|$)/) || [])[0]);
+  const dayId = /이번\s*주\s*일요일|이번주\s*일요일|일요일|sunday|sun/.test(text) ? "sun" : explicitDay;
+  if (!dayId) return null;
+
+  return { dayId, raceType, ...RACE_EVENT_TYPES[raceType] };
+}
+
+function createRaceSession(event, previousSession = {}) {
+  return {
+    id: event.dayId,
+    day: DAY_LABELS[event.dayId],
+    type: "long",
+    title: event.title,
+    subtitle: "훈련이 아니라 레이스 실행",
+    purpose: `${event.raceLabel} 당일입니다. 훈련량을 채우는 대신 안전한 완주와 페이스 운영을 우선합니다.`,
+    success: "초반을 여유 있게 열고, 후반까지 자세와 보급 리듬을 유지하면 성공입니다.",
+    failure: "컨디션이나 통증 신호가 크면 기록보다 중단 판단과 회복을 우선합니다.",
+    next: "레이스 다음 날은 회복과 몸 상태 기록으로 연결합니다.",
+    intensity: event.raceType === "10k" ? "hard" : "steady",
+    duration: event.duration,
+    distance: event.distance,
+    blocks: ["워밍업 10~15분", `${event.raceLabel} ${event.distance}`, "종료 후 수분, 탄수화물, 통증 체크"],
+    status: previousSession.status === "complete" ? previousSession.status : "planned",
+    note: previousSession.status === "complete" ? previousSession.note || "" : "",
+    debrief: previousSession.status === "complete" ? previousSession.debrief || null : null,
+  };
+}
+
+function mergeExplicitRaceEvent(pendingPlan, message, fallback) {
+  const event = extractRaceEvent(message);
+  if (!event) return pendingPlan;
+
+  const basePlan = pendingPlan?.weeklyPlan || fallback?.currentPlan || [];
+  if (!Array.isArray(basePlan) || basePlan.length !== DAY_ORDER.length) return pendingPlan;
+
+  const weeklyPlan = basePlan.map((session) => (
+    session.id === event.dayId ? createRaceSession(event, session) : session
+  ));
+  const profile = { ...(pendingPlan?.profile || {}) };
+  profile.goalNotes = profile.goalNotes || `이번 주 ${DAY_LABELS[event.dayId]} ${event.raceLabel}`;
+  const checkin = {
+    ...(pendingPlan?.checkin || {}),
+    temporaryLongRunDay: event.dayId,
+  };
+
+  return {
+    ...(pendingPlan || {}),
+    concern: "race",
+    checkin,
+    profile,
+    weeklyPlan,
+  };
+}
+
 function profileDisplayNote(value, kind) {
   const text = String(value || "").trim();
   if (!text) return "";
@@ -342,11 +412,12 @@ function normalizeCoachResponse(response, fallback, message) {
       }, fallback.pendingPlan)
     : fallback.pendingPlan || null;
   const preferenceAwarePlan = mergeExplicitTrainingPreference(pendingPlan, message);
+  const raceAwarePlan = mergeExplicitRaceEvent(preferenceAwarePlan, message, fallback);
   const safetyLevel = ALLOWED_SAFETY_LEVELS.has(raw.safety?.level) ? raw.safety.level : "green";
 
   return {
-    stage: preferenceAwarePlan && (stage === "idle" || requestedApply) ? "proposal" : stage,
-    pendingPlan: preferenceAwarePlan,
+    stage: raceAwarePlan ? "proposal" : stage,
+    pendingPlan: raceAwarePlan,
     reply: reply || fallback.reply,
     meta: {
       source: "llm-coach",
@@ -362,9 +433,11 @@ function normalizeCoachResponse(response, fallback, message) {
 
 function buildFallbackReply({ message, state, reason }) {
   const fallback = buildCoachReply({ message, state });
+  const raceAwarePlan = mergeExplicitRaceEvent(fallback.pendingPlan, message, { currentPlan: state.plan });
   return {
     ...fallback,
-    pendingPlan: fallback.pendingPlan ? { ...fallback.pendingPlan, source: "llm-fallback" } : null,
+    stage: raceAwarePlan ? "proposal" : fallback.stage,
+    pendingPlan: raceAwarePlan ? { ...raceAwarePlan, source: "llm-fallback" } : null,
     meta: {
       source: "llm-fallback",
       fallbackReason: reason,

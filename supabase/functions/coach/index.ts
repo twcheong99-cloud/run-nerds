@@ -88,6 +88,7 @@ Plan editing rules:
 - Preserve the runner's stated race goal, date, race type, and target time unless the user explicitly asks to change those goal facts. Do not casually rewrite a November marathon into another goal.
 - For requests like "swap Tuesday and Thursday", actually swap the sessions in weeklyPlan. Do not convert two mentioned weekdays into "2 weekly run days".
 - If the user asks to move, swap, soften, shorten, replace, or remove specific sessions, modify those sessions directly in weeklyPlan.
+- If the user says an imminent race is this week, such as "이번 주 일요일 하프마라톤", make that day a race-specific long session in weeklyPlan (for half marathon use 21.1km) instead of leaving the old planned run.
 - If the user gives broad availability constraints such as "this week I can only run twice", then use checkin.temporaryAvailableDays and make weeklyPlan match that constraint.
 - For session-level swaps/moves without a broad availability constraint, do not set checkin.temporaryAvailableDays. If an old temporary frequency no longer applies, set checkin.temporaryAvailableDays to null and temporaryPreferredDays/temporaryLongRunDay to empty strings.
 - If the user says "this week" or gives a temporary constraint, put frequency/day preferences in checkin.temporary* fields, not profile.

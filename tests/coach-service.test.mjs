@@ -90,6 +90,26 @@ function makeSession(id, patch = {}) {
 
 {
   const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "idle",
+    reply: "이번 주 일요일을 하프마라톤으로 고쳤어.",
+    pendingPlan: null,
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+  }, "이번 주 일요일에 하프마라톤이 있어. 계획표에 반영해줘");
+
+  const sunday = response.pendingPlan.weeklyPlan.find((session) => session.id === "sun");
+  assert.equal(response.stage, "proposal");
+  assert.equal(response.pendingPlan.concern, "race");
+  assert.equal(response.pendingPlan.checkin.temporaryLongRunDay, "sun");
+  assert.equal(sunday.title, "하프마라톤 레이스");
+  assert.equal(sunday.distance, "21.1km");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
     stage: "proposal",
     reply: "기본 루틴으로 돌릴게.",
     pendingPlan: {
