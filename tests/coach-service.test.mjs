@@ -1,0 +1,159 @@
+import assert from "node:assert/strict";
+
+globalThis.window = {
+  RUN_NERDS_ENV: {
+    SUPABASE_URL: "https://example.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "test-key",
+  },
+};
+
+const { __coachServiceTest } = await import("../js/coach-service.js");
+const { buildPlan } = await import("../js/plan.js");
+const { mergePlanWithTrainingHistory } = await import("../js/plan.js");
+const { defaultCheckin, defaultProfile } = await import("../js/config.js");
+const { __homeTest } = await import("../js/home.js");
+
+const currentPlan = buildPlan(defaultProfile, defaultCheckin).plan;
+
+function makeSession(id, patch = {}) {
+  const previous = currentPlan.find((session) => session.id === id);
+  return {
+    id,
+    type: previous.type,
+    title: previous.title,
+    subtitle: previous.subtitle,
+    purpose: previous.purpose,
+    success: previous.success,
+    failure: previous.failure,
+    next: previous.next,
+    intensity: previous.intensity,
+    duration: previous.duration,
+    distance: previous.distance,
+    blocks: previous.blocks,
+    ...patch,
+  };
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "proposal",
+    reply: "화요일과 목요일 훈련을 서로 바꿨어.",
+    pendingPlan: {
+      concern: "schedule",
+      weeklyPlan: [
+        makeSession("mon"),
+        makeSession("tue", { title: currentPlan.find((session) => session.id === "thu").title }),
+        makeSession("wed"),
+        makeSession("thu", { title: currentPlan.find((session) => session.id === "tue").title }),
+        makeSession("fri"),
+        makeSession("sat"),
+        makeSession("sun"),
+      ],
+    },
+    safety: { level: "green", message: "" },
+    meta: { summary: "swap requested sessions" },
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+  }, "화요일이랑 목요일 훈련 바꿔줘");
+
+  assert.equal(response.stage, "proposal");
+  assert.equal(response.pendingPlan.weeklyPlan.length, 7);
+  assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "tue").title, currentPlan.find((session) => session.id === "thu").title);
+  assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "thu").title, currentPlan.find((session) => session.id === "tue").title);
+  assert.equal(response.pendingPlan.profile.availableDays, undefined);
+  assert.equal(response.pendingPlan.checkin.temporaryAvailableDays, undefined);
+  assert.equal(response.pendingPlan.checkin.temporaryPreferredDays, undefined);
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "proposal",
+    reply: "이번 주는 두 번만 뛰는 계획으로 줄였어.",
+    pendingPlan: {
+      concern: "schedule",
+      checkin: {},
+      weeklyPlan: currentPlan,
+    },
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+  }, "이번 주는 화 목 2번만 뛸 수 있어. 조정해줘");
+
+  assert.equal(response.pendingPlan.checkin.temporaryAvailableDays, 2);
+  assert.equal(response.pendingPlan.checkin.temporaryPreferredDays, "tue, thu");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "proposal",
+    reply: "기본 루틴으로 돌릴게.",
+    pendingPlan: {
+      concern: "general",
+      checkin: { schedule: "stable" },
+      weeklyPlan: currentPlan,
+    },
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+  }, "이번 주 임시 조정 해제하고 원래대로 복귀");
+
+  assert.equal(response.pendingPlan.checkin.temporaryAvailableDays, null);
+  assert.equal(response.pendingPlan.checkin.temporaryPreferredDays, "");
+  assert.equal(response.pendingPlan.checkin.temporaryLongRunDay, "");
+}
+
+{
+  const previousPlan = currentPlan.map((session) => ({ ...session, status: "planned", note: "old note" }));
+  const nextPlan = currentPlan.map((session) => ({ ...session, title: `새 계획 ${session.id}` }));
+  const merged = mergePlanWithTrainingHistory(nextPlan, previousPlan, {});
+
+  assert.equal(merged.find((session) => session.id === "tue").title, "새 계획 tue");
+  assert.equal(merged.find((session) => session.id === "tue").status, "planned");
+  assert.equal(merged.find((session) => session.id === "tue").note, "");
+}
+
+{
+  const previousPlan = currentPlan.map((session) => (
+    session.id === "tue" ? { ...session, title: "기록된 템포", status: "complete", note: "done" } : session
+  ));
+  const nextPlan = currentPlan.map((session) => ({ ...session, title: `새 계획 ${session.id}` }));
+  const merged = mergePlanWithTrainingHistory(nextPlan, previousPlan, {});
+
+  assert.equal(merged.find((session) => session.id === "tue").title, "기록된 템포");
+  assert.equal(merged.find((session) => session.id === "tue").status, "complete");
+  assert.equal(merged.find((session) => session.id === "wed").title, "새 계획 wed");
+}
+
+{
+  const previousPlan = currentPlan.map((session) => (
+    session.id === "thu" ? { ...session, title: "로그가 있는 이지런", status: "planned" } : session
+  ));
+  const nextPlan = currentPlan.map((session) => ({ ...session, title: `새 계획 ${session.id}` }));
+  const merged = mergePlanWithTrainingHistory(nextPlan, previousPlan, {
+    "2026-05-21": { dayId: "thu", source: "manual", distance: "6" },
+  });
+
+  assert.equal(merged.find((session) => session.id === "thu").title, "로그가 있는 이지런");
+}
+
+{
+  assert.equal(__homeTest.hasActiveTemporarySchedule({
+    temporaryAvailableDays: null,
+    temporaryPreferredDays: "화, 목, 토",
+    temporaryLongRunDay: "",
+  }, defaultProfile), false);
+  assert.equal(__homeTest.hasActiveTemporarySchedule({
+    temporaryAvailableDays: "2",
+    temporaryPreferredDays: "화, 목",
+    temporaryLongRunDay: "",
+  }, defaultProfile), true);
+}
+
+console.log("coach-service tests passed");

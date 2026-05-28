@@ -154,6 +154,21 @@ export function mergePreviousProgress(nextPlan, previousPlan) {
   });
 }
 
+function hasRecordedTraining(session, activityLogs = {}) {
+  if (!session) return false;
+  if (session.status && session.status !== "planned") return true;
+  return Object.values(activityLogs || {}).some((log) => log?.dayId === session.id);
+}
+
+export function mergePlanWithTrainingHistory(nextPlan, previousPlan, activityLogs = {}) {
+  const prevMap = new Map((previousPlan || []).map((session) => [session.id, session]));
+  return nextPlan.map((session) => {
+    const prev = prevMap.get(session.id);
+    if (hasRecordedTraining(prev, activityLogs)) return prev;
+    return { ...session, status: "planned", note: "", debrief: null };
+  });
+}
+
 export function buildPlan(profile, checkin) {
   const mileage = Number(profile.weeklyMileage) || 24;
   const safety = getSafetyState(profile, checkin);

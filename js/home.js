@@ -149,6 +149,33 @@ function buildStatusCoachQuestion(status, values) {
   return "오늘 미실행한 이유를 조금만 더 말해줘. 코칭에서는 못 뛴 이유까지 같이 보고 다음 훈련을 조정할게.";
 }
 
+function normalizeDayList(value) {
+  const dayMap = {
+    월: "mon", 화: "tue", 수: "wed", 목: "thu", 금: "fri", 토: "sat", 일: "sun",
+    mon: "mon", tue: "tue", wed: "wed", thu: "thu", fri: "fri", sat: "sat", sun: "sun",
+  };
+  return String(value || "")
+    .split(/[,\s/]+/)
+    .map((token) => dayMap[token.trim().toLowerCase()] || dayMap[token.trim()])
+    .filter(Boolean)
+    .join(",");
+}
+
+function hasActiveTemporarySchedule(checkin, profile) {
+  const temporaryAvailableDays = checkin?.temporaryAvailableDays;
+  const hasTemporaryAvailableDays = temporaryAvailableDays !== null
+    && temporaryAvailableDays !== undefined
+    && String(temporaryAvailableDays).trim() !== ""
+    && Number(temporaryAvailableDays) !== Number(profile?.availableDays || 0);
+  const temporaryPreferredDays = normalizeDayList(checkin?.temporaryPreferredDays);
+  const profilePreferredDays = normalizeDayList(profile?.preferredDays);
+  const hasTemporaryPreferredDays = Boolean(temporaryPreferredDays && temporaryPreferredDays !== profilePreferredDays);
+  const temporaryLongRunDay = String(checkin?.temporaryLongRunDay || "").trim();
+  const profileLongRunDay = String(profile?.longRunDay || "").trim();
+  const hasTemporaryLongRunDay = Boolean(temporaryLongRunDay && temporaryLongRunDay !== profileLongRunDay);
+  return hasTemporaryAvailableDays || hasTemporaryPreferredDays || hasTemporaryLongRunDay;
+}
+
 function setActivityLogOpen(isOpen) {
   document.body.classList.toggle("activity-log-open", isOpen);
 }
@@ -267,7 +294,10 @@ export function renderTodayWorkout(ctx) {
             <textarea name="memo" rows="3" placeholder="예: 후반에 종아리가 묵직했고 호흡은 괜찮았어.">${escapeHtml(activityLog?.memo || "")}</textarea>
           </label>
         </div>
-        <button type="submit" class="submit-pixel-btn" id="activityLogSubmitBtn">SUBMIT</button>
+        <div class="activity-log-actions">
+          <button type="button" class="ghost-btn submit-pixel-btn" id="generateCoachQuestionBtn">코치 질문 받기</button>
+          <button type="submit" class="submit-pixel-btn" id="activityLogSubmitBtn">기록 저장</button>
+        </div>
       </form>
     </div>
     <div id="statusNoteModal" class="activity-log-modal hidden" role="dialog" aria-modal="true">
@@ -345,29 +375,37 @@ export function renderTodayWorkout(ctx) {
     setActivityLogOpen(false);
     dom.todayWorkoutCard.querySelector("#statusNoteModal")?.classList.add("hidden");
   });
+  dom.todayWorkoutCard.querySelector("#generateCoachQuestionBtn")?.addEventListener("click", (event) => {
+    const form = event.currentTarget.form;
+    if (!form) return;
+    const values = Object.fromEntries(new FormData(form).entries());
+    const coachStep = form.querySelector("#postRunCoachStep");
+    const question = form.querySelector("#postRunCoachQuestion");
+    if (!coachStep || !question) return;
+    event.currentTarget.disabled = true;
+    runSystemPulse(["parsing workout data...", "evaluating recovery load...", "generating coach question..."], "코치 질문을 만들었어요", {
+      onBeforeDone: () => {
+        question.textContent = buildPostRunCoachQuestion(values);
+        coachStep.classList.remove("hidden");
+        event.currentTarget.classList.add("hidden");
+      },
+    }).finally(() => {
+      event.currentTarget.disabled = false;
+    });
+  });
   dom.todayWorkoutCard.querySelector("#activityLogForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(event.currentTarget).entries());
-    const coachStep = event.currentTarget.querySelector("#postRunCoachStep");
-    const submitButton = event.currentTarget.querySelector("#activityLogSubmitBtn");
-    if (coachStep?.classList.contains("hidden")) {
-      runSystemPulse(["parsing workout data...", "evaluating recovery load...", "generating coach question..."], "코치 질문을 만들었어요", {
-        onBeforeDone: () => {
-          event.currentTarget.querySelector("#postRunCoachQuestion").textContent = buildPostRunCoachQuestion(values);
-          coachStep.classList.remove("hidden");
-          submitButton.textContent = "SUBMIT";
-        },
-      });
-      return;
-    }
+    const coachQuestion = event.currentTarget.querySelector("#postRunCoachQuestion")?.textContent || buildPostRunCoachQuestion(values);
     setActivityLogOpen(false);
+    event.currentTarget.closest("#activityLogModal")?.classList.add("hidden");
     saveActivityLog(todayDateKey, {
       dayId: session.id,
       distance: values.distance,
       duration: values.duration,
       rpe: values.rpe,
       pain: values.pain,
-      coachQuestion: event.currentTarget.querySelector("#postRunCoachQuestion")?.textContent || "",
+      coachQuestion,
       memo: values.memo,
     });
   });
@@ -397,7 +435,7 @@ export function renderWeekMiniCalendar(ctx) {
   const { dom, state, updateSession } = ctx;
   const todayId = getTodayDayId();
   const completedCount = state.plan.filter((session) => session.status === "complete").length;
-  const hasTemporarySchedule = Boolean(state.checkin?.temporaryAvailableDays || state.checkin?.temporaryPreferredDays || state.checkin?.temporaryLongRunDay);
+  const hasTemporarySchedule = hasActiveTemporarySchedule(state.checkin, state.profile);
   const getCompactLabel = (session) => {
     if (session.type === "rest") return "휴식";
     if (session.type === "mobility") return "보강";
@@ -435,3 +473,7 @@ export function renderWeekMiniCalendar(ctx) {
     button.addEventListener("click", () => updateSession(button.dataset.id, { status: button.dataset.status }));
   });
 }
+
+export const __homeTest = {
+  hasActiveTemporarySchedule,
+};

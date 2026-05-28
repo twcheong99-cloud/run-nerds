@@ -69,6 +69,21 @@ function getCoachSourceTitle(message) {
   return message.sourceDetail ? `${label}: ${escapeHtml(message.sourceDetail)}` : label;
 }
 
+function renderPlanPreview(plan) {
+  if (!Array.isArray(plan) || !plan.length) return "";
+  return `
+    <div class="coach-plan-preview" aria-label="제안된 주간 훈련표">
+      ${plan.map((session) => `
+        <div class="coach-plan-preview-row">
+          <span>${escapeHtml(session.day || DAY_LABELS[session.id] || session.id)}</span>
+          <strong>${escapeHtml(session.title || "조정 세션")}</strong>
+          <em>${escapeHtml(session.distance || session.duration || "-")}</em>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 export function createDefaultCoachChat(conversationDate = null) {
   return {
     stage: "idle",
@@ -189,7 +204,8 @@ export function renderCoachTab(ctx) {
       <div>
         <p class="section-kicker">PROPOSED REPLAN</p>
         <strong>${concernLabel}</strong>
-        <p>캘린더는 아직 바뀌지 않았습니다. 반영하면 코치 엔진이 이번 주 훈련표를 다시 계산합니다.</p>
+        <p>캘린더는 아직 바뀌지 않았습니다. 반영하면 AI 코치가 제안한 이번 주 훈련표가 앱에 적용됩니다.</p>
+        ${renderPlanPreview(pendingPlan.weeklyPlan)}
       </div>
       <button type="button" id="applyCoachPlanBtn">계획 반영</button>
     `;

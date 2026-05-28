@@ -44,6 +44,15 @@ Netlify에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를
 - Edge Function 환경변수에 `OPENAI_API_KEY`를 설정하면 LLM 코치가 응답합니다.
 - `OPENAI_API_KEY`가 없거나 응답이 실패하면 기존 로컬 코치 엔진으로 자동 fallback됩니다.
 - 선택적으로 `OPENAI_MODEL`을 설정할 수 있으며, 기본값은 `gpt-5.2`입니다.
+- 코칭 판단 근거는 `COACHING_KNOWLEDGE.md`에 정리했고, Edge Function 프롬프트는 이 원칙을 매 요청에 포함합니다.
+
+## 테스트
+
+```bash
+npm test
+```
+
+현재 테스트는 LLM 코치 응답 정규화, 요일/횟수 요구사항 병합, 임시 조정 해제 동작을 확인합니다.
 
 ## 보안 주의
 

@@ -429,6 +429,10 @@ button {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
 }
 
+.activity-log-open .home-dashboard {
+  overflow: hidden;
+}
+
 .goal-strip {
   flex: 1;
   min-width: 0;
@@ -838,21 +842,24 @@ textarea:focus {
   inset: 0;
   z-index: 90;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  padding: 82px max(10px, calc((100vw - 430px) / 2)) 24px;
+  padding: 82px max(10px, calc((100vw - 430px) / 2)) 92px;
   background:
     linear-gradient(180deg, rgba(2, 6, 3, 0.48), rgba(2, 6, 3, 0.9)),
     rgba(2, 6, 3, 0.68);
   backdrop-filter: blur(8px) saturate(0.65);
   animation: scrim-in 200ms ease-out;
+  overscroll-behavior: contain;
 }
 
 .activity-log-dialog {
   width: 100%;
   max-width: 430px;
-  max-height: calc(100dvh - 86px);
+  max-height: min(620px, calc(100dvh - 186px));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   position: relative;
   z-index: 91;
   display: grid;
@@ -899,6 +906,18 @@ textarea:focus {
   font-size: 0.58rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.activity-log-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.activity-log-actions .submit-pixel-btn {
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: normal;
 }
 
 .activity-log-grid {
@@ -1723,6 +1742,40 @@ textarea:focus {
   margin: 8px 0 0;
   color: var(--muted);
   line-height: 1.65;
+}
+
+.coach-plan-preview {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.coach-plan-preview-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 7px;
+  border: 1px solid rgba(223, 255, 150, 0.16);
+  background: rgba(2, 4, 3, 0.24);
+}
+
+.coach-plan-preview-row span,
+.coach-plan-preview-row em {
+  font-family: var(--pixel-font);
+  font-size: 0.48rem;
+  color: var(--muted);
+  font-style: normal;
+}
+
+.coach-plan-preview-row strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .coach-form {

@@ -1,5 +1,5 @@
 import { createDefaultOnboarding, defaultCheckin, defaultProfile, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./config.js";
-import { buildPlan, mergePreviousProgress } from "./plan.js";
+import { buildPlan, mergePlanWithTrainingHistory } from "./plan.js";
 import { buildInitialPlanningProfileFromOnboarding, getOnboardingSteps, renderOnboarding, shouldShowOnboarding, validateOnboardingStep } from "./onboarding.js";
 import { renderHome } from "./home.js";
 import { createDefaultCoachChat } from "./coach.js";
@@ -322,7 +322,7 @@ function readProfileForm() {
 
 function rebuildPlanKeepingProgress(nextSelectedId) {
   const result = buildPlan(state.profile, state.checkin);
-  state.plan = mergePreviousProgress(result.plan, state.plan);
+  state.plan = mergePlanWithTrainingHistory(result.plan, state.plan, state.activityLogs);
   state.planMeta = result.meta;
   state.selectedDayId = nextSelectedId || state.plan.find((session) => session.type === "quality")?.id || state.plan[0]?.id || null;
 }
@@ -358,7 +358,7 @@ function applyPendingCoachPlan(pendingPlan) {
     if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryLongRunDay")) {
       state.checkin.temporaryLongRunDay = "";
     }
-    state.plan = mergePreviousProgress(pendingPlan.weeklyPlan, state.plan);
+    state.plan = mergePlanWithTrainingHistory(pendingPlan.weeklyPlan, state.plan, state.activityLogs);
     state.planMeta = {
       ...(state.planMeta || {}),
       stats: buildPlanStats(state.plan),

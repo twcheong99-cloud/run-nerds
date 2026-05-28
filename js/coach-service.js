@@ -184,9 +184,9 @@ function normalizeSession(rawSession, previousSession) {
     duration: trimText(rawSession.duration || previousSession?.duration || "-", 40) || "-",
     distance: trimText(rawSession.distance || previousSession?.distance || "-", 40) || "-",
     blocks: normalizeBlocks(rawSession.blocks),
-    status: previousSession?.status || "planned",
-    note: previousSession?.note || "",
-    debrief: previousSession?.debrief || null,
+    status: "planned",
+    note: "",
+    debrief: null,
   };
 }
 
@@ -207,10 +207,16 @@ function normalizeWeeklyPlan(rawPlan, previousPlan = []) {
 function extractTrainingPreference(message) {
   const text = String(message || "");
   const resetTemporary = /기본\s*루틴|원래\s*루틴|임시.*해제|임시.*취소|이번\s*주.*해제|원래대로|복귀/.test(text);
-  const dayMatches = text.match(/[월화수목금토일]/g) || [];
-  const preferredDays = dayMatches.length ? normalizePreferredDays(dayMatches.join(",")) : "";
   const countMatch = text.match(/주\s*([2-6])\s*회|([2-6])\s*번/);
-  const availableDays = countMatch ? Number(countMatch[1] || countMatch[2]) : preferredDays ? preferredDays.split(",").filter(Boolean).length : null;
+  const requestedCount = countMatch ? Number(countMatch[1] || countMatch[2]) : null;
+  const hasAvailabilityLanguage = Boolean(
+    requestedCount ||
+    /이번\s*주.*(가능|뛸 수|뛸수|만|밖에)|가능한\s*날|가능.*요일|훈련.*횟수|러닝.*횟수|주간.*횟수|매주|앞으로|기본|루틴|계속|항상|only/i.test(text)
+  );
+  const dayMatches = text.match(/[월화수목금토일]/g) || [];
+  const dayTokens = hasAvailabilityLanguage && requestedCount && dayMatches.length > requestedCount ? dayMatches.slice(0, requestedCount) : hasAvailabilityLanguage ? dayMatches : [];
+  const preferredDays = dayTokens.length ? normalizePreferredDays(dayTokens.join(",")) : "";
+  const availableDays = requestedCount || (preferredDays ? preferredDays.split(",").filter(Boolean).length : null);
   const longRunDay = /롱런.*일|일.*롱런/.test(text) ? "sun" : /롱런.*토|토.*롱런/.test(text) ? "sat" : "";
   const scope = /이번\s*주|이번주는|이번주만|이번 주만|오늘부터 이번|금주/.test(text)
     ? "temporary"
@@ -335,7 +341,7 @@ function normalizeCoachResponse(response, fallback, message) {
         source: "llm-coach",
       }, fallback.pendingPlan)
     : fallback.pendingPlan || null;
-  const preferenceAwarePlan = pendingPlan;
+  const preferenceAwarePlan = mergeExplicitTrainingPreference(pendingPlan, message);
   const safetyLevel = ALLOWED_SAFETY_LEVELS.has(raw.safety?.level) ? raw.safety.level : "green";
 
   return {
@@ -406,3 +412,10 @@ export async function requestCoachReply({ supabase, authSession, message, state 
     });
   }
 }
+
+export const __coachServiceTest = {
+  hasApplyIntent,
+  mergeExplicitTrainingPreference,
+  normalizeCoachResponse,
+  normalizeWeeklyPlan,
+};
