@@ -183,10 +183,10 @@ function setActivityLogOpen(isOpen) {
 function renderProfileSummary({ dom, state }) {
   const initial = state.onboarding?.initialPlanningProfile;
   const profile = state.profile || {};
-  const availableDays = initial?.availableTrainingDays || profile.availableDays || "-";
-  const raceName = initial?.race?.name || profile.goalRace || "목표 미정";
-  const raceType = initial?.race?.type || profile.raceType;
-  const goalTime = initial?.race?.goalTime || profile.goalTime || "기록 미정";
+  const availableDays = profile.availableDays || initial?.availableTrainingDays || "-";
+  const raceName = profile.goalRace || initial?.race?.name || "목표 미정";
+  const raceType = profile.raceType || initial?.race?.type;
+  const goalTime = profile.goalTime || initial?.race?.goalTime || "기록 미정";
   const pain = initial?.painArea || profile.pain || "없음";
   const bodyCondition = initial?.bodyCondition || profile.fatigue || state.checkin?.fatigue;
   const bodyNote = displayProfileNote(profile.physicalNotes, "physical") || displayProfileNote(initial?.bodyConditionNote, "physical");
@@ -223,12 +223,15 @@ function renderProfileSummary({ dom, state }) {
 
 export function renderGoalSummary({ dom, state }) {
   const initial = state.onboarding?.initialPlanningProfile;
-  const goalTitle = initial?.primaryGoalType === "race"
-    ? `${initial?.race?.name || state.profile.goalRace || "목표 대회"}`
-    : initial?.nonRace?.focus ? `비대회 목표 · ${initial.nonRace.focus}` : state.profile.goalRace || "첫 목표 설정 완료";
-  const goalCopy = initial?.primaryGoalType === "race"
-    ? `${initial?.race?.type?.toUpperCase?.() || state.profile.raceType?.toUpperCase?.() || ""} · ${initial?.race?.date || "날짜 미정"} · ${initial?.race?.goalTime || state.profile.goalTime || "기록 미정"}`
-    : `${initial?.nonRace?.durationWeeks || "-"}주 프로그램 · 주 ${initial?.availableTrainingDays || state.profile.availableDays || "-"}회`;
+  const profile = state.profile || {};
+  const goalTitle = profile.goalRace
+    || (initial?.primaryGoalType === "race" ? initial?.race?.name : initial?.nonRace?.focus ? `비대회 목표 · ${initial.nonRace.focus}` : "")
+    || "첫 목표 설정 완료";
+  const raceType = profile.raceType || initial?.race?.type || "";
+  const goalTime = profile.goalTime || initial?.race?.goalTime || "기록 미정";
+  const goalCopy = initial?.primaryGoalType === "race" || profile.goalRace
+    ? `${raceType.toUpperCase?.() || ""} · ${initial?.race?.date || "날짜 미정"} · ${goalTime}`
+    : `${initial?.nonRace?.durationWeeks || "-"}주 프로그램 · 주 ${profile.availableDays || initial?.availableTrainingDays || "-"}회`;
   if (dom.goalStripMain) dom.goalStripMain.textContent = goalTitle;
   if (dom.goalStripMeta) dom.goalStripMeta.textContent = goalCopy;
   dom.goalSummaryCard.innerHTML = `<div class="goal-main">${goalTitle}</div><div class="goal-copy">${goalCopy}</div>`;

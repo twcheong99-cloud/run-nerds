@@ -4,7 +4,22 @@ import { DAY_LABELS, DAY_ORDER } from "./config.js";
 const COACH_FUNCTION_NAME = "coach";
 const COACH_TIMEOUT_MS = 60000;
 const RECENT_MESSAGE_LIMIT = 10;
-const ALLOWED_PROFILE_FIELDS = new Set(["fatigue", "pain", "availableDays", "preferredDays", "longRunDay", "physicalNotes", "goalNotes"]);
+const ALLOWED_PROFILE_FIELDS = new Set([
+  "fatigue",
+  "pain",
+  "availableDays",
+  "preferredDays",
+  "longRunDay",
+  "physicalNotes",
+  "goalNotes",
+  "goalRace",
+  "goalTime",
+  "weeklyMileage",
+  "raceType",
+  "qualityFocus",
+  "notes",
+  "coachNotes",
+]);
 const ALLOWED_CHECKIN_FIELDS = new Set(["fatigue", "pain", "sleep", "schedule", "confidence", "comment", "temporaryAvailableDays", "temporaryPreferredDays", "temporaryLongRunDay"]);
 const ALLOWED_STAGES = new Set(["idle", "clarifying", "proposal"]);
 const ALLOWED_SAFETY_LEVELS = new Set(["green", "yellow", "red"]);
@@ -30,7 +45,9 @@ function withTimeout(promise, timeoutMs) {
 
 function pickAllowed(source, allowedFields) {
   return Object.fromEntries(
-    Object.entries(source || {}).filter(([key, value]) => allowedFields.has(key) && value !== undefined && String(value).trim() !== "")
+    Object.entries(source || {}).filter(([key, value]) => (
+      allowedFields.has(key) && value !== undefined && (value === null || String(value).trim() !== "")
+    ))
   );
 }
 
@@ -96,8 +113,33 @@ function normalizeProfilePatch(patch) {
     else if (key === "longRunDay") next[key] = normalizeDayId(value) || "sat";
     else if (key === "physicalNotes") next[key] = profileDisplayNote(value, "physical");
     else if (key === "goalNotes") next[key] = profileDisplayNote(value, "goal");
+    else if (key === "weeklyMileage") next[key] = Math.min(180, Math.max(0, Number(value) || 0));
+    else if (key === "raceType") {
+      const raceType = normalizeRaceType(value);
+      if (raceType) next[key] = raceType;
+    } else if (key === "qualityFocus") {
+      const qualityFocus = normalizeQualityFocus(value);
+      if (qualityFocus) next[key] = qualityFocus;
+    }
+    else if (key === "goalRace" || key === "goalTime" || key === "notes" || key === "coachNotes") next[key] = trimText(value, 120);
   });
   return next;
+}
+
+function normalizeRaceType(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (/10\s*k|10k|ten/.test(text)) return "10k";
+  if (/half|하프/.test(text)) return "half";
+  if (/full|풀|마라톤|marathon/.test(text)) return "full";
+  return "";
+}
+
+function normalizeQualityFocus(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (/interval|인터벌|speed|스피드/.test(text)) return "interval";
+  if (/steady|스테디|지속/.test(text)) return "steady";
+  if (/tempo|threshold|템포|역치/.test(text)) return "tempo";
+  return "";
 }
 
 function normalizeDayId(value) {
@@ -205,6 +247,12 @@ function normalizeWeeklyPlan(rawPlan, previousPlan = []) {
     if (normalized) nextByDay.set(normalized.id, normalized);
   });
 
+  if (!nextByDay.size) return null;
+  if (nextByDay.size !== DAY_ORDER.length) {
+    DAY_ORDER.forEach((dayId) => {
+      if (!nextByDay.has(dayId) && previousByDay.has(dayId)) nextByDay.set(dayId, previousByDay.get(dayId));
+    });
+  }
   if (nextByDay.size !== DAY_ORDER.length) return null;
   return DAY_ORDER.map((dayId) => nextByDay.get(dayId));
 }
@@ -400,13 +448,23 @@ function normalizeCoachResponse(response, fallback, message) {
   const requestedApply = hasApplyIntent(message);
   const stage = ALLOWED_STAGES.has(raw.stage) ? raw.stage : fallback.stage;
   const reply = String(raw.reply || raw.message || fallback.reply || "").trim();
-  const pendingPlan = raw.pendingPlan && typeof raw.pendingPlan === "object"
+  const rawPendingPlan = raw.pendingPlan && typeof raw.pendingPlan === "object"
+    ? raw.pendingPlan
+    : (raw.weeklyPlan || raw.profile || raw.checkin)
+      ? {
+          concern: raw.concern,
+          checkin: raw.checkin,
+          profile: raw.profile,
+          weeklyPlan: raw.weeklyPlan,
+        }
+      : null;
+  const pendingPlan = rawPendingPlan
     ? strengthenPatchForConcern({
-        concern: String(raw.pendingPlan.concern || fallback.pendingPlan?.concern || "general"),
-        originalMessage: raw.pendingPlan.originalMessage || fallback.pendingPlan?.originalMessage,
-        checkin: normalizeCheckinPatch(raw.pendingPlan.checkin),
-        profile: normalizeProfilePatch(raw.pendingPlan.profile),
-        weeklyPlan: normalizeWeeklyPlan(raw.pendingPlan.weeklyPlan || raw.weeklyPlan, fallback.currentPlan),
+        concern: String(rawPendingPlan.concern || fallback.pendingPlan?.concern || "general"),
+        originalMessage: rawPendingPlan.originalMessage || fallback.pendingPlan?.originalMessage,
+        checkin: normalizeCheckinPatch(rawPendingPlan.checkin),
+        profile: normalizeProfilePatch(rawPendingPlan.profile),
+        weeklyPlan: normalizeWeeklyPlan(rawPendingPlan.weeklyPlan || raw.weeklyPlan, fallback.currentPlan),
         meta: raw.meta || null,
         source: "llm-coach",
       }, fallback.pendingPlan)

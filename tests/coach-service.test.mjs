@@ -71,6 +71,60 @@ function makeSession(id, patch = {}) {
 {
   const response = __coachServiceTest.normalizeCoachResponse({
     stage: "proposal",
+    reply: "목요일만 회복 조깅으로 낮췄어.",
+    pendingPlan: {
+      concern: "fatigue",
+      weeklyPlan: [
+        makeSession("thu", {
+          type: "recovery",
+          title: "회복 조깅 4km",
+          distance: "4km",
+          intensity: "easy",
+        }),
+      ],
+    },
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+  }, "목요일 훈련을 회복 조깅으로 바꿔줘");
+
+  assert.equal(response.stage, "proposal");
+  assert.equal(response.pendingPlan.weeklyPlan.length, 7);
+  assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "thu").title, "회복 조깅 4km");
+  assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "tue").title, currentPlan.find((session) => session.id === "tue").title);
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "idle",
+    reply: "목표와 주간 거리를 앱 프로필에 반영했어.",
+    profile: {
+      goalRace: "춘천마라톤",
+      goalTime: "3:50",
+      raceType: "full",
+      weeklyMileage: "48",
+      qualityFocus: "interval",
+    },
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+  }, "목표를 춘천마라톤 풀코스 3:50으로 바꾸고 주간 48km, 인터벌 중심으로 수정해줘");
+
+  assert.equal(response.stage, "proposal");
+  assert.equal(response.pendingPlan.profile.goalRace, "춘천마라톤");
+  assert.equal(response.pendingPlan.profile.goalTime, "3:50");
+  assert.equal(response.pendingPlan.profile.raceType, "full");
+  assert.equal(response.pendingPlan.profile.weeklyMileage, 48);
+  assert.equal(response.pendingPlan.profile.qualityFocus, "interval");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "proposal",
     reply: "이번 주는 두 번만 뛰는 계획으로 줄였어.",
     pendingPlan: {
       concern: "schedule",
