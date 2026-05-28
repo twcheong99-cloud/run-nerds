@@ -6,6 +6,7 @@ import { createDefaultCoachChat } from "./coach.js";
 import { requestCoachReply } from "./coach-service.js";
 import { applyCoachPlanToState } from "./coach-apply.js";
 import { enhanceThemeSelects } from "./theme-select.js";
+import { buildCompletedGoal, buildNextGoalDraftPatch, getNonRaceGoalLabel, normalizeGoalLifecycle } from "./goal-lifecycle.js";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true },
@@ -82,6 +83,7 @@ function baseState() {
     activeTab: "home",
     coachChat: createDefaultCoachChat(),
     onboarding: createDefaultOnboarding(),
+    goalLifecycle: normalizeGoalLifecycle(),
   };
 }
 
@@ -194,6 +196,7 @@ function initializeState(loaded) {
     selectedDayId: loaded?.selectedDayId || loaded?.selected_day_id || stateDefaults.selectedDayId,
     activeTab: normalizeAppTab(loaded?.activeTab || loaded?.active_tab || stateDefaults.activeTab),
     coachChat: normalizeCoachChatForToday(loaded?.coachChat || loaded?.coach_chat || stateDefaults.coachChat),
+    goalLifecycle: normalizeGoalLifecycle(loaded?.goalLifecycle || loaded?.goal_lifecycle || stateDefaults.goalLifecycle),
   };
   const defaults = createDefaultOnboarding();
   state.onboarding = {
@@ -233,7 +236,21 @@ function syncUI() {
   dom.appShell.classList.toggle("onboarding-active", showOnboarding);
   dom.onboardingShell.classList.toggle("hidden", !showOnboarding);
   dom.dashboard.classList.toggle("hidden", showOnboarding);
-  renderHome({ dom, state, updateSession, saveActivityLog, saveWorkoutStatusNote, switchAppTab, sendCoachMessage, applyCoachPlan, runSystemPulse });
+  renderHome({
+    dom,
+    state,
+    updateSession,
+    saveActivityLog,
+    saveWorkoutStatusNote,
+    switchAppTab,
+    sendCoachMessage,
+    applyCoachPlan,
+    runSystemPulse,
+    saveGoalReview,
+    chooseNextGoalMode,
+    saveNextGoal,
+    addRaceGoal,
+  });
   renderOnboarding({ dom, state, persistWorkspaceSoon });
   enhanceThemeSelects(dom.appShell);
   if (previousCoachDate && previousCoachDate !== state.coachChat?.conversationDate && !isBootstrapping) {
@@ -268,6 +285,7 @@ async function persistWorkspace(options = {}) {
       active_tab: state.activeTab,
       coach_chat: state.coachChat,
       onboarding: state.onboarding,
+      goal_lifecycle: state.goalLifecycle,
     },
   });
   if (error) throw error;
@@ -483,6 +501,154 @@ function applyCoachPlan() {
   });
 }
 
+function archiveCurrentGoal(review) {
+  state.goalLifecycle = normalizeGoalLifecycle(state.goalLifecycle);
+  const archived = buildCompletedGoal(state, review);
+  const alreadyArchived = state.goalLifecycle.completedGoals.some((goal) => goal.goalKey === archived.goalKey);
+  state.goalLifecycle = {
+    ...state.goalLifecycle,
+    completedGoals: alreadyArchived ? state.goalLifecycle.completedGoals : [...state.goalLifecycle.completedGoals, archived],
+    activeRecovery: {
+      startedAt: archived.completedAt,
+      fromGoalKey: archived.goalKey,
+      review: archived.review,
+    },
+  };
+  state.profile = {
+    ...state.profile,
+    goalStatus: "completed",
+    fatigue: "tired",
+    goalNotes: [state.profile.goalNotes, `${archived.name} 완료 회고 저장`].filter(Boolean).join(" / "),
+  };
+  state.checkin = {
+    ...state.checkin,
+    fatigue: "high",
+    sleep: state.checkin.sleep || "okay",
+    confidence: "steady",
+    comment: [state.checkin.comment, "목표 이벤트 완료 후 회복 주간"].filter(Boolean).join(" / "),
+    temporaryAvailableDays: 2,
+    temporaryPreferredDays: "",
+    temporaryLongRunDay: "",
+  };
+}
+
+function saveGoalReview(values) {
+  runSystemPulse(["archiving finished goal...", "building recovery week...", "syncing coach state..."], "회고와 회복 주간을 저장했어요", {
+    onBeforeDone: () => {
+      archiveCurrentGoal(values);
+      rebuildPlanKeepingProgress(state.selectedDayId);
+      syncUI();
+      persistWorkspaceSoon();
+    },
+  });
+}
+
+function chooseNextGoalMode(mode) {
+  state.goalLifecycle = normalizeGoalLifecycle(state.goalLifecycle);
+  state.goalLifecycle = {
+    ...state.goalLifecycle,
+    nextGoalDraft: {
+      ...state.goalLifecycle.nextGoalDraft,
+      mode,
+    },
+  };
+  syncUI();
+  persistWorkspaceSoon();
+}
+
+function applyNextRaceGoal(draft) {
+  const raceName = draft.raceName || "다음 목표 대회";
+  state.profile = {
+    ...state.profile,
+    goalRace: raceName,
+    goalTime: draft.raceGoalTime || "기록 미정",
+    goalDate: draft.raceDate,
+    raceType: draft.raceType || "half",
+    goalStatus: "active",
+    goalNotes: [state.profile.goalNotes, `${raceName} 준비 시작`].filter(Boolean).join(" / "),
+  };
+  state.onboarding = {
+    ...state.onboarding,
+    initialPlanningProfile: {
+      ...(state.onboarding.initialPlanningProfile || {}),
+      primaryGoalType: "race",
+      race: {
+        name: raceName,
+        type: draft.raceType || "half",
+        date: draft.raceDate,
+        goalTime: draft.raceGoalTime || "",
+      },
+      nonRace: null,
+    },
+  };
+}
+
+function applyNextNonRaceGoal(draft) {
+  const label = getNonRaceGoalLabel(draft.nonRaceFocus);
+  state.profile = {
+    ...state.profile,
+    goalRace: label,
+    goalTime: `${draft.programDurationWeeks || "8"}주`,
+    goalDate: "",
+    goalStatus: "active",
+    goalNotes: [state.profile.goalNotes, `${label} 시작`].filter(Boolean).join(" / "),
+  };
+  state.onboarding = {
+    ...state.onboarding,
+    initialPlanningProfile: {
+      ...(state.onboarding.initialPlanningProfile || {}),
+      primaryGoalType: "non-race",
+      race: null,
+      nonRace: {
+        focus: draft.nonRaceFocus || "consistency",
+        durationWeeks: Number(draft.programDurationWeeks || 8),
+      },
+    },
+  };
+}
+
+function saveNextGoal(values) {
+  const draft = buildNextGoalDraftPatch(values);
+  runSystemPulse(["saving next goal...", "reconciling plan...", "syncing coach state..."], "다음 목표를 시작했어요", {
+    onBeforeDone: () => {
+      state.goalLifecycle = normalizeGoalLifecycle(state.goalLifecycle);
+      if (draft.mode === "race") applyNextRaceGoal(draft);
+      else applyNextNonRaceGoal(draft);
+      state.goalLifecycle = {
+        ...state.goalLifecycle,
+        activeRecovery: null,
+        nextGoalDraft: { ...state.goalLifecycle.nextGoalDraft, ...draft },
+      };
+      state.checkin = {
+        ...state.checkin,
+        temporaryAvailableDays: null,
+        temporaryPreferredDays: "",
+        temporaryLongRunDay: "",
+      };
+      rebuildPlanKeepingProgress(state.selectedDayId);
+      syncUI();
+      persistWorkspaceSoon();
+    },
+  });
+}
+
+function addRaceGoal(values) {
+  const draft = buildNextGoalDraftPatch({ ...values, mode: "race" });
+  runSystemPulse(["adding race target...", "updating season context...", "syncing coach state..."], "대회 목표를 추가했어요", {
+    onBeforeDone: () => {
+      state.goalLifecycle = normalizeGoalLifecycle(state.goalLifecycle);
+      applyNextRaceGoal(draft);
+      state.goalLifecycle = {
+        ...state.goalLifecycle,
+        nextGoalDraft: { ...state.goalLifecycle.nextGoalDraft, ...draft },
+      };
+      rebuildPlanKeepingProgress(state.selectedDayId);
+      syncUI();
+      persistWorkspaceSoon();
+    },
+  });
+}
+
 async function handleProfileSubmit(event) {
   event.preventDefault();
   state.profile = { ...state.profile, ...readProfileForm() };
@@ -592,8 +758,10 @@ async function handleOnboardingComplete(event) {
       isFirstConsultationActive = false;
       state.profile = {
         ...state.profile,
-        goalRace: initialPlanningProfile.race?.name || state.profile.goalRace,
-        goalTime: initialPlanningProfile.race?.goalTime || state.profile.goalTime,
+        goalRace: initialPlanningProfile.race?.name || getNonRaceGoalLabel(initialPlanningProfile.nonRace?.focus),
+        goalTime: initialPlanningProfile.race?.goalTime || `${initialPlanningProfile.nonRace?.durationWeeks || 8}주`,
+        goalDate: initialPlanningProfile.race?.date || "",
+        goalStatus: "active",
         raceType: initialPlanningProfile.race?.type || state.profile.raceType,
         weeklyMileage: initialPlanningProfile.averageMileage4Weeks || state.profile.weeklyMileage,
         availableDays: initialPlanningProfile.availableTrainingDays || state.profile.availableDays,

@@ -70,6 +70,7 @@ Return only JSON matching this shape:
       "goalNotes": "...",
       "goalRace": "...",
       "goalTime": "...",
+      "goalDate": "YYYY-MM-DD",
       "weeklyMileage": "...",
       "raceType": "10k | half | full",
       "qualityFocus": "tempo | interval | steady",
@@ -104,7 +105,7 @@ Plan editing rules:
 - If the runner has already logged or marked a session, keep that past training record conceptually intact. Modify only the remaining forward plan.
 - weeklyPlan session type must be one of exactly: rest, mobility, easy, quality, long, recovery. Use quality for tempo, threshold, interval, hills, and other workout sessions.
 - weeklyPlan intensity must be one of exactly: rest, easy, moderate, steady, hard. Use moderate for tempo/threshold and hard only for clearly hard interval work.
-- Preserve the runner's stated race goal, date, race type, and target time unless the user explicitly asks to change those goal facts. If they clearly ask to change goal facts, put those changes in profile.goalRace, profile.goalTime, profile.raceType, and profile.goalNotes.
+- Preserve the runner's stated race goal, date, race type, and target time unless the user explicitly asks to change those goal facts. If they clearly ask to change goal facts, put those changes in profile.goalRace, profile.goalDate, profile.goalTime, profile.raceType, and profile.goalNotes.
 - For requests like "swap Tuesday and Thursday", actually swap the sessions in weeklyPlan. Do not convert two mentioned weekdays into "2 weekly run days".
 - If the user asks to move, swap, soften, shorten, replace, or remove specific sessions, modify those sessions directly in weeklyPlan.
 - If the user says an imminent race is this week, such as "이번 주 일요일 하프마라톤", make that day a race-specific long session in weeklyPlan (for half marathon use 21.1km) instead of leaving the old planned run.
@@ -138,6 +139,7 @@ Use only these canonical patch values:
 - profile.preferredDays: comma-separated day ids such as "tue, thu, fri, sat"
 - profile.longRunDay: "sat" | "sun" | another day id only if the user clearly says so
 - profile.raceType: "10k" | "half" | "full"
+- profile.goalDate: YYYY-MM-DD race date
 - profile.qualityFocus: "tempo" | "interval" | "steady"
 - profile.weeklyMileage: numeric km per week
 If the user asks about next week but has not confirmed next week's availability, ask a clarifying question instead of changing profile.

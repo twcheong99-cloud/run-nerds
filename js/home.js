@@ -1,5 +1,6 @@
 import { formatStatus } from "./plan.js";
 import { renderCoachTab } from "./coach.js";
+import { getGoalDate, getNonRaceGoalLabel, hasFinishedRaceGoal, normalizeGoalLifecycle } from "./goal-lifecycle.js";
 
 export function getTodayDayId() {
   return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()];
@@ -40,6 +41,12 @@ function formatRaceType(type) {
   if (type === "half") return "하프";
   if (type === "full") return "풀";
   return type || "-";
+}
+
+function formatGoalFocus(focus) {
+  if (focus === "fitness") return "체력 향상";
+  if (focus === "comeback") return "복귀";
+  return "꾸준함";
 }
 
 function formatBodyCondition(condition) {
@@ -221,20 +228,139 @@ function renderProfileSummary({ dom, state }) {
   `;
 }
 
-export function renderGoalSummary({ dom, state }) {
+export function renderGoalSummary(ctx) {
+  const { dom, state } = ctx;
   const initial = state.onboarding?.initialPlanningProfile;
   const profile = state.profile || {};
+  const goalLifecycle = normalizeGoalLifecycle(state.goalLifecycle);
+  const goalDate = getGoalDate(state);
+  const isRaceGoal = initial?.primaryGoalType === "race" || Boolean(goalDate);
   const goalTitle = profile.goalRace
     || (initial?.primaryGoalType === "race" ? initial?.race?.name : initial?.nonRace?.focus ? `비대회 목표 · ${initial.nonRace.focus}` : "")
     || "첫 목표 설정 완료";
   const raceType = profile.raceType || initial?.race?.type || "";
   const goalTime = profile.goalTime || initial?.race?.goalTime || "기록 미정";
-  const goalCopy = initial?.primaryGoalType === "race" || profile.goalRace
-    ? `${raceType.toUpperCase?.() || ""} · ${initial?.race?.date || "날짜 미정"} · ${goalTime}`
+  const goalCopy = isRaceGoal
+    ? `${raceType.toUpperCase?.() || ""} · ${goalDate || "날짜 미정"} · ${goalTime}`
     : `${initial?.nonRace?.durationWeeks || "-"}주 프로그램 · 주 ${profile.availableDays || initial?.availableTrainingDays || "-"}회`;
   if (dom.goalStripMain) dom.goalStripMain.textContent = goalTitle;
   if (dom.goalStripMeta) dom.goalStripMeta.textContent = goalCopy;
-  dom.goalSummaryCard.innerHTML = `<div class="goal-main">${goalTitle}</div><div class="goal-copy">${goalCopy}</div>`;
+  const showLifecycleCard = hasFinishedRaceGoal(state) || goalLifecycle.activeRecovery || initial?.primaryGoalType === "non-race";
+  dom.goalSummaryCard.closest(".goal-panel")?.classList.toggle("active", Boolean(showLifecycleCard));
+  dom.goalSummaryCard.innerHTML = [
+    `<div class="goal-main">${escapeHtml(goalTitle)}</div><div class="goal-copy">${escapeHtml(goalCopy)}</div>`,
+    renderGoalLifecyclePanel(state),
+  ].join("");
+  bindGoalLifecycleActions(ctx);
+}
+
+function renderGoalLifecyclePanel(state) {
+  const initial = state.onboarding?.initialPlanningProfile || {};
+  const profile = state.profile || {};
+  const goalLifecycle = normalizeGoalLifecycle(state.goalLifecycle);
+  const draft = goalLifecycle.nextGoalDraft;
+  if (hasFinishedRaceGoal(state) && !goalLifecycle.activeRecovery) return `
+    <form class="goal-lifecycle-card" id="goalReviewForm">
+      <div>
+        <span class="mini-day-name">finish line</span>
+        <strong>목표 이벤트가 끝났어요</strong>
+        <p>바로 다음 계획을 밀어붙이기보다, 기록과 몸 상태를 먼저 남기고 회복 주간으로 전환할게요.</p>
+      </div>
+      <div class="activity-log-grid">
+        <label>실제 기록<input name="actualTime" placeholder="예: 1:48:30" /></label>
+        <label>체감<select name="effort"><option value="smooth">여유</option><option value="steady">적당함</option><option value="hard">많이 힘듦</option></select></label>
+        <label>통증<select name="pain"><option value="none">통증 없음</option><option value="light">가벼운 불편</option><option value="sharp">주의 신호</option></select></label>
+        <label>메모<input name="memo" placeholder="잘 된 점이나 아쉬운 점" /></label>
+      </div>
+      <button type="submit" class="submit-pixel-btn">회고 저장하고 회복 시작</button>
+    </form>
+  `;
+  if (goalLifecycle.activeRecovery) return `
+    <div class="goal-lifecycle-card">
+      <div>
+        <span class="mini-day-name">recovery block</span>
+        <strong>회복 주간 진행 중</strong>
+        <p>이번 주는 훈련량보다 회복, 통증 체크, 다음 목표 선택을 우선합니다.</p>
+      </div>
+      ${renderNextGoalChooser(draft)}
+    </div>
+  `;
+  if (initial.primaryGoalType === "non-race") return `
+    <div class="goal-lifecycle-card compact">
+      <div>
+        <span class="mini-day-name">race target</span>
+        <strong>대회는 나중에 추가할 수 있어요</strong>
+        <p>지금은 ${escapeHtml(getNonRaceGoalLabel(initial.nonRace?.focus || "consistency"))}으로 가고, 대회가 정해지면 바로 시즌 목표로 바꿀 수 있습니다.</p>
+      </div>
+      ${renderRaceGoalForm("addRaceGoalForm", profile)}
+    </div>
+  `;
+  return "";
+}
+
+function renderNextGoalChooser(draft) {
+  const mode = draft.mode || "";
+  return `
+    <div class="next-goal-mode">
+      <button type="button" class="choice-card ${mode === "race" ? "selected" : ""}" data-next-goal-mode="race">
+        <div class="choice-title">RACE MODE</div>
+        <div class="choice-copy">대회 날짜와 목표 기록을 중심으로 다음 시즌을 준비합니다.</div>
+      </button>
+      <button type="button" class="choice-card ${mode === "non-race" ? "selected" : ""}" data-next-goal-mode="non-race">
+        <div class="choice-title">NO RACE</div>
+        <div class="choice-copy">대회 없이 루틴, 체력, 복귀 흐름을 먼저 만듭니다.</div>
+      </button>
+    </div>
+    ${mode === "race" ? renderRaceGoalForm("nextGoalForm", draft) : ""}
+    ${mode === "non-race" ? renderNonRaceGoalForm(draft) : ""}
+  `;
+}
+
+function renderRaceGoalForm(id, values = {}) {
+  return `
+    <form class="next-goal-form" id="${id}">
+      <input type="hidden" name="mode" value="race" />
+      <div class="activity-log-grid">
+        <label>대회 이름<input name="raceName" value="${escapeHtml(values.raceName || values.goalRace || "")}" placeholder="예: 서울하프마라톤" required /></label>
+        <label>종목<select name="raceType"><option value="10k" ${(values.raceType || "") === "10k" ? "selected" : ""}>10K</option><option value="half" ${(values.raceType || "half") === "half" ? "selected" : ""}>하프</option><option value="full" ${(values.raceType || "") === "full" ? "selected" : ""}>풀</option></select></label>
+        <label>대회 날짜<input name="raceDate" type="date" value="${escapeHtml(values.raceDate || values.goalDate || "")}" required /></label>
+        <label>목표 기록<input name="raceGoalTime" value="${escapeHtml(values.raceGoalTime || values.goalTime || "")}" placeholder="예: 하프 1:45" /></label>
+      </div>
+      <button type="submit" class="submit-pixel-btn">${id === "addRaceGoalForm" ? "대회 목표 추가" : "다음 대회 시작"}</button>
+    </form>
+  `;
+}
+
+function renderNonRaceGoalForm(draft) {
+  return `
+    <form class="next-goal-form" id="nextGoalForm">
+      <input type="hidden" name="mode" value="non-race" />
+      <div class="activity-log-grid">
+        <label>목표 방향<select name="nonRaceFocus"><option value="consistency" ${draft.nonRaceFocus === "consistency" ? "selected" : ""}>꾸준함</option><option value="fitness" ${draft.nonRaceFocus === "fitness" ? "selected" : ""}>체력 향상</option><option value="comeback" ${draft.nonRaceFocus === "comeback" ? "selected" : ""}>복귀</option></select></label>
+        <label>기간<select name="programDurationWeeks"><option value="6" ${draft.programDurationWeeks === "6" ? "selected" : ""}>6주</option><option value="8" ${draft.programDurationWeeks === "8" ? "selected" : ""}>8주</option><option value="12" ${draft.programDurationWeeks === "12" ? "selected" : ""}>12주</option><option value="16" ${draft.programDurationWeeks === "16" ? "selected" : ""}>16주</option></select></label>
+      </div>
+      <p class="goal-lifecycle-note">대회가 정해지면 이 카드에서 바로 대회 목표를 추가할 수 있습니다.</p>
+      <button type="submit" class="submit-pixel-btn">${escapeHtml(formatGoalFocus(draft.nonRaceFocus))} 목표 시작</button>
+    </form>
+  `;
+}
+
+function bindGoalLifecycleActions({ dom, saveGoalReview, chooseNextGoalMode, saveNextGoal, addRaceGoal }) {
+  dom.goalSummaryCard.querySelector("#goalReviewForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveGoalReview(Object.fromEntries(new FormData(event.currentTarget).entries()));
+  });
+  dom.goalSummaryCard.querySelectorAll("[data-next-goal-mode]").forEach((button) => {
+    button.addEventListener("click", () => chooseNextGoalMode(button.dataset.nextGoalMode));
+  });
+  dom.goalSummaryCard.querySelector("#nextGoalForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveNextGoal(Object.fromEntries(new FormData(event.currentTarget).entries()));
+  });
+  dom.goalSummaryCard.querySelector("#addRaceGoalForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    addRaceGoal(Object.fromEntries(new FormData(event.currentTarget).entries()));
+  });
 }
 
 export function renderTodayWorkout(ctx) {

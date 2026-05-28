@@ -24,6 +24,8 @@ export const defaultProfile = {
   email: "",
   goalRace: "가을 하프",
   goalTime: "하프 1:50",
+  goalDate: "",
+  goalStatus: "active",
   weeklyMileage: 30,
   availableDays: 4,
   preferredDays: "화, 목, 토",

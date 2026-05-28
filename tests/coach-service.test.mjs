@@ -17,6 +17,7 @@ const { buildPlan } = await import("../js/plan.js");
 const { mergePlanWithTrainingHistory } = await import("../js/plan.js");
 const { defaultCheckin, defaultProfile } = await import("../js/config.js");
 const { __homeTest } = await import("../js/home.js");
+const { buildCompletedGoal, buildNextGoalDraftPatch, hasFinishedRaceGoal } = await import("../js/goal-lifecycle.js");
 
 const currentPlan = buildPlan(defaultProfile, defaultCheckin).plan;
 
@@ -180,6 +181,7 @@ function makeSession(id, patch = {}) {
     profile: {
       goalRace: "춘천마라톤",
       goalTime: "3:50",
+      goalDate: "2026-10-25",
       raceType: "full",
       weeklyMileage: "48",
       qualityFocus: "interval",
@@ -194,6 +196,7 @@ function makeSession(id, patch = {}) {
   assert.equal(response.stage, "proposal");
   assert.equal(response.pendingPlan.profile.goalRace, "춘천마라톤");
   assert.equal(response.pendingPlan.profile.goalTime, "3:50");
+  assert.equal(response.pendingPlan.profile.goalDate, "2026-10-25");
   assert.equal(response.pendingPlan.profile.raceType, "full");
   assert.equal(response.pendingPlan.profile.weeklyMileage, 48);
   assert.equal(response.pendingPlan.profile.qualityFocus, "interval");
@@ -357,6 +360,41 @@ function makeSession(id, patch = {}) {
     temporaryPreferredDays: "화, 목",
     temporaryLongRunDay: "",
   }, defaultProfile), true);
+}
+
+{
+  const raceState = {
+    profile: {
+      ...defaultProfile,
+      goalRace: "서울하프마라톤",
+      goalDate: "2026-05-24",
+      raceType: "half",
+      goalTime: "1:45",
+    },
+    onboarding: {
+      initialPlanningProfile: {
+        primaryGoalType: "race",
+        race: { name: "서울하프마라톤", type: "half", date: "2026-05-24", goalTime: "1:45" },
+      },
+    },
+    goalLifecycle: { completedGoals: [] },
+  };
+  assert.equal(hasFinishedRaceGoal(raceState, "2026-05-28"), true);
+  const archived = buildCompletedGoal(raceState, { actualTime: "1:47:20", effort: "hard", pain: "light", memo: "후반 버팀" }, "2026-05-28T00:00:00.000Z");
+  assert.equal(archived.name, "서울하프마라톤");
+  assert.equal(archived.review.actualTime, "1:47:20");
+  assert.equal(hasFinishedRaceGoal({ ...raceState, goalLifecycle: { completedGoals: [archived] } }, "2026-05-28"), false);
+}
+
+{
+  const draft = buildNextGoalDraftPatch({
+    mode: "non-race",
+    nonRaceFocus: "fitness",
+    programDurationWeeks: "12",
+  });
+  assert.equal(draft.mode, "non-race");
+  assert.equal(draft.nonRaceFocus, "fitness");
+  assert.equal(draft.programDurationWeeks, "12");
 }
 
 {

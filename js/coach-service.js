@@ -15,6 +15,7 @@ const ALLOWED_PROFILE_FIELDS = new Set([
   "goalNotes",
   "goalRace",
   "goalTime",
+  "goalDate",
   "weeklyMileage",
   "raceType",
   "qualityFocus",
@@ -122,7 +123,7 @@ function normalizeProfilePatch(patch) {
       const qualityFocus = normalizeQualityFocus(value);
       if (qualityFocus) next[key] = qualityFocus;
     }
-    else if (key === "goalRace" || key === "goalTime" || key === "notes" || key === "coachNotes") next[key] = trimText(value, 120);
+    else if (key === "goalRace" || key === "goalTime" || key === "goalDate" || key === "notes" || key === "coachNotes") next[key] = trimText(value, 120);
   });
   return next;
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = "run-nerds-family-test-v11";
+const CACHE_NAME = "run-nerds-family-test-v12";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -14,6 +14,7 @@ const APP_SHELL = [
   "./js/coach-service.js",
   "./js/coach.js",
   "./js/config.js",
+  "./js/goal-lifecycle.js",
   "./js/home.js",
   "./js/onboarding.js",
   "./js/plan.js",
