@@ -169,9 +169,10 @@ function detectConcern(message: string): CoachConcern {
 function validateResponse(value: unknown, originalMessage: string): CoachResponse {
   const raw = value && typeof value === "object" ? value as Record<string, unknown> : {};
   const hasTopLevelPatch = Boolean(raw.profile || raw.checkin || raw.weeklyPlan);
+  const hasPendingPatch = Boolean(raw.pendingPlan && typeof raw.pendingPlan === "object");
   const stage = raw.stage === "proposal" || raw.stage === "clarifying" || raw.stage === "idle"
-    ? hasTopLevelPatch ? "proposal" : raw.stage
-    : hasTopLevelPatch ? "proposal" : "clarifying";
+    ? hasTopLevelPatch || hasPendingPatch ? "proposal" : raw.stage
+    : hasTopLevelPatch || hasPendingPatch ? "proposal" : "clarifying";
   const reply = typeof raw.reply === "string" && raw.reply.trim()
     ? raw.reply.trim()
     : "지금 상태를 조금 더 알려줘. 몸 상태, 가능한 훈련일, 꼭 지키고 싶은 세션을 같이 보면 안전하게 조정할 수 있어.";

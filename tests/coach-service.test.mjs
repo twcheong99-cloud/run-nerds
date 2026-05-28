@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 globalThis.window = {
   RUN_NERDS_ENV: {
@@ -36,6 +37,12 @@ function makeSession(id, patch = {}) {
     blocks: previous.blocks,
     ...patch,
   };
+}
+
+{
+  const edgeSource = readFileSync(new URL("../supabase/functions/coach/index.ts", import.meta.url), "utf8");
+  assert.match(edgeSource, /hasPendingPatch/);
+  assert.match(edgeSource, /hasTopLevelPatch \|\| hasPendingPatch \? "proposal"/);
 }
 
 {
