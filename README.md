@@ -47,6 +47,11 @@ Netlify에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를
 - 코칭 판단 근거는 `COACHING_KNOWLEDGE.md`에 정리했고, Edge Function 프롬프트는 이 원칙을 매 요청에 포함합니다.
 - 정적 앱 배포와 Supabase Edge Function 배포는 별개입니다. `supabase/functions/coach/index.ts`를 바꾸면 정적 사이트를 다시 배포하는 것만으로는 LLM 프롬프트가 바뀌지 않으므로 `coach` Edge Function도 별도로 배포해야 합니다.
 
+```bash
+supabase login
+supabase functions deploy coach --project-ref jnlexemtrjgwskzwybim
+```
+
 ## 테스트
 
 ```bash
