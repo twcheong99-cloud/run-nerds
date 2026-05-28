@@ -168,13 +168,25 @@ function detectConcern(message: string): CoachConcern {
 
 function validateResponse(value: unknown, originalMessage: string): CoachResponse {
   const raw = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  const stage = raw.stage === "proposal" || raw.stage === "clarifying" || raw.stage === "idle" ? raw.stage : "clarifying";
+  const hasTopLevelPatch = Boolean(raw.profile || raw.checkin || raw.weeklyPlan);
+  const stage = raw.stage === "proposal" || raw.stage === "clarifying" || raw.stage === "idle"
+    ? hasTopLevelPatch ? "proposal" : raw.stage
+    : hasTopLevelPatch ? "proposal" : "clarifying";
   const reply = typeof raw.reply === "string" && raw.reply.trim()
     ? raw.reply.trim()
     : "지금 상태를 조금 더 알려줘. 몸 상태, 가능한 훈련일, 꼭 지키고 싶은 세션을 같이 보면 안전하게 조정할 수 있어.";
   const safetyRaw = raw.safety && typeof raw.safety === "object" ? raw.safety as Record<string, unknown> : {};
   const safetyLevel = safetyRaw.level === "red" || safetyRaw.level === "yellow" || safetyRaw.level === "green" ? safetyRaw.level : "green";
-  const pendingRaw = raw.pendingPlan && typeof raw.pendingPlan === "object" ? raw.pendingPlan as Record<string, unknown> : null;
+  const pendingRaw = raw.pendingPlan && typeof raw.pendingPlan === "object"
+    ? raw.pendingPlan as Record<string, unknown>
+    : hasTopLevelPatch
+      ? {
+          concern: raw.concern,
+          checkin: raw.checkin,
+          profile: raw.profile,
+          weeklyPlan: raw.weeklyPlan,
+        }
+      : null;
 
   return {
     stage,
