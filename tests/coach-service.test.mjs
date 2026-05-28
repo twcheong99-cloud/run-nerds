@@ -415,4 +415,46 @@ function makeSession(id, patch = {}) {
   assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "thu").title, "회복 조깅 4km");
 }
 
+{
+  const supabase = {
+    functions: {
+      invoke: async () => {
+        throw new Error("edge unavailable");
+      },
+    },
+  };
+  const response = await requestCoachReply({
+    supabase,
+    authSession: null,
+    message: "이번 주는 화 목 2번만 뛸 수 있어. 계획표에 반영해줘",
+    state: {
+      profile: defaultProfile,
+      checkin: defaultCheckin,
+      plan: currentPlan,
+      activityLogs: {},
+      coachChat: { stage: "idle", pendingPlan: null, messages: [] },
+      onboarding: {},
+    },
+  });
+
+  assert.equal(response.stage, "proposal");
+  assert.equal(response.meta.source, "llm-fallback");
+  assert.equal(response.pendingPlan.source, "llm-fallback");
+  assert.equal(response.pendingPlan.checkin.temporaryAvailableDays, 2);
+  assert.equal(response.pendingPlan.checkin.temporaryPreferredDays, "tue, thu");
+
+  const applied = applyCoachPlanToState({
+    profile: defaultProfile,
+    checkin: defaultCheckin,
+    plan: currentPlan,
+    activityLogs: {},
+    planMeta: {},
+    selectedDayId: "tue",
+  }, response.pendingPlan);
+
+  assert.equal(applied.applied, true);
+  assert.equal(applied.state.checkin.temporaryAvailableDays, 2);
+  assert.equal(applied.state.plan.filter((session) => ["easy", "quality", "long", "recovery"].includes(session.type)).length, 2);
+}
+
 console.log("coach-service tests passed");

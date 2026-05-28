@@ -571,11 +571,17 @@ function normalizeCoachResponse(response, fallback, message) {
 
 function buildFallbackReply({ message, state, reason }) {
   const fallback = buildCoachReply({ message, state });
-  const raceAwarePlan = mergeExplicitRaceEvent(fallback.pendingPlan, message, { currentPlan: state.plan });
+  const preferenceAwarePlan = mergeExplicitTrainingPreference(fallback.pendingPlan, message);
+  const raceAwarePlan = mergeExplicitRaceEvent(preferenceAwarePlan, message, { currentPlan: state.plan });
+  const hasChanges = pendingPlanHasChanges(raceAwarePlan, {
+    currentPlan: state.plan,
+    profile: state.profile,
+    checkin: state.checkin,
+  });
   return {
     ...fallback,
-    stage: raceAwarePlan ? "proposal" : fallback.stage,
-    pendingPlan: raceAwarePlan ? { ...raceAwarePlan, source: "llm-fallback" } : null,
+    stage: hasChanges ? "proposal" : fallback.stage,
+    pendingPlan: hasChanges ? { ...raceAwarePlan, source: "llm-fallback" } : null,
     meta: {
       source: "llm-fallback",
       fallbackReason: reason,
