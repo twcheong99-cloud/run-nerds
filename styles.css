@@ -583,8 +583,7 @@ select.native-select {
   min-width: 0;
 }
 
-.panel:has(.theme-select.open),
-.activity-log-dialog:has(.theme-select.open) {
+.panel:has(.theme-select.open) {
   overflow: visible;
 }
 
@@ -671,6 +670,12 @@ select.native-select {
   display: grid;
   gap: 4px;
   animation: select-pop 150ms ease-out;
+}
+
+.activity-log-dialog .theme-select.open .theme-select-list {
+  position: static;
+  margin-top: 6px;
+  max-height: min(180px, 34dvh);
 }
 
 .theme-select-option {
