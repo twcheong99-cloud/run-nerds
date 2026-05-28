@@ -1750,6 +1750,44 @@ textarea:focus {
   margin-top: 12px;
 }
 
+.coach-patch-preview {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 9px;
+  border: 1px solid rgba(223, 255, 150, 0.16);
+  background: rgba(2, 4, 3, 0.18);
+}
+
+.coach-patch-preview > span {
+  font-family: var(--pixel-font);
+  font-size: 0.46rem;
+  color: var(--warning);
+  letter-spacing: 0.1em;
+}
+
+.coach-patch-preview-row {
+  display: grid;
+  grid-template-columns: minmax(86px, 0.45fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  min-height: 24px;
+}
+
+.coach-patch-preview-row em {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
+.coach-patch-preview-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .coach-plan-preview-row {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto;

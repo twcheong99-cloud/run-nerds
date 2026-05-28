@@ -5,9 +5,11 @@ globalThis.window = {
     SUPABASE_URL: "https://example.supabase.co",
     SUPABASE_PUBLISHABLE_KEY: "test-key",
   },
+  setTimeout: globalThis.setTimeout,
+  clearTimeout: globalThis.clearTimeout,
 };
 
-const { __coachServiceTest } = await import("../js/coach-service.js");
+const { __coachServiceTest, requestCoachReply } = await import("../js/coach-service.js");
 const { buildPlan } = await import("../js/plan.js");
 const { mergePlanWithTrainingHistory } = await import("../js/plan.js");
 const { defaultCheckin, defaultProfile } = await import("../js/config.js");
@@ -289,6 +291,62 @@ function makeSession(id, patch = {}) {
     temporaryPreferredDays: "화, 목",
     temporaryLongRunDay: "",
   }, defaultProfile), true);
+}
+
+{
+  const calls = [];
+  const supabase = {
+    functions: {
+      invoke: async (_name, options) => {
+        calls.push(options.body);
+        if (calls.length === 1) {
+          return {
+            data: {
+              stage: "proposal",
+              reply: "목요일 훈련을 회복 조깅으로 바꿨어.",
+              pendingPlan: null,
+            },
+            error: null,
+          };
+        }
+        return {
+          data: {
+            stage: "proposal",
+            reply: "이번에는 앱에 적용 가능한 변경안으로 다시 보냈어.",
+            pendingPlan: {
+              concern: "fatigue",
+              weeklyPlan: [
+                makeSession("thu", {
+                  type: "recovery",
+                  title: "회복 조깅 4km",
+                  distance: "4km",
+                  intensity: "easy",
+                }),
+              ],
+            },
+          },
+          error: null,
+        };
+      },
+    },
+  };
+  const response = await requestCoachReply({
+    supabase,
+    authSession: null,
+    message: "목요일 훈련을 회복 조깅으로 바꿔줘",
+    state: {
+      profile: defaultProfile,
+      checkin: defaultCheckin,
+      plan: currentPlan,
+      activityLogs: {},
+      coachChat: { stage: "idle", pendingPlan: null, messages: [] },
+      onboarding: {},
+    },
+  });
+
+  assert.equal(calls.length, 2);
+  assert.match(calls[1].message, /STRUCTURED APP UPDATE REQUIRED/);
+  assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "thu").title, "회복 조깅 4km");
 }
 
 console.log("coach-service tests passed");

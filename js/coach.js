@@ -84,6 +84,55 @@ function renderPlanPreview(plan) {
   `;
 }
 
+function formatPatchKey(key) {
+  return {
+    fatigue: "피로",
+    pain: "통증",
+    availableDays: "주간 가능 횟수",
+    preferredDays: "선호 요일",
+    longRunDay: "롱런 요일",
+    physicalNotes: "몸 상태 메모",
+    goalNotes: "목표 메모",
+    goalRace: "목표 대회",
+    goalTime: "목표 기록",
+    weeklyMileage: "주간 거리",
+    raceType: "목표 종목",
+    qualityFocus: "핵심 훈련",
+    notes: "프로필 메모",
+    coachNotes: "코치 메모",
+    sleep: "수면",
+    schedule: "일정",
+    confidence: "자신감",
+    comment: "체크인 메모",
+    temporaryAvailableDays: "이번 주 가능 횟수",
+    temporaryPreferredDays: "이번 주 가능 요일",
+    temporaryLongRunDay: "이번 주 롱런 요일",
+  }[key] || key;
+}
+
+function formatPatchValue(value) {
+  if (value === null) return "해제";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value ?? "-");
+}
+
+function renderPatchPreview(title, patch) {
+  const entries = Object.entries(patch || {}).filter(([, value]) => value !== undefined && value !== "");
+  if (!entries.length) return "";
+  return `
+    <div class="coach-patch-preview">
+      <span>${escapeHtml(title)}</span>
+      ${entries.map(([key, value]) => `
+        <div class="coach-patch-preview-row">
+          <em>${escapeHtml(formatPatchKey(key))}</em>
+          <strong>${escapeHtml(formatPatchValue(value))}</strong>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 export function createDefaultCoachChat(conversationDate = null) {
   return {
     stage: "idle",
@@ -205,6 +254,8 @@ export function renderCoachTab(ctx) {
         <p class="section-kicker">PROPOSED REPLAN</p>
         <strong>${concernLabel}</strong>
         <p>캘린더는 아직 바뀌지 않았습니다. 반영하면 AI 코치가 제안한 이번 주 훈련표가 앱에 적용됩니다.</p>
+        ${renderPatchPreview("PROFILE", pendingPlan.profile)}
+        ${renderPatchPreview("CHECK-IN", pendingPlan.checkin)}
         ${renderPlanPreview(pendingPlan.weeklyPlan)}
       </div>
       <button type="button" id="applyCoachPlanBtn">계획 반영</button>

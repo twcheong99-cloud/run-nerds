@@ -45,6 +45,7 @@ Netlify에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를
 - `OPENAI_API_KEY`가 없거나 응답이 실패하면 기존 로컬 코치 엔진으로 자동 fallback됩니다.
 - 선택적으로 `OPENAI_MODEL`을 설정할 수 있으며, 기본값은 `gpt-5.2`입니다.
 - 코칭 판단 근거는 `COACHING_KNOWLEDGE.md`에 정리했고, Edge Function 프롬프트는 이 원칙을 매 요청에 포함합니다.
+- 정적 앱 배포와 Supabase Edge Function 배포는 별개입니다. `supabase/functions/coach/index.ts`를 바꾸면 정적 사이트를 다시 배포하는 것만으로는 LLM 프롬프트가 바뀌지 않으므로 `coach` Edge Function도 별도로 배포해야 합니다.
 
 ## 테스트
 
