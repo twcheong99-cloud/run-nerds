@@ -3,6 +3,7 @@ import { DAY_LABELS, DAY_ORDER } from "./config.js";
 
 const COACH_FUNCTION_NAME = "coach";
 const COACH_TIMEOUT_MS = 60000;
+const COACH_CONTRACT_VERSION = "coach-contract-v3";
 const RECENT_MESSAGE_LIMIT = 10;
 const ALLOWED_PROFILE_FIELDS = new Set([
   "fatigue",
@@ -485,6 +486,7 @@ function mergeExplicitTrainingPreference(pendingPlan, message) {
 
 function buildCoachRequest({ message, state }) {
   return {
+    contractVersion: COACH_CONTRACT_VERSION,
     message,
     applyIntent: hasApplyIntent(message),
     profile: state.profile,
@@ -553,7 +555,11 @@ function normalizeCoachResponse(response, fallback, message) {
     reply: reply || fallback.reply,
     meta: {
       source: "llm-coach",
-      fallbackReason: "none",
+      fallbackReason: raw.meta?.contractVersion === COACH_CONTRACT_VERSION || raw.contractVersion === COACH_CONTRACT_VERSION
+        ? "none"
+        : "coach-contract-unverified",
+      contractVersion: String(raw.meta?.contractVersion || raw.contractVersion || ""),
+      expectedContractVersion: COACH_CONTRACT_VERSION,
       summary: String(raw.meta?.summary || raw.summary || "").slice(0, 600),
       safety: {
         level: safetyLevel,
@@ -573,6 +579,8 @@ function buildFallbackReply({ message, state, reason }) {
     meta: {
       source: "llm-fallback",
       fallbackReason: reason,
+      contractVersion: COACH_CONTRACT_VERSION,
+      expectedContractVersion: COACH_CONTRACT_VERSION,
       summary: "LLM coach service was unavailable, so the local coach engine generated this response.",
       safety: null,
     },

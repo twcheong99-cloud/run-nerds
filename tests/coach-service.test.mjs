@@ -69,6 +69,7 @@ function makeSession(id, patch = {}) {
   assert.equal(response.pendingPlan.profile.availableDays, undefined);
   assert.equal(response.pendingPlan.checkin.temporaryAvailableDays, undefined);
   assert.equal(response.pendingPlan.checkin.temporaryPreferredDays, undefined);
+  assert.equal(response.meta.fallbackReason, "coach-contract-unverified");
 }
 
 {
@@ -86,6 +87,7 @@ function makeSession(id, patch = {}) {
         }),
       ],
     },
+    meta: { contractVersion: "coach-contract-v3" },
   }, {
     stage: "clarifying",
     reply: "fallback",
@@ -94,6 +96,7 @@ function makeSession(id, patch = {}) {
   }, "목요일 훈련을 회복 조깅으로 바꿔줘");
 
   assert.equal(response.stage, "proposal");
+  assert.equal(response.meta.fallbackReason, "none");
   assert.equal(response.pendingPlan.weeklyPlan.length, 7);
   assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "thu").title, "회복 조깅 4km");
   assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "tue").title, currentPlan.find((session) => session.id === "tue").title);
@@ -123,6 +126,7 @@ function makeSession(id, patch = {}) {
     stage: "clarifying",
     reply: "목요일을 회복 조깅으로 바꾸기 전에 통증이 있는지 먼저 알려줘.",
     pendingPlan: null,
+    meta: { contractVersion: "coach-contract-v3" },
   }, {
     stage: "clarifying",
     reply: "fallback",
