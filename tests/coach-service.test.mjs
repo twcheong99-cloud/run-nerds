@@ -98,6 +98,48 @@ function makeSession(id, patch = {}) {
 
 {
   const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "proposal",
+    reply: "훈련표에 반영했어.",
+    pendingPlan: null,
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+    profile: defaultProfile,
+    checkin: defaultCheckin,
+  }, "목요일 훈련을 회복 조깅으로 바꿔줘");
+
+  assert.equal(response.stage, "clarifying");
+  assert.equal(response.pendingPlan, null);
+  assert.equal(response.meta.fallbackReason, "missing-structured-change");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "proposal",
+    reply: "그대로 반영했어.",
+    pendingPlan: {
+      concern: "general",
+      profile: { weeklyMileage: defaultProfile.weeklyMileage },
+      weeklyPlan: currentPlan,
+    },
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+    profile: defaultProfile,
+    checkin: defaultCheckin,
+  }, "주간 거리를 지금 상태로 반영해줘");
+
+  assert.equal(response.stage, "clarifying");
+  assert.equal(response.pendingPlan, null);
+  assert.equal(response.meta.fallbackReason, "no-effective-change");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
     stage: "idle",
     reply: "목표와 주간 거리를 앱 프로필에 반영했어.",
     profile: {

@@ -169,6 +169,62 @@ function trimText(value, maxLength = 180) {
   return String(value ?? "").trim().slice(0, maxLength);
 }
 
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function normalizedValue(value) {
+  return stableStringify(value ?? null);
+}
+
+function patchHasChanges(patch, current = {}) {
+  return Object.entries(patch || {}).some(([key, value]) => normalizedValue(value) !== normalizedValue(current?.[key]));
+}
+
+function sessionChanged(nextSession, currentSession = {}) {
+  const keys = ["type", "title", "subtitle", "purpose", "success", "failure", "next", "intensity", "duration", "distance", "blocks"];
+  return keys.some((key) => normalizedValue(nextSession?.[key]) !== normalizedValue(currentSession?.[key]));
+}
+
+function planHasChanges(nextPlan, currentPlan = []) {
+  if (!Array.isArray(nextPlan) || !nextPlan.length) return false;
+  const currentByDay = new Map((currentPlan || []).map((session) => [session.id, session]));
+  return nextPlan.some((session) => sessionChanged(session, currentByDay.get(session.id)));
+}
+
+function pendingPlanHasChanges(pendingPlan, fallback = {}) {
+  if (!pendingPlan) return false;
+  return patchHasChanges(pendingPlan.profile, fallback.profile)
+    || patchHasChanges(pendingPlan.checkin, fallback.checkin)
+    || planHasChanges(pendingPlan.weeklyPlan, fallback.currentPlan);
+}
+
+function messageRequestsAppChange(message) {
+  return hasApplyIntent(message) || /(계획표|앱|프로필|목표|요일|훈련|러닝|롱런|이지|템포|인터벌|회복|휴식).*(고쳐|바꿔|수정|변경|반영|조정|업데이트)|고쳐줘|바꿔줘|수정해줘|반영해줘|조정해줘/i.test(String(message || ""));
+}
+
+function replyClaimsChange(reply) {
+  return /(고쳤|바꿨|수정했|변경했|반영했|조정했|업데이트했|다시 짰|줄였|늘렸|moved|changed|updated|applied)/i.test(String(reply || ""));
+}
+
+function buildUnappliedChangeResponse(reply, fallback, reason = "missing-structured-change") {
+  return {
+    stage: "clarifying",
+    pendingPlan: null,
+    reply: "수정했다고 말하기 전에 앱에 적용할 변경안을 확인해야 하는데, 방금 응답에는 실제로 저장할 구조화된 변경이 없었어. 어떤 항목을 어떻게 바꿀지 다시 잡아서 계획표/프로필에 반영 가능한 형태로 만들게.",
+    meta: {
+      source: "llm-coach",
+      fallbackReason: reason,
+      summary: `Rejected coach reply without applicable app changes: ${String(reply || fallback?.reply || "").slice(0, 220)}`,
+      safety: null,
+    },
+  };
+}
+
 function normalizeBlocks(value) {
   if (!Array.isArray(value)) return [];
   return value
@@ -443,6 +499,19 @@ function buildCoachRequest({ message, state }) {
   };
 }
 
+function buildRepairCoachRequest({ message, state, previousReply }) {
+  return buildCoachRequest({
+    message: [
+      "STRUCTURED APP UPDATE REQUIRED.",
+      "The previous coach reply claimed a change, but the app could not apply it because it had no effective pendingPlan/profile/checkin/weeklyPlan changes.",
+      "Return JSON only. If the user's request changes the app, include pendingPlan with concrete profile/checkin fields and/or changed weeklyPlan sessions. Do not say you changed the app unless pendingPlan contains effective changes.",
+      `Original user message: ${message}`,
+      `Previous unusable reply: ${previousReply || ""}`,
+    ].join("\n"),
+    state,
+  });
+}
+
 function normalizeCoachResponse(response, fallback, message) {
   const raw = response && typeof response === "object" ? response : {};
   const requestedApply = hasApplyIntent(message);
@@ -472,6 +541,11 @@ function normalizeCoachResponse(response, fallback, message) {
   const preferenceAwarePlan = mergeExplicitTrainingPreference(pendingPlan, message);
   const raceAwarePlan = mergeExplicitRaceEvent(preferenceAwarePlan, message, fallback);
   const safetyLevel = ALLOWED_SAFETY_LEVELS.has(raw.safety?.level) ? raw.safety.level : "green";
+  const hasChanges = pendingPlanHasChanges(raceAwarePlan, fallback);
+
+  if (!hasChanges && (messageRequestsAppChange(message) || replyClaimsChange(reply))) {
+    return buildUnappliedChangeResponse(reply, fallback, raceAwarePlan ? "no-effective-change" : "missing-structured-change");
+  }
 
   return {
     stage: raceAwarePlan ? "proposal" : stage,
@@ -520,6 +594,8 @@ export async function requestCoachReply({ supabase, authSession, message, state 
   const localFallback = {
     ...buildCoachReply({ message, state }),
     currentPlan: state.plan,
+    profile: state.profile,
+    checkin: state.checkin,
   };
 
   try {
@@ -532,7 +608,21 @@ export async function requestCoachReply({ supabase, authSession, message, state 
       COACH_TIMEOUT_MS
     );
     if (error) throw error;
-    return normalizeCoachResponse(data, localFallback, message);
+    const normalized = normalizeCoachResponse(data, localFallback, message);
+    if (normalized.meta?.fallbackReason === "missing-structured-change" || normalized.meta?.fallbackReason === "no-effective-change") {
+      const { data: repairedData, error: repairError } = await withTimeout(
+        supabase.functions.invoke(COACH_FUNCTION_NAME, {
+          body: buildRepairCoachRequest({ message, state, previousReply: data?.reply || data?.message || "" }),
+          headers: authSession?.access_token ? { Authorization: `Bearer ${authSession.access_token}` } : {},
+        }),
+        COACH_TIMEOUT_MS
+      );
+      if (!repairError) {
+        const repaired = normalizeCoachResponse(repairedData, localFallback, message);
+        if (repaired.pendingPlan) return repaired;
+      }
+    }
+    return normalized;
   } catch (error) {
     const reason = await describeCoachError(error);
     console.warn("Coach service fallback", reason, error);

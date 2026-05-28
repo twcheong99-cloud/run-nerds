@@ -342,7 +342,24 @@ function isExplicitApplyRequest(message) {
   return /반영|적용|바꿔|변경|수정|업데이트|조정해|줄여|늘려|다시 짜|다시짜|replan|apply|update|change/i.test(String(message || ""));
 }
 
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function getCoachAppliedStateSnapshot() {
+  return stableStringify({
+    profile: state.profile,
+    checkin: state.checkin,
+    plan: state.plan,
+  });
+}
+
 function applyPendingCoachPlan(pendingPlan) {
+  const beforeSnapshot = getCoachAppliedStateSnapshot();
   state.profile = { ...state.profile, ...(pendingPlan.profile || {}) };
   state.checkin = { ...state.checkin, ...(pendingPlan.checkin || {}) };
   if (pendingPlan.checkin && Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays") && pendingPlan.checkin.temporaryAvailableDays === null) {
@@ -376,6 +393,7 @@ function applyPendingCoachPlan(pendingPlan) {
     fallbackReason: pendingPlan.source === "llm-fallback" ? "used-local-coach-engine" : "none",
     coach: pendingPlan.meta || state.planMeta?.coach || null,
   };
+  return getCoachAppliedStateSnapshot() !== beforeSnapshot;
 }
 
 function buildPlanStats(plan) {
@@ -475,16 +493,20 @@ function sendCoachMessage(message) {
       const result = await requestCoachReply({ supabase, authSession, message, state });
       mergeCoachMeta(result.meta);
       const shouldApplyImmediately = isExplicitApplyRequest(message) && result.stage === "proposal" && result.pendingPlan;
-      if (shouldApplyImmediately) applyPendingCoachPlan(result.pendingPlan);
+      const appliedImmediately = shouldApplyImmediately ? applyPendingCoachPlan(result.pendingPlan) : false;
       state.coachChat = {
         ...state.coachChat,
-        stage: shouldApplyImmediately ? "idle" : result.stage,
-        pendingPlan: shouldApplyImmediately ? null : result.pendingPlan,
+        stage: appliedImmediately ? "idle" : result.stage,
+        pendingPlan: appliedImmediately ? null : result.pendingPlan,
         messages: [
           ...state.coachChat.messages,
           {
             role: "coach",
-            text: shouldApplyImmediately ? `${result.reply} 요청대로 앱의 이번 주 훈련표에도 바로 반영했어.` : result.reply,
+            text: appliedImmediately
+              ? `${result.reply} 요청대로 앱의 이번 주 훈련표에도 바로 반영했어.`
+              : shouldApplyImmediately
+                ? `${result.reply} 다만 앱 상태를 확인해보니 실제로 바뀐 항목이 없어서 자동 반영은 하지 않았어. 바꿀 요일이나 프로필 항목을 더 구체적으로 말해줘.`
+                : result.reply,
             source: result.meta?.source || "local-coach-engine",
             sourceDetail: result.meta?.fallbackReason || "",
           },
@@ -501,14 +523,19 @@ function applyCoachPlan() {
   if (!pendingPlan) return;
   runSystemPulse(["reconciling plan...", "applying adjustments...", "syncing coach state..."], "조정이 반영됐어요", {
     onBeforeDone: () => {
-      applyPendingCoachPlan(pendingPlan);
+      const applied = applyPendingCoachPlan(pendingPlan);
       state.coachChat = {
         ...state.coachChat,
         stage: "idle",
         pendingPlan: null,
         messages: [
           ...(state.coachChat?.messages || []),
-          { role: "coach", text: "좋아, 방금 대화 기준으로 이번 주 캘린더를 다시 짰어. 오늘은 계획을 이기는 날이 아니라 몸과 약속을 다시 맞추는 날이야." },
+          {
+            role: "coach",
+            text: applied
+              ? "좋아, 방금 대화 기준으로 이번 주 캘린더를 다시 짰어. 오늘은 계획을 이기는 날이 아니라 몸과 약속을 다시 맞추는 날이야."
+              : "확인해보니 앱에서 실제로 바뀐 항목이 없었어. 이미 같은 상태이거나 완료된 기록을 보호해서 변경하지 않았어.",
+          },
         ],
       };
       syncUI();
