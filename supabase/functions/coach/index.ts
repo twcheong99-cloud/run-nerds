@@ -159,10 +159,12 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function detectConcern(message: string): CoachConcern {
-  if (/통증|아파|아픔|무릎|발목|종아리|햄스트링|허리|pain/i.test(message)) return "pain";
-  if (/피곤|피로|무거|잠|수면|회복|지침|힘들/i.test(message)) return "fatigue";
-  if (/일정|바빠|야근|출장|회식|시간|못.*뛰|못뛰|급한/i.test(message)) return "schedule";
-  if (/대회|기록|페이스|목표/i.test(message)) return "race";
+  const text = String(message || "").trim().toLowerCase();
+  if (text === "pain" || text === "fatigue" || text === "schedule" || text === "race" || text === "general") return text;
+  if (/통증|아파|아픔|무릎|발목|종아리|햄스트링|허리|pain/i.test(text)) return "pain";
+  if (/피곤|피로|무거|잠|수면|회복|지침|힘들/i.test(text)) return "fatigue";
+  if (/일정|바빠|야근|출장|회식|시간|못.*뛰|못뛰|급한/i.test(text)) return "schedule";
+  if (/대회|기록|페이스|목표/i.test(text)) return "race";
   return "general";
 }
 

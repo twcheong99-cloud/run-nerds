@@ -43,6 +43,7 @@ function makeSession(id, patch = {}) {
   const edgeSource = readFileSync(new URL("../supabase/functions/coach/index.ts", import.meta.url), "utf8");
   assert.match(edgeSource, /hasPendingPatch/);
   assert.match(edgeSource, /hasTopLevelPatch \|\| hasPendingPatch \? "proposal"/);
+  assert.match(edgeSource, /text === "pain" \|\| text === "fatigue" \|\| text === "schedule"/);
 }
 
 {
