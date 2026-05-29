@@ -46,7 +46,11 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
   "www/safety.html",
   "www/support.html",
   "www/manifest.webmanifest",
+  "MOBILE_BUILD.md",
+  "STORE_SUBMISSION.md",
+  "STORE_LISTING.md",
   "android/app/src/main/AndroidManifest.xml",
+  "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "ios/App/App/Info.plist",
 ].forEach(assertFile);
 
@@ -63,6 +67,10 @@ assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:usesCleartex
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:screenOrientation="portrait"', "portrait Android orientation");
 assertIncludes("android/app/build.gradle", 'applicationId "com.runnerds.app"', "Android application id");
 assertIncludes("android/app/build.gradle", 'versionName "1.0"', "Android version name");
+assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "setNavigationBarColor", "Android navigation bar color handling");
+assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "setStatusBarColor", "Android status bar color handling");
+assertIncludes("styles.css", "env(safe-area-inset-bottom", "CSS bottom safe-area handling");
+assertIncludes("index.html", "viewport-fit=cover", "viewport safe-area handling");
 
 assertIncludes("ios/App/App/Info.plist", "<key>ITSAppUsesNonExemptEncryption</key>", "iOS encryption declaration");
 assertIncludes("ios/App/App/Info.plist", "<false/>", "iOS no non-exempt encryption value");
@@ -83,6 +91,19 @@ assert(!/OPENAI_API_KEY|service role|SERVICE_ROLE|DATABASE_URL/i.test(executable
 const supportPage = read("support.html");
 assert(supportPage.includes("https://github.com/twcheong99-cloud/run-nerds/issues"), "support.html must include the configured support URL");
 warn(supportPage.includes("GitHub Issues"), "support.html should name the support channel");
+
+const storeListing = read("STORE_LISTING.md");
+assert(storeListing.includes("## Short Description"), "STORE_LISTING.md must include short description copy");
+assert(storeListing.includes("## Full Description"), "STORE_LISTING.md must include full description copy");
+assert(storeListing.includes("## Screenshot Plan"), "STORE_LISTING.md must include a screenshot plan");
+assert(storeListing.includes("## Review Notes Draft"), "STORE_LISTING.md must include review notes");
+assert(storeListing.includes("run-nerds is not a medical app"), "STORE_LISTING.md must include medical disclaimer copy");
+warn(!storeListing.includes("production URL"), "STORE_LISTING.md still has production URL placeholders");
+warn(!storeListing.includes("- Email:\n- Password:"), "STORE_LISTING.md still needs demo credentials");
+
+const storeSubmission = read("STORE_SUBMISSION.md");
+assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must include the data safety draft");
+assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
 
 if (warnings.length) {
   console.log("\nWarnings:");
