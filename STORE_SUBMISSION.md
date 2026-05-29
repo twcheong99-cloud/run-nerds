@@ -55,6 +55,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Run `npm run release:check` before cutting a review build.
 - Follow `RELEASE_RUNBOOK.md` for signed Android/iOS build and device-test steps.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
+- Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
 - Demo account credentials, if reviewers need login.
 - Production privacy policy URL.
 - Production support URL or support email. Current candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.

@@ -49,6 +49,7 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
   "MOBILE_BUILD.md",
   "STORE_SUBMISSION.md",
   "STORE_LISTING.md",
+  "STORE_SCREENSHOTS.md",
   "RELEASE_RUNBOOK.md",
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
@@ -97,10 +98,19 @@ const storeListing = read("STORE_LISTING.md");
 assert(storeListing.includes("## Short Description"), "STORE_LISTING.md must include short description copy");
 assert(storeListing.includes("## Full Description"), "STORE_LISTING.md must include full description copy");
 assert(storeListing.includes("## Screenshot Plan"), "STORE_LISTING.md must include a screenshot plan");
+assert(storeListing.includes("STORE_SCREENSHOTS.md"), "STORE_LISTING.md must reference the screenshot checklist");
 assert(storeListing.includes("## Review Notes Draft"), "STORE_LISTING.md must include review notes");
 assert(storeListing.includes("run-nerds is not a medical app"), "STORE_LISTING.md must include medical disclaimer copy");
 warn(!storeListing.includes("production URL"), "STORE_LISTING.md still has production URL placeholders");
 warn(!storeListing.includes("- Email:\n- Password:"), "STORE_LISTING.md still needs demo credentials");
+
+const storeScreenshots = read("STORE_SCREENSHOTS.md");
+assert(storeScreenshots.includes("## Required shots"), "STORE_SCREENSHOTS.md must list required screenshots");
+assert(storeScreenshots.includes("Workout log completion form"), "STORE_SCREENSHOTS.md must include the workout log screenshot");
+assert(storeScreenshots.includes("activity log modal"), "STORE_SCREENSHOTS.md must include activity log modal state");
+assert(storeScreenshots.includes("## Visual QA"), "STORE_SCREENSHOTS.md must include visual QA checks");
+assert(storeScreenshots.includes("android-01-onboarding.png"), "STORE_SCREENSHOTS.md must define stable Android file names");
+assert(storeScreenshots.includes("ios-01-onboarding.png"), "STORE_SCREENSHOTS.md must define stable iOS file names");
 
 const storeSubmission = read("STORE_SUBMISSION.md");
 assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must include the data safety draft");

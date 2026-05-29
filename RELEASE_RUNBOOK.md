@@ -18,7 +18,7 @@ npm run release:check
    - Production privacy policy URL
    - Production support URL or support email
    - Demo reviewer account credentials
-   - Store screenshots from signed device builds
+   - Store screenshots from signed device builds using `STORE_SCREENSHOTS.md`
 
 ## Android review build
 
@@ -48,7 +48,7 @@ Steps:
    - Coach conversation and fallback response
    - Post-goal recovery and next-goal selection
    - Privacy, safety, and support links
-9. Capture Play Store screenshots from the tested build.
+9. Capture Play Store screenshots from the tested build using `STORE_SCREENSHOTS.md`.
 10. Upload the `.aab` to an internal testing track first.
 
 Stop before review if:
@@ -88,7 +88,7 @@ Steps:
    - Privacy, safety, and support links
 8. Archive in Xcode and validate the archive.
 9. Upload to TestFlight first.
-10. Capture App Store screenshots from the tested build.
+10. Capture App Store screenshots from the tested build using `STORE_SCREENSHOTS.md`.
 
 Stop before review if:
 

@@ -80,6 +80,7 @@ running,marathon,half marathon,10K,training plan,running coach,AI coach,workout 
 ## Screenshot Plan
 
 Capture on a real device build after signing/tooling is ready.
+Use `STORE_SCREENSHOTS.md` for the exact demo account state, device checks, visual QA, and file naming.
 
 1. Onboarding: goal type selection
    Caption: `목표 대회와 현재 상태를 먼저 맞춥니다.`

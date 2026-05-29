@@ -91,6 +91,7 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 - Support page: `support.html`
 - Store submission checklist: `STORE_SUBMISSION.md`
 - Store listing draft: `STORE_LISTING.md`
+- Store screenshot checklist: `STORE_SCREENSHOTS.md`
 - Release runbook: `RELEASE_RUNBOOK.md`
 - The app uses Supabase Auth for account login.
 - Runner profile, goal, plan, activity log, onboarding, and coach chat workspace data are stored in Supabase.
