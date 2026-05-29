@@ -41,6 +41,7 @@ run("Capacitor doctor", "npx", ["cap", "doctor"]);
 run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
 
 [
+  "README.md",
   "www/index.html",
   "www/privacy.html",
   "www/safety.html",
@@ -89,6 +90,13 @@ const executableWebBundle = [
 ].map(read).join("\n");
 
 assert(!/OPENAI_API_KEY|service role|SERVICE_ROLE|DATABASE_URL/i.test(executableWebBundle), "executable web bundle must not include server secret names");
+
+const readme = read("README.md");
+assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Capacitor native app path");
+assert(readme.includes("npm run release:check"), "README.md must document the release check");
+assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
+assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
+assert(readme.includes("Production privacy/support URL"), "README.md must list production URL as a remaining blocker");
 
 const supportPage = read("support.html");
 assert(supportPage.includes("https://github.com/twcheong99-cloud/run-nerds/issues"), "support.html must include the configured support URL");

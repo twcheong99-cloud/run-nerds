@@ -1,6 +1,23 @@
 # run-nerds
 
-문서 기반으로 만든 로컬 프로토타입입니다. 가족 테스트용 배포는 PWA 정적 웹앱으로 진행합니다.
+목표 대회, 회복 상태, 주간 훈련 계획, 훈련 기록을 한 흐름으로 관리하는 모바일 러닝 코치 앱입니다. 소스는 정적 웹앱/PWA 구조이고, 스토어 제출용 앱 빌드는 Capacitor Android/iOS 네이티브 셸로 감쌉니다.
+
+## 현재 릴리즈 상태
+
+- Web/PWA: 정적 배포 가능
+- Native shell: Android/iOS Capacitor 프로젝트 체크인 완료
+- App ID / package: `com.runnerds.app`
+- Store readiness gate: `npm run release:check`
+- Legal/support pages: `privacy.html`, `safety.html`, `support.html`
+- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`
+
+남은 실제 제출 blocker:
+
+- Android Studio, Android SDK, Java Runtime/JDK가 있는 머신에서 Android 빌드 검증
+- Full Xcode와 Apple Developer signing으로 iOS archive/TestFlight 검증
+- Production privacy/support URL 확정
+- Reviewer demo account credentials 준비
+- Signed/internal-test device build에서 스토어 스크린샷 촬영
 
 ## 실행 전 설정
 
@@ -26,7 +43,7 @@ python3 -m http.server 4173
 
 ## 가족 테스트 배포
 
-이 앱은 PWA로 설정되어 있어 Netlify나 Vercel 같은 정적 호스팅에 그대로 배포할 수 있습니다.
+이 앱은 PWA로 설정되어 있어 Netlify나 Vercel 같은 정적 호스팅에 배포할 수 있습니다.
 
 포함된 PWA 파일:
 
@@ -36,6 +53,29 @@ python3 -m http.server 4173
 - `netlify.toml`: Netlify 정적 배포와 PWA 헤더 설정
 
 Netlify에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를 사이트로 연결하거나 드래그 앤 드롭 배포하면 됩니다. 배포 후 가족에게 배포 URL만 공유하고, 설치 방법은 `FAMILY_TESTING.md`를 안내하면 됩니다.
+
+## 모바일 앱 빌드
+
+웹 변경 후 네이티브 프로젝트에 반영하려면:
+
+```bash
+npm run mobile:sync
+```
+
+네이티브 프로젝트 열기:
+
+```bash
+npm run mobile:open:android
+npm run mobile:open:ios
+```
+
+릴리즈 후보를 만들기 전에는:
+
+```bash
+npm run release:check
+```
+
+이 체크는 웹 테스트, Capacitor sync, Capacitor doctor, iOS plist lint, 스토어 제출 문서, safe-area/native bar 설정, 비밀키 번들 누락 여부를 함께 확인합니다. 실제 signed build 순서는 `RELEASE_RUNBOOK.md`를 따르고, 스크린샷 준비는 `STORE_SCREENSHOTS.md`를 따릅니다.
 
 ## LLM 코치 연결 준비
 
@@ -56,13 +96,15 @@ supabase functions deploy coach --project-ref jnlexemtrjgwskzwybim
 
 ```bash
 npm test
+npm run release:check
 ```
 
-현재 테스트는 LLM 코치 응답 정규화, 요일/횟수 요구사항 병합, 임시 조정 해제 동작을 확인합니다.
+`npm test`는 LLM 코치 응답 정규화, 요일/횟수 요구사항 병합, 임시 조정 해제 동작을 확인합니다. `npm run release:check`는 스토어 제출 전 기본 게이트입니다.
 
 ## 보안 주의
 
 - `env.js`는 커밋하지 않습니다.
 - LLM API 키는 `env.js`에 넣지 않습니다.
+- `www/env.js`는 네이티브 앱 번들에 포함되면 안 됩니다.
 - 이미 공개 저장소에 publishable key를 올렸다면 새 키로 교체하는 것을 권장합니다.
 - Supabase SQL은 `supabase-setup.sql`을 SQL Editor에서 실행해 주세요.
