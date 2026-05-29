@@ -13,6 +13,7 @@ Use this runbook when preparing the first Play Store or App Store review build. 
 
 ```bash
 npm install
+npm run security:scan
 npm run native:doctor
 npm run release:check
 ```
@@ -73,6 +74,7 @@ Stop before review if:
 - Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - The app bundle includes local secrets or `env.js`.
+- `npm run security:scan` reports a committed secret.
 - Production privacy, account deletion, safety, or support URLs fail `PRODUCTION_URLS.md`.
 - Store Data safety answers differ from `STORE_SUBMISSION.md`.
 - Android permissions differ from `ANDROID_PERMISSIONS.md`.
@@ -118,6 +120,7 @@ Stop before review if:
 - The keyboard hides coach input, activity log fields, or submit actions.
 - Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
+- `npm run security:scan` reports a committed secret.
 - App Store privacy answers differ from `STORE_SUBMISSION.md`.
 - App Store age rating or health declarations differ from `STORE_RATING.md`.
 - `PrivacyInfo.xcprivacy` is missing from the archive or contradicts the App Store privacy answers.

@@ -57,6 +57,7 @@ function assertPngSize(relativePath, width, height = width) {
 }
 
 run("web tests", "npm", ["test"]);
+run("secret scan", "npm", ["run", "security:scan"]);
 run("Capacitor sync", "npm", ["run", "mobile:sync"]);
 run("Capacitor doctor", "npx", ["cap", "doctor"]);
 run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
@@ -98,6 +99,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "supabase-setup.sql",
   "scripts/check-production-urls.mjs",
   "scripts/native-release-doctor.mjs",
+  "scripts/secret-scan.mjs",
   "supabase/functions/coach/index.ts",
   "supabase/functions/delete-account/index.ts",
 ].forEach(assertFile);
@@ -233,6 +235,7 @@ const readme = read("README.md");
 assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Capacitor native app path");
 assert(readme.includes("STORE_CONSOLE.md"), "README.md must link the store console input package");
 assert(readme.includes("npm run release:check"), "README.md must document the release check");
+assert(readme.includes("npm run security:scan"), "README.md must document the secret scan");
 assert(readme.includes("npm run native:doctor"), "README.md must document the native release doctor");
 assert(readme.includes(".github/workflows/release-check.yml"), "README.md must document the release check workflow");
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
@@ -449,6 +452,11 @@ assert(nativeDoctor.includes("Java Runtime / JDK"), "native release doctor must 
 assert(nativeDoctor.includes("Android Gradle wrapper"), "native release doctor must check Gradle wrapper");
 assert(nativeDoctor.includes("Xcode selected"), "native release doctor must check Xcode selection");
 assert(nativeDoctor.includes("Supabase CLI"), "native release doctor must check Supabase CLI");
+
+const secretScan = read("scripts/secret-scan.mjs");
+assert(secretScan.includes("OpenAI secret key"), "secret scan must check OpenAI key pattern");
+assert(secretScan.includes("Supabase service role JWT"), "secret scan must check Supabase service role JWT pattern");
+assert(secretScan.includes("Private key block"), "secret scan must check private key blocks");
 
 const productionUrlScript = read("scripts/check-production-urls.mjs");
 assert(productionUrlScript.includes("PRODUCTION_ORIGIN"), "production URL script must require PRODUCTION_ORIGIN");

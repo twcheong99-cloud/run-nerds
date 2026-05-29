@@ -83,6 +83,7 @@ Stop if any of these are true:
 - Any production URL still contains `production URL` or `<production-origin>`.
 - Demo credentials appear in repository files.
 - Store privacy/data answers differ from `STORE_SUBMISSION.md`.
+- `npm run security:scan` reports a committed secret or reviewer credential.
 - Store content/age/health answers differ from `STORE_RATING.md`.
 - Screenshot or asset evidence is missing.
 - `RELEASE_EVIDENCE.md` still has blank required fields for the final submission.

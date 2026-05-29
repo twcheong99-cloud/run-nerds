@@ -112,10 +112,11 @@ supabase functions deploy coach --project-ref jnlexemtrjgwskzwybim
 
 ```bash
 npm test
+npm run security:scan
 npm run release:check
 ```
 
-`npm test`는 LLM 코치 응답 정규화, 요일/횟수 요구사항 병합, 임시 조정 해제 동작을 확인합니다. `npm run release:check`는 스토어 제출 전 기본 게이트입니다.
+`npm test`는 LLM 코치 응답 정규화, 요일/횟수 요구사항 병합, 임시 조정 해제 동작을 확인합니다. `npm run security:scan`은 커밋된 파일 안에 실제 secret/token/password 형태가 들어왔는지 확인합니다. `npm run release:check`는 스토어 제출 전 기본 게이트입니다.
 
 GitHub Actions의 `Release readiness` 워크플로도 `main` push와 pull request에서 같은 릴리즈 체크를 실행합니다. 최종 제출 전 CI 증거 정리는 `CI_RELEASE.md`와 `RELEASE_EVIDENCE.md`를 따릅니다.
 
