@@ -117,4 +117,4 @@ Before review, provide demo credentials only in the private store console review
 - Production support URL or final support email
 - Demo account credentials entered privately in the store console
 - Final app screenshots from signed Android/iOS builds
-- Final age rating and health/fitness declarations in each store console
+- Final age rating and health/fitness declarations in each store console, using `STORE_RATING.md`

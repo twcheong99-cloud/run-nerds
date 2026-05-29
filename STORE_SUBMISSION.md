@@ -17,6 +17,7 @@ Before submission, publish these pages on the production domain. Current support
 - Secondary fit: Sports / Productivity
 - Short description: Korean mobile running coach for goal races, recovery, weekly plans, and workout logs.
 - Medical positioning: Fitness coaching only. The app does not diagnose, treat, prescribe, or provide emergency medical guidance.
+- Age rating / health declaration baseline: use `STORE_RATING.md` before answering Play Console and App Store Connect questionnaires.
 
 ## Data Safety Draft
 
@@ -60,6 +61,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Follow `BACKEND_RELEASE.md` for Supabase Auth, RLS, and Edge Function release checks.
 - Follow `VERSIONING.md` for app identity and build number checks.
 - Follow `ANDROID_PERMISSIONS.md` for Android permission and Play Data safety alignment.
+- Follow `STORE_RATING.md` for content rating, age rating, and health/fitness declaration alignment.
 - Follow `RELEASE_BLOCKERS.md` for the remaining external evidence needed before submission.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
@@ -67,6 +69,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Production privacy policy URL.
 - Production support URL or support email. Current candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.
 - Confirmation that the app is not a medical device and does not provide diagnosis or treatment.
+- Confirmation that Play Console content rating and App Store Connect age rating / health declarations match `STORE_RATING.md`.
 - Explanation that pain and fatigue inputs are used to reduce training load and encourage professional evaluation when needed.
 - Confirmation that there is no advertising, tracking SDK, location collection, contacts access, or payment collection in the current app.
 - Confirmation that the Android manifest only requests `android.permission.INTERNET`.
@@ -86,4 +89,5 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Complete the Android and iOS stop-before-review checks in `RELEASE_RUNBOOK.md`.
 - Complete the Supabase/Auth/Edge Function stop-before-review checks in `BACKEND_RELEASE.md`.
 - Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
+- Complete the content rating, age rating, and health declaration checks in `STORE_RATING.md`.
 - Close every external blocker in `RELEASE_BLOCKERS.md`.

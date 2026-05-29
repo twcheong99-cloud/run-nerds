@@ -10,7 +10,7 @@
 - Store readiness gate: `npm run release:check`
 - CI gate: `.github/workflows/release-check.yml`
 - Legal/support pages: `privacy.html`, `safety.html`, `support.html`
-- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`, `RELEASE_BLOCKERS.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
+- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `STORE_RATING.md`, `RELEASE_RUNBOOK.md`, `RELEASE_BLOCKERS.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
 
 남은 실제 제출 blocker:
 
@@ -20,6 +20,7 @@
 - Production privacy/support URL 확정
 - Reviewer demo account credentials 준비
 - Signed/internal-test device build에서 스토어 스크린샷 촬영
+- Store age rating / health declarations 입력 및 증거 보관
 - Production Supabase Auth/RLS/Edge Function 최종 검증
 
 ## 실행 전 설정
@@ -78,7 +79,7 @@ npm run mobile:open:ios
 npm run release:check
 ```
 
-이 체크는 웹 테스트, Capacitor sync, Capacitor doctor, iOS plist lint, 스토어 제출 문서, safe-area/native bar 설정, 비밀키 번들 누락 여부를 함께 확인합니다. 실제 signed build 순서는 `RELEASE_RUNBOOK.md`를 따르고, 스크린샷 준비는 `STORE_SCREENSHOTS.md`를 따릅니다.
+이 체크는 웹 테스트, Capacitor sync, Capacitor doctor, iOS plist lint, 스토어 제출 문서, age rating/health declaration 기준, safe-area/native bar 설정, 비밀키 번들 누락 여부를 함께 확인합니다. 실제 signed build 순서는 `RELEASE_RUNBOOK.md`를 따르고, 스크린샷 준비는 `STORE_SCREENSHOTS.md`를 따릅니다.
 
 ## LLM 코치 연결 준비
 

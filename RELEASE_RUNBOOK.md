@@ -23,6 +23,7 @@ npm run release:check
    - Store screenshots from signed device builds using `STORE_SCREENSHOTS.md`
 8. Complete the backend release checks in `BACKEND_RELEASE.md`.
 9. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
+10. Complete the age rating, content rating, and health declaration checks in `STORE_RATING.md`.
 
 ## Android review build
 
@@ -66,6 +67,7 @@ Stop before review if:
 - The app bundle includes local secrets or `env.js`.
 - Store Data safety answers differ from `STORE_SUBMISSION.md`.
 - Android permissions differ from `ANDROID_PERMISSIONS.md`.
+- Play Console content rating or health declarations differ from `STORE_RATING.md`.
 
 ## iOS review build
 
@@ -107,6 +109,7 @@ Stop before review if:
 - Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - App Store privacy answers differ from `STORE_SUBMISSION.md`.
+- App Store age rating or health declarations differ from `STORE_RATING.md`.
 - `PrivacyInfo.xcprivacy` is missing from the archive or contradicts the App Store privacy answers.
 - Safety disclaimer or privacy policy pages are inaccessible in the app.
 
@@ -125,3 +128,4 @@ Review note essentials:
 - Pain and fatigue inputs are used to reduce training load and encourage safer decisions.
 - AI coach requests go through a Supabase Edge Function; server secrets are not bundled in the app.
 - The current app has no advertising SDK, tracking SDK, location tracking, contacts access, photos/videos access, or payments.
+- Age rating and health declarations should follow `STORE_RATING.md`.

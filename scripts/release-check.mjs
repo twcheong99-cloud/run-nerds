@@ -63,6 +63,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "STORE_SUBMISSION.md",
   "STORE_LISTING.md",
   "STORE_SCREENSHOTS.md",
+  "STORE_RATING.md",
   "RELEASE_RUNBOOK.md",
   "RELEASE_BLOCKERS.md",
   "android/app/src/main/AndroidManifest.xml",
@@ -173,6 +174,7 @@ assert(readme.includes(".github/workflows/release-check.yml"), "README.md must d
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
 assert(readme.includes("RELEASE_BLOCKERS.md"), "README.md must link the release blockers");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
+assert(readme.includes("STORE_RATING.md"), "README.md must link the store rating checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
 assert(readme.includes("VERSIONING.md"), "README.md must link the versioning checklist");
 assert(readme.includes("ANDROID_PERMISSIONS.md"), "README.md must link the Android permissions checklist");
@@ -191,6 +193,7 @@ assert(storeListing.includes("STORE_SCREENSHOTS.md"), "STORE_LISTING.md must ref
 assert(storeListing.includes("account-deletion.html"), "STORE_LISTING.md must include account deletion URL placeholder");
 assert(storeListing.includes("## Review Notes Draft"), "STORE_LISTING.md must include review notes");
 assert(storeListing.includes("run-nerds is not a medical app"), "STORE_LISTING.md must include medical disclaimer copy");
+assert(storeListing.includes("STORE_RATING.md"), "STORE_LISTING.md must reference rating/declaration checklist");
 assert(storeListing.includes("private store console review fields"), "STORE_LISTING.md must keep demo credentials in private store console fields");
 assert(!storeListing.includes("- Email:\n- Password:"), "STORE_LISTING.md must not include blank demo credential fields");
 assert(!/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(storeReviewNotesDraft), "STORE_LISTING.md review notes must not commit demo email credentials");
@@ -211,6 +214,7 @@ assert(storeSubmission.includes("Remaining blockers before real submission"), "S
 assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must reference backend release checks");
 assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must reference versioning checks");
 assert(storeSubmission.includes("ANDROID_PERMISSIONS.md"), "STORE_SUBMISSION.md must reference Android permission checks");
+assert(storeSubmission.includes("STORE_RATING.md"), "STORE_SUBMISSION.md must reference rating/declaration checks");
 assert(storeSubmission.includes("RELEASE_BLOCKERS.md"), "STORE_SUBMISSION.md must reference release blockers");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must reference account deletion function");
@@ -226,6 +230,7 @@ assert(releaseRunbook.includes("BACKEND_RELEASE.md"), "RELEASE_RUNBOOK.md must r
 assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must reference versioning checks");
 assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md must reference the iOS privacy manifest");
 assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md must reference Android permission checks");
+assert(releaseRunbook.includes("STORE_RATING.md"), "RELEASE_RUNBOOK.md must reference rating/declaration checks");
 assert(releaseRunbook.includes("RELEASE_BLOCKERS.md"), "RELEASE_RUNBOOK.md must reference release blockers");
 assert(releaseRunbook.includes("Account deletion"), "RELEASE_RUNBOOK.md must include account deletion device test");
 assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
@@ -263,6 +268,15 @@ assert(androidPermissionsDoc.includes("Permissions not used"), "ANDROID_PERMISSI
 assert(androidPermissionsDoc.includes("Advertising ID"), "ANDROID_PERMISSIONS.md must document no advertising ID");
 assert(androidPermissionsDoc.includes("Play Data safety alignment"), "ANDROID_PERMISSIONS.md must document Play Data safety alignment");
 
+const storeRating = read("STORE_RATING.md");
+assert(storeRating.includes("Content rating answer baseline"), "STORE_RATING.md must include content rating baseline");
+assert(storeRating.includes("Health and fitness declarations"), "STORE_RATING.md must include health declaration baseline");
+assert(storeRating.includes("not a medical device"), "STORE_RATING.md must document non-medical-device positioning");
+assert(storeRating.includes("does not diagnose, treat, monitor, cure, or prevent"), "STORE_RATING.md must document no diagnosis/treatment claims");
+assert(storeRating.includes("no advertising SDK"), "STORE_RATING.md must document no ads/tracking");
+assert(storeRating.includes("does not request location, camera, microphone, contacts, photo library, Bluetooth, or notification permissions"), "STORE_RATING.md must align with Android permissions");
+assert(storeRating.includes("Official references"), "STORE_RATING.md must include official reference context");
+
 const releaseBlockers = read("RELEASE_BLOCKERS.md");
 assert(releaseBlockers.includes("Production privacy and support URLs"), "RELEASE_BLOCKERS.md must track production URL blocker");
 assert(releaseBlockers.includes("Reviewer demo credentials"), "RELEASE_BLOCKERS.md must track reviewer credentials blocker");
@@ -270,6 +284,7 @@ assert(releaseBlockers.includes("Android signed build verification"), "RELEASE_B
 assert(releaseBlockers.includes("iOS signed build verification"), "RELEASE_BLOCKERS.md must track iOS signed build blocker");
 assert(releaseBlockers.includes("Production Supabase/Auth/Edge Function verification"), "RELEASE_BLOCKERS.md must track backend production verification blocker");
 assert(releaseBlockers.includes("Store screenshots from device builds"), "RELEASE_BLOCKERS.md must track device screenshot blocker");
+assert(releaseBlockers.includes("Store age rating and health declarations"), "RELEASE_BLOCKERS.md must track rating/declaration blocker");
 assert(releaseBlockers.includes("CI confirmation on main"), "RELEASE_BLOCKERS.md must track CI confirmation blocker");
 assert(releaseBlockers.includes("Do not mark the store-readiness goal complete"), "RELEASE_BLOCKERS.md must include completion rule");
 assert(releaseBlockers.includes("never contain the credentials themselves"), "RELEASE_BLOCKERS.md must keep reviewer credentials out of repo docs");
