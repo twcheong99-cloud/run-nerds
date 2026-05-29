@@ -272,6 +272,66 @@ button {
   text-align: center;
 }
 
+.legal-body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.legal-page {
+  width: min(760px, calc(100vw - 18px - var(--safe-left) - var(--safe-right)));
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: calc(24px + var(--safe-top)) 0 calc(24px + var(--safe-bottom));
+}
+
+.legal-card {
+  display: grid;
+  gap: 22px;
+  padding: clamp(20px, 5vw, 34px);
+}
+
+.legal-card h1,
+.legal-card h2,
+.legal-card p {
+  margin: 0;
+}
+
+.legal-card h1 {
+  color: var(--text);
+  font-size: clamp(1.75rem, 8vw, 3rem);
+  line-height: 1.05;
+}
+
+.legal-card h2 {
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-family: var(--pixel-font);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.legal-card p {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.legal-updated {
+  font-family: var(--pixel-font);
+  font-size: 0.5rem;
+}
+
+.legal-actions {
+  display: flex;
+}
+
+.legal-actions .ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .auth-stage {
   width: min(1040px, 100%);
   display: grid;
@@ -834,6 +894,23 @@ textarea:focus {
   border-color: rgba(255, 159, 159, 0.24);
   background: rgba(255, 159, 159, 0.08);
   color: var(--danger);
+}
+
+.legal-link-row {
+  margin: 14px 0 0;
+  text-align: center;
+}
+
+.legal-link-row a,
+.profile-legal-link {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.legal-link-row a:hover,
+.profile-legal-link:hover {
+  color: var(--accent);
 }
 
 .hero {
@@ -1791,6 +1868,12 @@ textarea:focus {
 .profile-logout {
   width: 100%;
   margin-top: 12px;
+}
+
+.profile-legal-link {
+  display: block;
+  margin-top: 14px;
+  text-align: center;
 }
 
 .coach-chat {

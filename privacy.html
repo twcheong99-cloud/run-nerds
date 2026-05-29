@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="run-nerds 개인정보 처리 안내" />
+    <meta name="theme-color" content="#06100a" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>run-nerds 개인정보 처리 안내</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="legal-body">
+    <main class="legal-page">
+      <section class="legal-card panel">
+        <p class="section-kicker">RUN-NERDS PRIVACY</p>
+        <h1>개인정보 처리 안내</h1>
+        <p class="legal-updated">시행일: 2026년 5월 29일</p>
+
+        <section>
+          <h2>수집하는 정보</h2>
+          <p>run-nerds는 계정 생성과 훈련 코칭을 위해 이메일, 러너 이름, 목표 대회와 목표 기록, 훈련 가능 요일, 최근 컨디션, 통증 상태, 수면/피로 상태, 훈련 기록, 코치 대화 내용을 저장할 수 있습니다.</p>
+        </section>
+
+        <section>
+          <h2>사용 목적</h2>
+          <p>수집한 정보는 로그인, 사용자별 워크스페이스 동기화, 주간 훈련 계획 생성, 훈련 완료 기록, 회복/부상 위험을 고려한 코치 응답 제공, 앱 품질 개선을 위해 사용합니다.</p>
+        </section>
+
+        <section>
+          <h2>저장 및 처리 위치</h2>
+          <p>계정과 앱 데이터는 Supabase Auth 및 Supabase 데이터베이스에 저장됩니다. AI 코치 기능을 사용할 때는 프로필, 체크인, 주간 계획, 훈련 기록, 최근 코치 대화가 Supabase Edge Function을 통해 OpenAI API로 전달될 수 있습니다.</p>
+        </section>
+
+        <section>
+          <h2>저장하지 않는 정보</h2>
+          <p>OpenAI API key, Supabase service role key, 데이터베이스 접속 URL 같은 서버 비밀키는 브라우저 앱이나 모바일 앱 번들에 포함하지 않습니다. 결제 정보, 위치 추적, 연락처, 사진, 건강 플랫폼 원본 데이터는 현재 앱에서 직접 수집하지 않습니다.</p>
+        </section>
+
+        <section>
+          <h2>보관 및 삭제</h2>
+          <p>사용자 데이터는 계정과 워크스페이스를 제공하는 동안 보관됩니다. 계정 삭제나 데이터 삭제가 필요한 경우 앱 운영자에게 요청하면 Supabase에 저장된 프로필과 워크스페이스 데이터를 삭제할 수 있습니다.</p>
+        </section>
+
+        <section>
+          <h2>주의 사항</h2>
+          <p>run-nerds는 러닝 훈련을 돕는 코칭 앱이며 의료 진단을 제공하지 않습니다. 통증, 부상, 질환이 있거나 위험 신호가 있을 때는 훈련을 줄이고 전문가의 진료를 받아야 합니다.</p>
+        </section>
+
+        <section>
+          <h2>문의</h2>
+          <p>스토어 제출 전 이 영역에는 실제 지원 이메일 또는 문의 URL을 연결해야 합니다.</p>
+        </section>
+
+        <div class="legal-actions">
+          <a class="ghost-btn" href="./index.html">앱으로 돌아가기</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
