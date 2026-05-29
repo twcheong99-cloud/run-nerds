@@ -1,6 +1,10 @@
 {
   "type": "module",
   "scripts": {
-    "test": "node tests/coach-service.test.mjs"
+    "test": "node tests/coach-service.test.mjs",
+    "mobile:prepare": "node scripts/prepare-capacitor-web.mjs",
+    "mobile:sync": "npm run mobile:prepare && npx cap sync",
+    "mobile:open:android": "npm run mobile:prepare && npx cap open android",
+    "mobile:open:ios": "npm run mobile:prepare && npx cap open ios"
   }
 }
