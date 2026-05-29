@@ -69,7 +69,7 @@ The Capacitor projects can be generated and synced in this repository, but nativ
 
 - Android: Android Studio, Android SDK, and a working Java Runtime / JDK.
 - iOS: full Xcode selected with `xcode-select`, not only Command Line Tools.
-- Store release: Android signing key, Apple Developer team, bundle signing, and production support/privacy URLs.
+- Store release: Android signing key, Apple Developer team, bundle signing, and production privacy URL.
 
 ## Current app identity
 
@@ -91,4 +91,4 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 - The app uses Supabase Auth for account login.
 - Runner profile, goal, plan, activity log, onboarding, and coach chat workspace data are stored in Supabase.
 - AI coach requests may send the current profile, check-in, plan, activity logs, and recent coach conversation to the Supabase Edge Function and OpenAI API.
-- Before store submission, replace the support contact placeholder with the real support email or support URL used in the App Store / Play Store listing.
+- Current support URL candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`

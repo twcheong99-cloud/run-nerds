@@ -81,7 +81,8 @@ const executableWebBundle = [
 assert(!/OPENAI_API_KEY|service role|SERVICE_ROLE|DATABASE_URL/i.test(executableWebBundle), "executable web bundle must not include server secret names");
 
 const supportPage = read("support.html");
-warn(!supportPage.includes("스토어 제출 전"), "support.html still has a placeholder support-contact note");
+assert(supportPage.includes("https://github.com/twcheong99-cloud/run-nerds/issues"), "support.html must include the configured support URL");
+warn(supportPage.includes("GitHub Issues"), "support.html should name the support channel");
 
 if (warnings.length) {
   console.log("\nWarnings:");

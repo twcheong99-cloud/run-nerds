@@ -8,7 +8,7 @@ This file is a working checklist for Play Store / App Store submission. It shoul
 - Safety / medical disclaimer: `safety.html`
 - Support page: `support.html`
 
-Before submission, publish these pages on the production domain and replace placeholders with the real support email or support URL.
+Before submission, publish these pages on the production domain. Current support URL candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.
 
 ## App category and positioning
 
@@ -55,14 +55,13 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Run `npm run release:check` before cutting a review build.
 - Demo account credentials, if reviewers need login.
 - Production privacy policy URL.
-- Production support URL or support email.
+- Production support URL or support email. Current candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.
 - Confirmation that the app is not a medical device and does not provide diagnosis or treatment.
 - Explanation that pain and fatigue inputs are used to reduce training load and encourage professional evaluation when needed.
 - Confirmation that there is no advertising, tracking SDK, location collection, contacts access, or payment collection in the current app.
 
 ## Remaining blockers before real submission
 
-- Replace all support placeholders with a real support contact.
 - Generate native Android/iOS projects and verify app signing.
 - Install native build tooling on the release machine: Android Studio/JDK for Android and full Xcode for iOS.
 - Confirm final bundle ID / package name: `com.runnerds.app`.
