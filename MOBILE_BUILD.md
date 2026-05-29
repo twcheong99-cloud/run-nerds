@@ -22,6 +22,8 @@ Native security defaults:
 Native visual defaults:
 
 - The Android status bar and navigation bar use the same dark runnerds colors as the web shell.
+- Android launch and post-launch themes keep the same dark status/navigation bar colors to avoid a bright flash around startup.
+- iOS is fixed to dark appearance and the launch storyboard background matches the splash background.
 - On phone-width viewports, the web frame expands to the device edges so the app does not look like a browser page inside a native shell.
 - The bottom tab bar includes safe-area padding so Galaxy gesture navigation and 3-button navigation do not crowd or cover tappable controls.
 

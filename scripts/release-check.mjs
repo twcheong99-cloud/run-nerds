@@ -69,6 +69,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "android/app/src/main/res/values/colors.xml",
   "ios/App/App/Info.plist",
+  "ios/App/App/Base.lproj/LaunchScreen.storyboard",
   "ios/App/App/PrivacyInfo.xcprivacy",
   "supabase-setup.sql",
   "supabase/functions/coach/index.ts",
@@ -83,6 +84,7 @@ const androidBuild = read("android/app/build.gradle");
 const androidManifest = read("android/app/src/main/AndroidManifest.xml");
 const iosProject = read("ios/App/App.xcodeproj/project.pbxproj");
 const iosPrivacyManifest = read("ios/App/App/PrivacyInfo.xcprivacy");
+const iosLaunchScreen = read("ios/App/App/Base.lproj/LaunchScreen.storyboard");
 const versioning = read("VERSIONING.md");
 const expectedAppId = matchValue(versioning, /Android application ID: `([^`]+)`/, "VERSIONING.md Android application ID");
 const expectedMarketingVersion = matchValue(versioning, /Marketing version: `([^`]+)`/, "VERSIONING.md marketing version");
@@ -117,13 +119,21 @@ assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "
 assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "setStatusBarColor", "Android status bar color handling");
 assertIncludes("android/app/src/main/res/values/colors.xml", "runnerds_navigation_bar", "Android navigation bar color resource");
 assertIncludes("android/app/src/main/res/values/styles.xml", "android:windowLightNavigationBar", "Android dark navigation icon theme");
+assertIncludes("android/app/src/main/res/values/styles.xml", "AppTheme.NoActionBarLaunch", "Android launch theme");
+assertIncludes("android/app/src/main/res/values/styles.xml", "android:navigationBarColor", "Android launch navigation bar color");
 assertIncludes("styles.css", "env(safe-area-inset-bottom", "CSS bottom safe-area handling");
 assertIncludes("styles.css", "--bottom-tabs-safe-padding", "bottom tabs safe-area padding");
 assertIncludes("styles.css", "@media (max-width: 520px)", "native phone viewport shell handling");
 assertIncludes("index.html", "viewport-fit=cover", "viewport safe-area handling");
+assertIncludes("index.html", '<meta name="theme-color" content="#06100a" />', "web theme color");
+assert(manifest.background_color === "#050806", "manifest background color must match splash background");
+assert(manifest.theme_color === "#06100a", "manifest theme color must match status bar color");
 
 assertIncludes("ios/App/App/Info.plist", "<key>ITSAppUsesNonExemptEncryption</key>", "iOS encryption declaration");
 assertIncludes("ios/App/App/Info.plist", "<false/>", "iOS no non-exempt encryption value");
+assertIncludes("ios/App/App/Info.plist", "<key>UIUserInterfaceStyle</key>", "iOS fixed dark appearance");
+assertIncludes("ios/App/App/Info.plist", "<string>Dark</string>", "iOS dark appearance value");
+assert(iosLaunchScreen.includes('red="0.019607843137254902"') && iosLaunchScreen.includes('blue="0.023529411764705882"'), "iOS launch screen background must match splash dark color");
 assertIncludes("ios/App/App.xcodeproj/project.pbxproj", "PrivacyInfo.xcprivacy in Resources", "iOS privacy manifest target resource");
 assertIncludes("ios/App/App/PrivacyInfo.xcprivacy", "NSPrivacyTracking", "iOS privacy tracking declaration");
 assertIncludes("ios/App/App/PrivacyInfo.xcprivacy", "<false/>", "iOS no tracking declaration");
