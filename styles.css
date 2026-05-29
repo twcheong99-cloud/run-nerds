@@ -60,6 +60,14 @@
   --pixel-font: "Press Start 2P", "VT323", "IBM Plex Mono", "Menlo", monospace;
   --display-font: "VT323", "Press Start 2P", monospace;
   --body-font: "IBM Plex Sans KR", "Pretendard", "Noto Sans KR", sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --app-outer-gap: 10px;
+  --bottom-tabs-base-height: 84px;
+  --bottom-tabs-safe-offset: max(6px, var(--safe-bottom));
+  --dashboard-bottom-space: calc(var(--bottom-tabs-base-height) + var(--bottom-tabs-safe-offset) + 16px);
 }
 
 * {
@@ -73,6 +81,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--text);
   font-family: var(--body-font);
   background:
@@ -126,10 +135,10 @@ button {
 }
 
 .app-shell {
-  width: min(430px, calc(100vw - 18px));
-  height: calc(100dvh - 20px);
+  width: min(430px, calc(100vw - 18px - var(--safe-left) - var(--safe-right)));
+  height: calc(100dvh - (var(--app-outer-gap) * 2) - var(--safe-top) - var(--safe-bottom));
   min-height: 0;
-  margin: 10px auto;
+  margin: calc(var(--app-outer-gap) + var(--safe-top)) auto calc(var(--app-outer-gap) + var(--safe-bottom));
   position: relative;
   display: flex;
   flex-direction: column;
@@ -143,7 +152,7 @@ button {
 
 .app-shell.onboarding-active {
   height: auto;
-  min-height: calc(100dvh - 20px);
+  min-height: calc(100dvh - (var(--app-outer-gap) * 2) - var(--safe-top) - var(--safe-bottom));
   overflow: visible;
 }
 
@@ -1154,7 +1163,7 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 14px 12px 92px;
+  padding: 14px 12px var(--dashboard-bottom-space);
 }
 
 .topbar-panel {
@@ -1892,16 +1901,16 @@ textarea:focus {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--bottom-tabs-safe-offset);
   z-index: 5;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 0;
-  padding: 8px 10px 18px;
+  padding: 8px 10px 10px;
   border: 2px solid rgba(122, 255, 152, 0.18);
-  border-bottom: 0;
   background: #050d08;
+  box-shadow: 0 -12px 26px rgba(0, 0, 0, 0.28);
 }
 
 .tab-btn {
@@ -1942,8 +1951,8 @@ textarea:focus {
 
 @media (max-width: 760px) {
   .app-shell {
-    width: min(100vw - 18px, 100%);
-    margin: 10px auto;
+    width: min(100vw - 18px - var(--safe-left) - var(--safe-right), 100%);
+    margin: calc(var(--app-outer-gap) + var(--safe-top)) auto calc(var(--app-outer-gap) + var(--safe-bottom));
   }
 
   .hero,
