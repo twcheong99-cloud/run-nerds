@@ -13,6 +13,7 @@ Use this runbook when preparing the first Play Store or App Store review build. 
 
 ```bash
 npm install
+npm run native:doctor
 npm run release:check
 ```
 

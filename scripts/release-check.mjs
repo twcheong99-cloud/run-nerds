@@ -94,6 +94,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "ios/App/App/Base.lproj/LaunchScreen.storyboard",
   "ios/App/App/PrivacyInfo.xcprivacy",
   "supabase-setup.sql",
+  "scripts/native-release-doctor.mjs",
   "supabase/functions/coach/index.ts",
   "supabase/functions/delete-account/index.ts",
 ].forEach(assertFile);
@@ -228,6 +229,7 @@ assert(read("scripts/prepare-capacitor-web.mjs").includes('"account-deletion.htm
 const readme = read("README.md");
 assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Capacitor native app path");
 assert(readme.includes("npm run release:check"), "README.md must document the release check");
+assert(readme.includes("npm run native:doctor"), "README.md must document the native release doctor");
 assert(readme.includes(".github/workflows/release-check.yml"), "README.md must document the release check workflow");
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
 assert(readme.includes("RELEASE_BLOCKERS.md"), "README.md must link the release blockers");
@@ -294,6 +296,7 @@ assert(storeSubmission.includes("private Play Console / App Store Connect review
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
+assert(releaseRunbook.includes("npm run native:doctor"), "RELEASE_RUNBOOK.md must include native release doctor");
 assert(releaseRunbook.includes("## iOS review build"), "RELEASE_RUNBOOK.md must include iOS review build steps");
 assert(releaseRunbook.includes("Stop before review if:"), "RELEASE_RUNBOOK.md must include stop-before-review gates");
 assert(releaseRunbook.includes("activity log scrolling"), "RELEASE_RUNBOOK.md must include activity log scrolling device test");
@@ -389,6 +392,7 @@ assert(releaseBlockers.includes("PRODUCTION_URLS.md"), "RELEASE_BLOCKERS.md must
 assert(releaseBlockers.includes("Reviewer demo credentials"), "RELEASE_BLOCKERS.md must track reviewer credentials blocker");
 assert(releaseBlockers.includes("Android signed build verification"), "RELEASE_BLOCKERS.md must track Android signed build blocker");
 assert(releaseBlockers.includes("iOS signed build verification"), "RELEASE_BLOCKERS.md must track iOS signed build blocker");
+assert(releaseBlockers.includes("npm run native:doctor"), "RELEASE_BLOCKERS.md must reference native release doctor");
 assert(releaseBlockers.includes("Production Supabase/Auth/Edge Function verification"), "RELEASE_BLOCKERS.md must track backend production verification blocker");
 assert(releaseBlockers.includes("Store screenshots from device builds"), "RELEASE_BLOCKERS.md must track device screenshot blocker");
 assert(releaseBlockers.includes("Store icon and launch asset verification"), "RELEASE_BLOCKERS.md must track icon/launch asset blocker");
@@ -396,6 +400,12 @@ assert(releaseBlockers.includes("Store age rating and health declarations"), "RE
 assert(releaseBlockers.includes("CI confirmation on main"), "RELEASE_BLOCKERS.md must track CI confirmation blocker");
 assert(releaseBlockers.includes("Do not mark the store-readiness goal complete"), "RELEASE_BLOCKERS.md must include completion rule");
 assert(releaseBlockers.includes("never contain the credentials themselves"), "RELEASE_BLOCKERS.md must keep reviewer credentials out of repo docs");
+
+const nativeDoctor = read("scripts/native-release-doctor.mjs");
+assert(nativeDoctor.includes("Java Runtime / JDK"), "native release doctor must check Java/JDK");
+assert(nativeDoctor.includes("Android Gradle wrapper"), "native release doctor must check Gradle wrapper");
+assert(nativeDoctor.includes("Xcode selected"), "native release doctor must check Xcode selection");
+assert(nativeDoctor.includes("Supabase CLI"), "native release doctor must check Supabase CLI");
 
 if (warnings.length) {
   console.log("\nWarnings:");

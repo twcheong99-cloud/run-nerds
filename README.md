@@ -83,6 +83,14 @@ npm run release:check
 
 이 체크는 웹 테스트, Capacitor sync, Capacitor doctor, iOS plist lint, 스토어 제출 문서, age rating/health declaration 기준, safe-area/native bar 설정, 비밀키 번들 누락 여부를 함께 확인합니다. 실제 signed build 순서는 `RELEASE_RUNBOOK.md`를 따르고, 스크린샷 준비는 `STORE_SCREENSHOTS.md`를 따릅니다.
 
+실제 Android/iOS 릴리즈 머신에서는 추가로:
+
+```bash
+npm run native:doctor
+```
+
+이 점검은 Java/JDK, Android Gradle wrapper, Android Studio, full Xcode, Supabase CLI가 스토어 빌드 작업을 진행할 수 있는 상태인지 확인합니다.
+
 ## LLM 코치 연결 준비
 
 - 브라우저에는 LLM API 키를 넣지 않습니다.

@@ -7,6 +7,7 @@
     "mobile:doctor": "npx cap doctor",
     "mobile:open:android": "npm run mobile:prepare && npx cap open android",
     "mobile:open:ios": "npm run mobile:prepare && npx cap open ios",
+    "native:doctor": "node scripts/native-release-doctor.mjs",
     "release:check": "node scripts/release-check.mjs"
   },
   "devDependencies": {

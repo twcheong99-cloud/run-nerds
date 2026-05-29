@@ -55,6 +55,14 @@ Use this after dependency changes or native project edits:
 npm run mobile:doctor
 ```
 
+Use this on the release machine before attempting signed Android/iOS builds:
+
+```bash
+npm run native:doctor
+```
+
+This checks Java/JDK, the Android Gradle wrapper, Android Studio, full Xcode selection, `xcodebuild`, and the Supabase CLI.
+
 Before a release candidate, run the broader release check:
 
 ```bash
@@ -81,6 +89,7 @@ The Capacitor projects can be generated and synced in this repository, but nativ
 - Android: Android Studio, Android SDK, and a working Java Runtime / JDK.
 - iOS: full Xcode selected with `xcode-select`, not only Command Line Tools.
 - Store release: Android signing key, Apple Developer team, bundle signing, and production privacy URL.
+- Tooling preflight: `npm run native:doctor`.
 
 ## Current app identity
 
