@@ -41,6 +41,21 @@ function matchValue(source, pattern, label) {
   return match?.[1] || "";
 }
 
+function pngSize(relativePath) {
+  const buffer = readFileSync(path.join(root, relativePath));
+  assert(buffer.length >= 24, `${relativePath} must be a valid PNG`);
+  assert(buffer.toString("ascii", 1, 4) === "PNG", `${relativePath} must be a PNG`);
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
+
+function assertPngSize(relativePath, width, height = width) {
+  const size = pngSize(relativePath);
+  assert(size.width === width && size.height === height, `${relativePath} must be ${width}x${height}`);
+}
+
 run("web tests", "npm", ["test"]);
 run("Capacitor sync", "npm", ["run", "mobile:sync"]);
 run("Capacitor doctor", "npx", ["cap", "doctor"]);
@@ -63,6 +78,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "STORE_SUBMISSION.md",
   "STORE_LISTING.md",
   "STORE_SCREENSHOTS.md",
+  "STORE_ASSETS.md",
   "STORE_RATING.md",
   "PRODUCTION_URLS.md",
   "RELEASE_RUNBOOK.md",
@@ -70,6 +86,9 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "android/app/src/main/res/values/colors.xml",
+  "android/app/src/main/res/values/ic_launcher_background.xml",
+  "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+  "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
   "ios/App/App/Info.plist",
   "ios/App/App/Base.lproj/LaunchScreen.storyboard",
   "ios/App/App/PrivacyInfo.xcprivacy",
@@ -103,6 +122,8 @@ const allowedAndroidPermissions = ["android.permission.INTERNET"];
 assert(manifest.display === "standalone", "manifest display must be standalone");
 assert(manifest.orientation === "portrait", "manifest orientation must be portrait");
 assert(manifest.icons?.some((icon) => icon.purpose === "maskable"), "manifest must include a maskable icon");
+assert(manifest.icons?.some((icon) => icon.src === "./assets/icon-512.png" && icon.sizes === "512x512"), "manifest must include 512 standard icon");
+assert(manifest.icons?.some((icon) => icon.src === "./assets/icon-maskable-512.png" && icon.sizes === "512x512" && icon.purpose === "maskable"), "manifest must include 512 maskable icon");
 assert(capacitorConfig.appId === expectedAppId, "Capacitor appId must match VERSIONING.md");
 assert(androidApplicationId === expectedAppId, "Android applicationId must match VERSIONING.md");
 assert(androidNamespace === expectedAppId, "Android namespace must match VERSIONING.md");
@@ -151,6 +172,41 @@ assertIncludes("ios/App/App/PrivacyInfo.xcprivacy", "<false/>", "iOS no tracking
   assert(iosPrivacyManifest.includes(dataType), `iOS privacy manifest must include ${dataType}`);
 });
 
+[
+  ["assets/icon-192.png", 192],
+  ["assets/icon-512.png", 512],
+  ["assets/icon-maskable-192.png", 192],
+  ["assets/icon-maskable-512.png", 512],
+  ["assets/apple-touch-icon.png", 180],
+  ["ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png", 1024],
+  ["ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png", 2732],
+  ["ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-1.png", 2732],
+  ["ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-2.png", 2732],
+  ["android/app/src/main/res/mipmap-mdpi/ic_launcher.png", 48],
+  ["android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png", 48],
+  ["android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png", 108],
+  ["android/app/src/main/res/mipmap-hdpi/ic_launcher.png", 72],
+  ["android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png", 72],
+  ["android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png", 162],
+  ["android/app/src/main/res/mipmap-xhdpi/ic_launcher.png", 96],
+  ["android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png", 96],
+  ["android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png", 216],
+  ["android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png", 144],
+  ["android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png", 144],
+  ["android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png", 324],
+  ["android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png", 192],
+  ["android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png", 192],
+  ["android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png", 432],
+].forEach(([relativePath, width]) => assertPngSize(relativePath, width));
+
+assertIncludes("android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml", "@color/ic_launcher_background", "Android adaptive icon background");
+assertIncludes("android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml", "@mipmap/ic_launcher_foreground", "Android adaptive icon foreground");
+assertIncludes("android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml", "@color/ic_launcher_background", "Android round adaptive icon background");
+assertIncludes("android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml", "@mipmap/ic_launcher_foreground", "Android round adaptive icon foreground");
+assertIncludes("android/app/src/main/res/values/ic_launcher_background.xml", "#050806", "Android adaptive icon background color");
+assertIncludes("ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json", "1024x1024", "iOS App Store icon size metadata");
+assertIncludes("ios/App/App/Assets.xcassets/Splash.imageset/Contents.json", "splash-2732x2732.png", "iOS splash asset metadata");
+
 const executableWebBundle = [
   "www/index.html",
   "www/account-deletion.html",
@@ -175,6 +231,7 @@ assert(readme.includes(".github/workflows/release-check.yml"), "README.md must d
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
 assert(readme.includes("RELEASE_BLOCKERS.md"), "README.md must link the release blockers");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
+assert(readme.includes("STORE_ASSETS.md"), "README.md must link the store asset checklist");
 assert(readme.includes("STORE_RATING.md"), "README.md must link the store rating checklist");
 assert(readme.includes("PRODUCTION_URLS.md"), "README.md must link the production URL checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
@@ -211,6 +268,13 @@ assert(storeScreenshots.includes("## Visual QA"), "STORE_SCREENSHOTS.md must inc
 assert(storeScreenshots.includes("android-01-onboarding.png"), "STORE_SCREENSHOTS.md must define stable Android file names");
 assert(storeScreenshots.includes("ios-01-onboarding.png"), "STORE_SCREENSHOTS.md must define stable iOS file names");
 
+const storeAssets = read("STORE_ASSETS.md");
+assert(storeAssets.includes("Web / PWA assets"), "STORE_ASSETS.md must document PWA assets");
+assert(storeAssets.includes("Android assets"), "STORE_ASSETS.md must document Android assets");
+assert(storeAssets.includes("iOS assets"), "STORE_ASSETS.md must document iOS assets");
+assert(storeAssets.includes("1024x1024"), "STORE_ASSETS.md must document iOS App Store icon size");
+assert(storeAssets.includes("maskable"), "STORE_ASSETS.md must document maskable icons");
+
 const storeSubmission = read("STORE_SUBMISSION.md");
 assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must include the data safety draft");
 assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
@@ -219,6 +283,7 @@ assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must refe
 assert(storeSubmission.includes("ANDROID_PERMISSIONS.md"), "STORE_SUBMISSION.md must reference Android permission checks");
 assert(storeSubmission.includes("STORE_RATING.md"), "STORE_SUBMISSION.md must reference rating/declaration checks");
 assert(storeSubmission.includes("PRODUCTION_URLS.md"), "STORE_SUBMISSION.md must reference production URL checks");
+assert(storeSubmission.includes("STORE_ASSETS.md"), "STORE_SUBMISSION.md must reference store asset checks");
 assert(storeSubmission.includes("RELEASE_BLOCKERS.md"), "STORE_SUBMISSION.md must reference release blockers");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must reference account deletion function");
@@ -236,6 +301,7 @@ assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md mus
 assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md must reference Android permission checks");
 assert(releaseRunbook.includes("STORE_RATING.md"), "RELEASE_RUNBOOK.md must reference rating/declaration checks");
 assert(releaseRunbook.includes("PRODUCTION_URLS.md"), "RELEASE_RUNBOOK.md must reference production URL checks");
+assert(releaseRunbook.includes("STORE_ASSETS.md"), "RELEASE_RUNBOOK.md must reference store asset checks");
 assert(releaseRunbook.includes("RELEASE_BLOCKERS.md"), "RELEASE_RUNBOOK.md must reference release blockers");
 assert(releaseRunbook.includes("Account deletion"), "RELEASE_RUNBOOK.md must include account deletion device test");
 assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
@@ -302,6 +368,7 @@ assert(releaseBlockers.includes("Android signed build verification"), "RELEASE_B
 assert(releaseBlockers.includes("iOS signed build verification"), "RELEASE_BLOCKERS.md must track iOS signed build blocker");
 assert(releaseBlockers.includes("Production Supabase/Auth/Edge Function verification"), "RELEASE_BLOCKERS.md must track backend production verification blocker");
 assert(releaseBlockers.includes("Store screenshots from device builds"), "RELEASE_BLOCKERS.md must track device screenshot blocker");
+assert(releaseBlockers.includes("Store icon and launch asset verification"), "RELEASE_BLOCKERS.md must track icon/launch asset blocker");
 assert(releaseBlockers.includes("Store age rating and health declarations"), "RELEASE_BLOCKERS.md must track rating/declaration blocker");
 assert(releaseBlockers.includes("CI confirmation on main"), "RELEASE_BLOCKERS.md must track CI confirmation blocker");
 assert(releaseBlockers.includes("Do not mark the store-readiness goal complete"), "RELEASE_BLOCKERS.md must include completion rule");

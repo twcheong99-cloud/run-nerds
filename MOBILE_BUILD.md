@@ -102,6 +102,7 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 - Store submission checklist: `STORE_SUBMISSION.md`
 - Store listing draft: `STORE_LISTING.md`
 - Store screenshot checklist: `STORE_SCREENSHOTS.md`
+- Store icon and launch asset checklist: `STORE_ASSETS.md`
 - Release runbook: `RELEASE_RUNBOOK.md`
 - Backend release checklist: `BACKEND_RELEASE.md`
 - Versioning and app identity: `VERSIONING.md`

@@ -37,11 +37,15 @@ This file tracks the remaining work that cannot be fully proven by repository ch
    - Evidence needed: Android and iOS screenshot sets captured from signed/internal-test builds using the stable file names in `STORE_SCREENSHOTS.md`.
    - Source docs to use: `STORE_SCREENSHOTS.md`, `STORE_LISTING.md`.
 
-7. Store age rating and health declarations
+7. Store icon and launch asset verification
+   - Evidence needed: signed Android/iOS builds show the expected launcher icon, adaptive icon shape, splash image, and no bright launch flash.
+   - Source docs to use: `STORE_ASSETS.md`, `MOBILE_BUILD.md`, `RELEASE_RUNBOOK.md`.
+
+8. Store age rating and health declarations
    - Evidence needed: Play Console content rating and App Store Connect age rating / health declarations completed and saved with answers matching `STORE_RATING.md`.
    - Source docs to use: `STORE_RATING.md`, `STORE_SUBMISSION.md`, `ANDROID_PERMISSIONS.md`.
 
-8. CI confirmation on main
+9. CI confirmation on main
    - Evidence needed: GitHub Actions `Release readiness` workflow passes on the final `main` commit.
    - Source docs to use: `.github/workflows/release-check.yml`, `RELEASE_RUNBOOK.md`.
 

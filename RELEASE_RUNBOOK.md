@@ -21,6 +21,7 @@ npm run release:check
    - Production support URL or support email
    - Demo reviewer account credentials in the private store console reviewer fields only
    - Store screenshots from signed device builds using `STORE_SCREENSHOTS.md`
+   - Store icon and launch assets using `STORE_ASSETS.md`
 8. Complete the backend release checks in `BACKEND_RELEASE.md`.
 9. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 10. Complete the age rating, content rating, and health declaration checks in `STORE_RATING.md`.
@@ -62,6 +63,7 @@ Stop before review if:
 
 - The activity log form cannot scroll to RPE, pain, memo, and save actions.
 - Android status bar or navigation bar clashes with the app background.
+- Android launcher icon or splash assets differ from `STORE_ASSETS.md`.
 - Login, signup, or workspace restore fails on a real device.
 - Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
@@ -107,6 +109,7 @@ Steps:
 Stop before review if:
 
 - Safe-area spacing is wrong around the status bar or home indicator.
+- iOS App Store icon or launch assets differ from `STORE_ASSETS.md`.
 - The keyboard hides coach input, activity log fields, or submit actions.
 - Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.

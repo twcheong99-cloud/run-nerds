@@ -66,6 +66,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Follow `RELEASE_BLOCKERS.md` for the remaining external evidence needed before submission.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
+- Use `STORE_ASSETS.md` for icon and launch asset checks.
 - Demo account credentials, if reviewers need login. Enter them only in private Play Console / App Store Connect reviewer fields and never commit them to this repository.
 - Production privacy policy URL.
 - Production support URL or support email. Current candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.
@@ -85,6 +86,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Confirm final bundle ID / package name: `com.runnerds.app`.
 - Confirm Android/iOS version values match `VERSIONING.md`.
 - Confirm the iOS privacy manifest still matches the App Store privacy answers.
+- Confirm store icons and launch assets match `STORE_ASSETS.md`.
 - Capture store screenshots on target devices.
 - Test login, signup, coach fallback, workout logging, privacy page, safety page, and support page on a device build.
 - Test account deletion with a disposable reviewer account.
