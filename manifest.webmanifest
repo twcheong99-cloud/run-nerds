@@ -1,13 +1,19 @@
 {
+  "id": "./",
   "name": "run-nerds",
   "short_name": "run-nerds",
-  "description": "A mobile-first running coach for nerds who run.",
-  "start_url": "./index.html",
+  "description": "대화형 AI 코치와 함께 목표 대회, 회복, 주간 훈련 기록을 관리하는 모바일 러닝 코치입니다.",
+  "lang": "ko-KR",
+  "dir": "ltr",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#050806",
   "theme_color": "#06100a",
   "orientation": "portrait",
+  "categories": ["health", "fitness", "sports", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "./assets/icon-192.png",
