@@ -76,6 +76,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "www/support.html",
   "www/manifest.webmanifest",
   "MOBILE_BUILD.md",
+  "STORE_READY_AUDIT.md",
   "STORE_CONSOLE.md",
   "STORE_SUBMISSION.md",
   "STORE_LISTING.md",
@@ -233,6 +234,7 @@ assert(read("scripts/prepare-capacitor-web.mjs").includes('"account-deletion.htm
 
 const readme = read("README.md");
 assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Capacitor native app path");
+assert(readme.includes("STORE_READY_AUDIT.md"), "README.md must link the store readiness audit");
 assert(readme.includes("STORE_CONSOLE.md"), "README.md must link the store console input package");
 assert(readme.includes("npm run release:check"), "README.md must document the release check");
 assert(readme.includes("npm run security:scan"), "README.md must document the secret scan");
@@ -305,6 +307,7 @@ assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must ref
 assert(storeSubmission.includes("private Play Console / App Store Connect reviewer fields"), "STORE_SUBMISSION.md must keep demo credentials private");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
+assert(releaseRunbook.includes("STORE_READY_AUDIT.md"), "RELEASE_RUNBOOK.md must reference store readiness audit");
 assert(releaseRunbook.includes("STORE_CONSOLE.md"), "RELEASE_RUNBOOK.md must reference final console input package");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
 assert(releaseRunbook.includes("npm run native:doctor"), "RELEASE_RUNBOOK.md must include native release doctor");
@@ -431,6 +434,7 @@ assert(ciRelease.includes("twcheong99-cloud/run-nerds/actions/workflows/release-
 assert(ciRelease.includes("gh run list"), "CI_RELEASE.md must include GitHub CLI confirmation commands");
 
 const releaseBlockers = read("RELEASE_BLOCKERS.md");
+assert(releaseBlockers.includes("STORE_READY_AUDIT.md"), "RELEASE_BLOCKERS.md must reference store readiness audit");
 assert(releaseBlockers.includes("Production privacy and support URLs"), "RELEASE_BLOCKERS.md must track production URL blocker");
 assert(releaseBlockers.includes("RELEASE_EVIDENCE.md"), "RELEASE_BLOCKERS.md must reference release evidence");
 assert(releaseBlockers.includes("PRODUCTION_URLS.md"), "RELEASE_BLOCKERS.md must reference production URL checklist");
@@ -463,6 +467,14 @@ assert(productionUrlScript.includes("PRODUCTION_ORIGIN"), "production URL script
 assert(productionUrlScript.includes("/privacy.html"), "production URL script must check privacy page");
 assert(productionUrlScript.includes("/account-deletion.html"), "production URL script must check account deletion page");
 assert(productionUrlScript.includes("/env.js"), "production URL script must check env.js is not served");
+
+const storeReadyAudit = read("STORE_READY_AUDIT.md");
+assert(storeReadyAudit.includes("Current verdict"), "STORE_READY_AUDIT.md must include current verdict");
+assert(storeReadyAudit.includes("Not yet ready for final store submission"), "STORE_READY_AUDIT.md must state not-ready verdict");
+assert(storeReadyAudit.includes("Repository evidence already in place"), "STORE_READY_AUDIT.md must summarize repository evidence");
+assert(storeReadyAudit.includes("External evidence still required"), "STORE_READY_AUDIT.md must list external evidence");
+assert(storeReadyAudit.includes("Submit only when"), "STORE_READY_AUDIT.md must define submit conditions");
+assert(storeReadyAudit.includes("Do not mark complete"), "STORE_READY_AUDIT.md must prevent premature completion");
 
 if (warnings.length) {
   console.log("\nWarnings:");

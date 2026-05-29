@@ -1,6 +1,6 @@
 # Release blockers
 
-This file tracks the remaining work that cannot be fully proven by repository checks alone. Keep it current until the first real Play Store / App Store submission is accepted. Record non-secret proof in `RELEASE_EVIDENCE.md`.
+This file tracks the remaining work that cannot be fully proven by repository checks alone. Keep it current until the first real Play Store / App Store submission is accepted. Use `STORE_READY_AUDIT.md` for the current top-level verdict and record non-secret proof in `RELEASE_EVIDENCE.md`.
 
 ## Current status
 

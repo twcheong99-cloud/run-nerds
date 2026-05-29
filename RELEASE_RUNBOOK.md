@@ -5,11 +5,12 @@ Use this runbook when preparing the first Play Store or App Store review build. 
 ## Preflight
 
 1. Confirm the working tree is clean.
-2. Confirm production Supabase settings are in `env.public.js`.
-3. Confirm `env.js` does not exist in the generated `www` bundle.
-4. Confirm the GitHub Actions `Release readiness` workflow is passing on `main` using `CI_RELEASE.md`.
-5. Review `RELEASE_BLOCKERS.md` and record non-secret evidence in `RELEASE_EVIDENCE.md`.
-6. Run:
+2. Read `STORE_READY_AUDIT.md` and confirm the current verdict is understood.
+3. Confirm production Supabase settings are in `env.public.js`.
+4. Confirm `env.js` does not exist in the generated `www` bundle.
+5. Confirm the GitHub Actions `Release readiness` workflow is passing on `main` using `CI_RELEASE.md`.
+6. Review `RELEASE_BLOCKERS.md` and record non-secret evidence in `RELEASE_EVIDENCE.md`.
+7. Run:
 
 ```bash
 npm install
