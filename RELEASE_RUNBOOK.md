@@ -29,6 +29,7 @@ npm run release:check
 11. Complete the production URL checks in `PRODUCTION_URLS.md`.
 12. Fill `RELEASE_EVIDENCE.md` with non-secret evidence locations before submitting for review.
 13. Copy the final `Release readiness` workflow run URL into `RELEASE_EVIDENCE.md`.
+14. Use `STORE_CONSOLE.md` as the final input package while filling Play Console and App Store Connect.
 
 ## Android review build
 
@@ -124,7 +125,7 @@ Stop before review if:
 
 ## Reviewer notes
 
-Use `STORE_LISTING.md` for the final store copy and reviewer notes. Before submitting, replace placeholders with:
+Use `STORE_CONSOLE.md` as the final input package and `STORE_LISTING.md` for the detailed store copy and reviewer notes. Before submitting, replace placeholders with:
 
 - Demo account email and password
 - Enter demo account email and password only in private reviewer fields, not in repository docs or screenshots.

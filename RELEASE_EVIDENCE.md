@@ -76,6 +76,7 @@ For sensitive proof, store screenshots or console exports in the private store/t
 
 ## Store declarations
 
+- Store console inputs checked against `STORE_CONSOLE.md`: yes / no
 - Play Data safety matches `STORE_SUBMISSION.md`: yes / no
 - App Store privacy answers match `STORE_SUBMISSION.md` and `PrivacyInfo.xcprivacy`: yes / no
 - Play content rating matches `STORE_RATING.md`: yes / no

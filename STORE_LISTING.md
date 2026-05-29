@@ -1,6 +1,6 @@
 # Store listing draft
 
-Use this as a copy source for Play Console and App Store Connect. Replace URLs before final submission. Demo credentials must be entered only in the private reviewer-notes fields in Play Console / App Store Connect and must not be committed to this repository.
+Use this as a copy source for Play Console and App Store Connect. `STORE_CONSOLE.md` is the final console-input index. Replace URLs before final submission. Demo credentials must be entered only in the private reviewer-notes fields in Play Console / App Store Connect and must not be committed to this repository.
 
 ## App Identity
 

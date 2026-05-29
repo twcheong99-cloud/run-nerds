@@ -2,6 +2,8 @@
 
 This file is a working checklist for Play Store / App Store submission. It should be updated before the first real review build.
 
+Use `STORE_CONSOLE.md` as the final store-console input index after this checklist is complete.
+
 ## Public URLs
 
 - Privacy policy: `privacy.html`
@@ -65,6 +67,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Follow `PRODUCTION_URLS.md` before entering public store URLs.
 - Follow `RELEASE_BLOCKERS.md` for the remaining external evidence needed before submission.
 - Record non-secret final submission evidence in `RELEASE_EVIDENCE.md`.
+- Use `STORE_CONSOLE.md` as the final console input package.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
 - Use `STORE_ASSETS.md` for icon and launch asset checks.

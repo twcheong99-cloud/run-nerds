@@ -75,6 +75,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "www/support.html",
   "www/manifest.webmanifest",
   "MOBILE_BUILD.md",
+  "STORE_CONSOLE.md",
   "STORE_SUBMISSION.md",
   "STORE_LISTING.md",
   "STORE_SCREENSHOTS.md",
@@ -229,6 +230,7 @@ assert(read("scripts/prepare-capacitor-web.mjs").includes('"account-deletion.htm
 
 const readme = read("README.md");
 assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Capacitor native app path");
+assert(readme.includes("STORE_CONSOLE.md"), "README.md must link the store console input package");
 assert(readme.includes("npm run release:check"), "README.md must document the release check");
 assert(readme.includes("npm run native:doctor"), "README.md must document the native release doctor");
 assert(readme.includes(".github/workflows/release-check.yml"), "README.md must document the release check workflow");
@@ -252,6 +254,7 @@ warn(supportPage.includes("GitHub Issues"), "support.html should name the suppor
 const storeListing = read("STORE_LISTING.md");
 const storeReviewNotesDraft = storeListing.split("## Review Notes Draft")[1]?.split("## Remaining Store Listing Inputs")[0] || "";
 assert(storeListing.includes("## Short Description"), "STORE_LISTING.md must include short description copy");
+assert(storeListing.includes("STORE_CONSOLE.md"), "STORE_LISTING.md must reference final console input package");
 assert(storeListing.includes("## Full Description"), "STORE_LISTING.md must include full description copy");
 assert(storeListing.includes("## Screenshot Plan"), "STORE_LISTING.md must include a screenshot plan");
 assert(storeListing.includes("STORE_SCREENSHOTS.md"), "STORE_LISTING.md must reference the screenshot checklist");
@@ -282,6 +285,7 @@ assert(storeAssets.includes("1024x1024"), "STORE_ASSETS.md must document iOS App
 assert(storeAssets.includes("maskable"), "STORE_ASSETS.md must document maskable icons");
 
 const storeSubmission = read("STORE_SUBMISSION.md");
+assert(storeSubmission.includes("STORE_CONSOLE.md"), "STORE_SUBMISSION.md must reference final console input package");
 assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must include the data safety draft");
 assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
 assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must reference backend release checks");
@@ -297,6 +301,7 @@ assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must ref
 assert(storeSubmission.includes("private Play Console / App Store Connect reviewer fields"), "STORE_SUBMISSION.md must keep demo credentials private");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
+assert(releaseRunbook.includes("STORE_CONSOLE.md"), "RELEASE_RUNBOOK.md must reference final console input package");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
 assert(releaseRunbook.includes("npm run native:doctor"), "RELEASE_RUNBOOK.md must include native release doctor");
 assert(releaseRunbook.includes("CI_RELEASE.md"), "RELEASE_RUNBOOK.md must reference CI confirmation checklist");
@@ -388,6 +393,28 @@ assert(releaseEvidence.includes("Do not add reviewer passwords"), "RELEASE_EVIDE
 assert(releaseEvidence.includes("signing keys"), "RELEASE_EVIDENCE.md must forbid signing key evidence");
 assert(releaseEvidence.includes("RELEASE_BLOCKERS.md"), "RELEASE_EVIDENCE.md must reference release blockers");
 assert(releaseEvidence.includes("CI_RELEASE.md"), "RELEASE_EVIDENCE.md must reference CI release checklist");
+assert(releaseEvidence.includes("STORE_CONSOLE.md"), "RELEASE_EVIDENCE.md must reference store console input package");
+
+const storeConsole = read("STORE_CONSOLE.md");
+[
+  "Shared app identity",
+  "Public URLs",
+  "Listing copy",
+  "Privacy and data declarations",
+  "Content rating and health declarations",
+  "Assets and screenshots",
+  "Pre-submit evidence",
+  "Stop before submit",
+].forEach((section) => {
+  assert(storeConsole.includes(`## ${section}`), `STORE_CONSOLE.md must include ${section}`);
+});
+assert(storeConsole.includes("com.runnerds.app"), "STORE_CONSOLE.md must include app identifier");
+assert(storeConsole.includes("STORE_LISTING.md"), "STORE_CONSOLE.md must reference listing copy");
+assert(storeConsole.includes("STORE_SUBMISSION.md"), "STORE_CONSOLE.md must reference privacy/data declarations");
+assert(storeConsole.includes("STORE_RATING.md"), "STORE_CONSOLE.md must reference rating declarations");
+assert(storeConsole.includes("STORE_SCREENSHOTS.md"), "STORE_CONSOLE.md must reference screenshot checklist");
+assert(storeConsole.includes("RELEASE_EVIDENCE.md"), "STORE_CONSOLE.md must reference evidence template");
+assert(storeConsole.includes("Demo credentials"), "STORE_CONSOLE.md must warn about demo credentials");
 
 const ciRelease = read("CI_RELEASE.md");
 assert(ciRelease.includes("Release readiness"), "CI_RELEASE.md must document the workflow name");
