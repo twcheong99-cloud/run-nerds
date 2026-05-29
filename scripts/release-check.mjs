@@ -64,6 +64,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "STORE_LISTING.md",
   "STORE_SCREENSHOTS.md",
   "STORE_RATING.md",
+  "PRODUCTION_URLS.md",
   "RELEASE_RUNBOOK.md",
   "RELEASE_BLOCKERS.md",
   "android/app/src/main/AndroidManifest.xml",
@@ -175,6 +176,7 @@ assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release r
 assert(readme.includes("RELEASE_BLOCKERS.md"), "README.md must link the release blockers");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
 assert(readme.includes("STORE_RATING.md"), "README.md must link the store rating checklist");
+assert(readme.includes("PRODUCTION_URLS.md"), "README.md must link the production URL checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
 assert(readme.includes("VERSIONING.md"), "README.md must link the versioning checklist");
 assert(readme.includes("ANDROID_PERMISSIONS.md"), "README.md must link the Android permissions checklist");
@@ -194,6 +196,7 @@ assert(storeListing.includes("account-deletion.html"), "STORE_LISTING.md must in
 assert(storeListing.includes("## Review Notes Draft"), "STORE_LISTING.md must include review notes");
 assert(storeListing.includes("run-nerds is not a medical app"), "STORE_LISTING.md must include medical disclaimer copy");
 assert(storeListing.includes("STORE_RATING.md"), "STORE_LISTING.md must reference rating/declaration checklist");
+assert(storeListing.includes("PRODUCTION_URLS.md"), "STORE_LISTING.md must reference production URL checklist");
 assert(storeListing.includes("private store console review fields"), "STORE_LISTING.md must keep demo credentials in private store console fields");
 assert(!storeListing.includes("- Email:\n- Password:"), "STORE_LISTING.md must not include blank demo credential fields");
 assert(!/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(storeReviewNotesDraft), "STORE_LISTING.md review notes must not commit demo email credentials");
@@ -215,6 +218,7 @@ assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must
 assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must reference versioning checks");
 assert(storeSubmission.includes("ANDROID_PERMISSIONS.md"), "STORE_SUBMISSION.md must reference Android permission checks");
 assert(storeSubmission.includes("STORE_RATING.md"), "STORE_SUBMISSION.md must reference rating/declaration checks");
+assert(storeSubmission.includes("PRODUCTION_URLS.md"), "STORE_SUBMISSION.md must reference production URL checks");
 assert(storeSubmission.includes("RELEASE_BLOCKERS.md"), "STORE_SUBMISSION.md must reference release blockers");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must reference account deletion function");
@@ -231,6 +235,7 @@ assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must refere
 assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md must reference the iOS privacy manifest");
 assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md must reference Android permission checks");
 assert(releaseRunbook.includes("STORE_RATING.md"), "RELEASE_RUNBOOK.md must reference rating/declaration checks");
+assert(releaseRunbook.includes("PRODUCTION_URLS.md"), "RELEASE_RUNBOOK.md must reference production URL checks");
 assert(releaseRunbook.includes("RELEASE_BLOCKERS.md"), "RELEASE_RUNBOOK.md must reference release blockers");
 assert(releaseRunbook.includes("Account deletion"), "RELEASE_RUNBOOK.md must include account deletion device test");
 assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
@@ -277,8 +282,21 @@ assert(storeRating.includes("no advertising SDK"), "STORE_RATING.md must documen
 assert(storeRating.includes("does not request location, camera, microphone, contacts, photo library, Bluetooth, or notification permissions"), "STORE_RATING.md must align with Android permissions");
 assert(storeRating.includes("Official references"), "STORE_RATING.md must include official reference context");
 
+const productionUrls = read("PRODUCTION_URLS.md");
+assert(productionUrls.includes("/privacy.html"), "PRODUCTION_URLS.md must include privacy URL path");
+assert(productionUrls.includes("/account-deletion.html"), "PRODUCTION_URLS.md must include account deletion URL path");
+assert(productionUrls.includes("/safety.html"), "PRODUCTION_URLS.md must include safety URL path");
+assert(productionUrls.includes("/support.html"), "PRODUCTION_URLS.md must include support URL path");
+assert(productionUrls.includes("www"), "PRODUCTION_URLS.md must require publishing the prepared www bundle");
+assert(productionUrls.includes("Do not publish the repository root"), "PRODUCTION_URLS.md must warn against root publishing");
+assert(productionUrls.includes("env.js"), "PRODUCTION_URLS.md must verify local env is not public");
+assert(read("netlify.toml").includes('publish = "www"'), "Netlify must publish prepared www bundle");
+assert(read("netlify.toml").includes('command = "npm run mobile:prepare"'), "Netlify must prepare web bundle before publish");
+assert(read("netlify.toml").includes("Permissions-Policy"), "Netlify must include basic browser permission headers");
+
 const releaseBlockers = read("RELEASE_BLOCKERS.md");
 assert(releaseBlockers.includes("Production privacy and support URLs"), "RELEASE_BLOCKERS.md must track production URL blocker");
+assert(releaseBlockers.includes("PRODUCTION_URLS.md"), "RELEASE_BLOCKERS.md must reference production URL checklist");
 assert(releaseBlockers.includes("Reviewer demo credentials"), "RELEASE_BLOCKERS.md must track reviewer credentials blocker");
 assert(releaseBlockers.includes("Android signed build verification"), "RELEASE_BLOCKERS.md must track Android signed build blocker");
 assert(releaseBlockers.includes("iOS signed build verification"), "RELEASE_BLOCKERS.md must track iOS signed build blocker");

@@ -115,6 +115,7 @@ Before review, provide demo credentials only in the private store console review
 - Production privacy policy URL
 - Production account deletion URL
 - Production support URL or final support email
+- Production URL verification using `PRODUCTION_URLS.md`
 - Demo account credentials entered privately in the store console
 - Final app screenshots from signed Android/iOS builds
 - Final age rating and health/fitness declarations in each store console, using `STORE_RATING.md`

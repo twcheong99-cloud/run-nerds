@@ -10,7 +10,7 @@
 - Store readiness gate: `npm run release:check`
 - CI gate: `.github/workflows/release-check.yml`
 - Legal/support pages: `privacy.html`, `safety.html`, `support.html`
-- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `STORE_RATING.md`, `RELEASE_RUNBOOK.md`, `RELEASE_BLOCKERS.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
+- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `STORE_RATING.md`, `PRODUCTION_URLS.md`, `RELEASE_RUNBOOK.md`, `RELEASE_BLOCKERS.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
 
 남은 실제 제출 blocker:
 
@@ -56,7 +56,7 @@ python3 -m http.server 4173
 - `assets/icon-192.png`, `assets/icon-512.png`, `assets/apple-touch-icon.png`: 홈 화면 아이콘
 - `netlify.toml`: Netlify 정적 배포와 PWA 헤더 설정
 
-Netlify에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를 사이트로 연결하거나 드래그 앤 드롭 배포하면 됩니다. 배포 후 가족에게 배포 URL만 공유하고, 설치 방법은 `FAMILY_TESTING.md`를 안내하면 됩니다.
+Netlify에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를 사이트로 연결하면 `netlify.toml`이 `npm run mobile:prepare`로 `www` 번들을 만들고 그 폴더만 공개합니다. 운영 URL을 스토어에 넣기 전에는 `PRODUCTION_URLS.md`를 따라 공개 페이지를 확인합니다.
 
 ## 모바일 앱 빌드
 

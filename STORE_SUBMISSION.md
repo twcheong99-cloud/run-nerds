@@ -9,7 +9,7 @@ This file is a working checklist for Play Store / App Store submission. It shoul
 - Safety / medical disclaimer: `safety.html`
 - Support page: `support.html`
 
-Before submission, publish these pages on the production domain. Current support URL candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.
+Before submission, publish these pages on the production domain and verify them with `PRODUCTION_URLS.md`. Current support URL candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.
 
 ## App category and positioning
 
@@ -62,12 +62,14 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Follow `VERSIONING.md` for app identity and build number checks.
 - Follow `ANDROID_PERMISSIONS.md` for Android permission and Play Data safety alignment.
 - Follow `STORE_RATING.md` for content rating, age rating, and health/fitness declaration alignment.
+- Follow `PRODUCTION_URLS.md` before entering public store URLs.
 - Follow `RELEASE_BLOCKERS.md` for the remaining external evidence needed before submission.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
 - Demo account credentials, if reviewers need login. Enter them only in private Play Console / App Store Connect reviewer fields and never commit them to this repository.
 - Production privacy policy URL.
 - Production support URL or support email. Current candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`.
+- Production account deletion URL.
 - Confirmation that the app is not a medical device and does not provide diagnosis or treatment.
 - Confirmation that Play Console content rating and App Store Connect age rating / health declarations match `STORE_RATING.md`.
 - Explanation that pain and fatigue inputs are used to reduce training load and encourage professional evaluation when needed.
@@ -90,4 +92,5 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Complete the Supabase/Auth/Edge Function stop-before-review checks in `BACKEND_RELEASE.md`.
 - Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 - Complete the content rating, age rating, and health declaration checks in `STORE_RATING.md`.
+- Complete the production URL checks in `PRODUCTION_URLS.md`.
 - Close every external blocker in `RELEASE_BLOCKERS.md`.

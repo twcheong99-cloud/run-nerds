@@ -24,6 +24,7 @@ npm run release:check
 8. Complete the backend release checks in `BACKEND_RELEASE.md`.
 9. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 10. Complete the age rating, content rating, and health declaration checks in `STORE_RATING.md`.
+11. Complete the production URL checks in `PRODUCTION_URLS.md`.
 
 ## Android review build
 
@@ -65,6 +66,7 @@ Stop before review if:
 - Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - The app bundle includes local secrets or `env.js`.
+- Production privacy, account deletion, safety, or support URLs fail `PRODUCTION_URLS.md`.
 - Store Data safety answers differ from `STORE_SUBMISSION.md`.
 - Android permissions differ from `ANDROID_PERMISSIONS.md`.
 - Play Console content rating or health declarations differ from `STORE_RATING.md`.
@@ -112,6 +114,7 @@ Stop before review if:
 - App Store age rating or health declarations differ from `STORE_RATING.md`.
 - `PrivacyInfo.xcprivacy` is missing from the archive or contradicts the App Store privacy answers.
 - Safety disclaimer or privacy policy pages are inaccessible in the app.
+- Production privacy, account deletion, safety, or support URLs fail `PRODUCTION_URLS.md`.
 
 ## Reviewer notes
 
@@ -121,6 +124,7 @@ Use `STORE_LISTING.md` for the final store copy and reviewer notes. Before submi
 - Enter demo account email and password only in private reviewer fields, not in repository docs or screenshots.
 - Production privacy policy URL
 - Production support URL or support email
+- Production account deletion URL
 
 Review note essentials:
 

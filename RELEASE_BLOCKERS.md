@@ -9,8 +9,9 @@ This file tracks the remaining work that cannot be fully proven by repository ch
 ## Open blockers
 
 1. Production privacy and support URLs
-   - Evidence needed: public HTTPS privacy policy URL and support URL/email accepted in Play Console and App Store Connect.
+   - Evidence needed: public HTTPS privacy, account deletion, safety, and support URLs accepted in Play Console and App Store Connect.
    - Source docs to update: `STORE_LISTING.md`, `STORE_SUBMISSION.md`, `README.md`.
+   - Source docs to use: `PRODUCTION_URLS.md`.
    - Release check warning today: `STORE_LISTING.md still has production URL placeholders`.
 
 2. Reviewer demo credentials
