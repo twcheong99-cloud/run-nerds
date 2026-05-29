@@ -10,10 +10,11 @@
 - Store readiness gate: `npm run release:check`
 - CI gate: `.github/workflows/release-check.yml`
 - Legal/support pages: `privacy.html`, `safety.html`, `support.html`
-- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
+- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`, `RELEASE_BLOCKERS.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
 
 남은 실제 제출 blocker:
 
+- 상세 현황은 `RELEASE_BLOCKERS.md`에서 추적합니다.
 - Android Studio, Android SDK, Java Runtime/JDK가 있는 머신에서 Android 빌드 검증
 - Full Xcode와 Apple Developer signing으로 iOS archive/TestFlight 검증
 - Production privacy/support URL 확정

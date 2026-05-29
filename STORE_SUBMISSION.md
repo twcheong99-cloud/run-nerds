@@ -58,6 +58,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Follow `BACKEND_RELEASE.md` for Supabase Auth, RLS, and Edge Function release checks.
 - Follow `VERSIONING.md` for app identity and build number checks.
 - Follow `ANDROID_PERMISSIONS.md` for Android permission and Play Data safety alignment.
+- Follow `RELEASE_BLOCKERS.md` for the remaining external evidence needed before submission.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
 - Demo account credentials, if reviewers need login.
@@ -81,3 +82,4 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Complete the Android and iOS stop-before-review checks in `RELEASE_RUNBOOK.md`.
 - Complete the Supabase/Auth/Edge Function stop-before-review checks in `BACKEND_RELEASE.md`.
 - Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
+- Close every external blocker in `RELEASE_BLOCKERS.md`.

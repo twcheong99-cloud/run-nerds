@@ -8,20 +8,21 @@ Use this runbook when preparing the first Play Store or App Store review build. 
 2. Confirm production Supabase settings are in `env.public.js`.
 3. Confirm `env.js` does not exist in the generated `www` bundle.
 4. Confirm the GitHub Actions `Release readiness` workflow is passing on `main`.
-5. Run:
+5. Review `RELEASE_BLOCKERS.md` and confirm every external blocker has evidence or is intentionally still open.
+6. Run:
 
 ```bash
 npm install
 npm run release:check
 ```
 
-6. Fill the final store inputs:
+7. Fill the final store inputs:
    - Production privacy policy URL
    - Production support URL or support email
    - Demo reviewer account credentials
    - Store screenshots from signed device builds using `STORE_SCREENSHOTS.md`
-7. Complete the backend release checks in `BACKEND_RELEASE.md`.
-8. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
+8. Complete the backend release checks in `BACKEND_RELEASE.md`.
+9. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 
 ## Android review build
 

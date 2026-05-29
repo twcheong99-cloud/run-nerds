@@ -63,6 +63,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "STORE_LISTING.md",
   "STORE_SCREENSHOTS.md",
   "RELEASE_RUNBOOK.md",
+  "RELEASE_BLOCKERS.md",
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "ios/App/App/Info.plist",
@@ -147,6 +148,7 @@ assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Ca
 assert(readme.includes("npm run release:check"), "README.md must document the release check");
 assert(readme.includes(".github/workflows/release-check.yml"), "README.md must document the release check workflow");
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
+assert(readme.includes("RELEASE_BLOCKERS.md"), "README.md must link the release blockers");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
 assert(readme.includes("VERSIONING.md"), "README.md must link the versioning checklist");
@@ -181,6 +183,7 @@ assert(storeSubmission.includes("Remaining blockers before real submission"), "S
 assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must reference backend release checks");
 assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must reference versioning checks");
 assert(storeSubmission.includes("ANDROID_PERMISSIONS.md"), "STORE_SUBMISSION.md must reference Android permission checks");
+assert(storeSubmission.includes("RELEASE_BLOCKERS.md"), "STORE_SUBMISSION.md must reference release blockers");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
@@ -193,6 +196,7 @@ assert(releaseRunbook.includes("BACKEND_RELEASE.md"), "RELEASE_RUNBOOK.md must r
 assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must reference versioning checks");
 assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md must reference the iOS privacy manifest");
 assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md must reference Android permission checks");
+assert(releaseRunbook.includes("RELEASE_BLOCKERS.md"), "RELEASE_RUNBOOK.md must reference release blockers");
 assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
 
 const releaseWorkflow = read(".github/workflows/release-check.yml");
@@ -220,6 +224,16 @@ assert(androidPermissionsDoc.includes("android.permission.INTERNET"), "ANDROID_P
 assert(androidPermissionsDoc.includes("Permissions not used"), "ANDROID_PERMISSIONS.md must document unused permission families");
 assert(androidPermissionsDoc.includes("Advertising ID"), "ANDROID_PERMISSIONS.md must document no advertising ID");
 assert(androidPermissionsDoc.includes("Play Data safety alignment"), "ANDROID_PERMISSIONS.md must document Play Data safety alignment");
+
+const releaseBlockers = read("RELEASE_BLOCKERS.md");
+assert(releaseBlockers.includes("Production privacy and support URLs"), "RELEASE_BLOCKERS.md must track production URL blocker");
+assert(releaseBlockers.includes("Reviewer demo credentials"), "RELEASE_BLOCKERS.md must track reviewer credentials blocker");
+assert(releaseBlockers.includes("Android signed build verification"), "RELEASE_BLOCKERS.md must track Android signed build blocker");
+assert(releaseBlockers.includes("iOS signed build verification"), "RELEASE_BLOCKERS.md must track iOS signed build blocker");
+assert(releaseBlockers.includes("Production Supabase/Auth/Edge Function verification"), "RELEASE_BLOCKERS.md must track backend production verification blocker");
+assert(releaseBlockers.includes("Store screenshots from device builds"), "RELEASE_BLOCKERS.md must track device screenshot blocker");
+assert(releaseBlockers.includes("CI confirmation on main"), "RELEASE_BLOCKERS.md must track CI confirmation blocker");
+assert(releaseBlockers.includes("Do not mark the store-readiness goal complete"), "RELEASE_BLOCKERS.md must include completion rule");
 
 if (warnings.length) {
   console.log("\nWarnings:");
