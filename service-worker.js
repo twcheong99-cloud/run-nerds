@@ -1,4 +1,4 @@
-const CACHE_NAME = "run-nerds-family-test-v14";
+const CACHE_NAME = "run-nerds-family-test-v15";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -64,7 +64,7 @@ self.addEventListener("fetch", (event) => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         return response;
-      });
+      }).catch(() => Response.error());
     })
   );
 });
