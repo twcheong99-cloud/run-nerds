@@ -6,7 +6,8 @@
     "mobile:sync": "npm run mobile:prepare && npx cap sync",
     "mobile:doctor": "npx cap doctor",
     "mobile:open:android": "npm run mobile:prepare && npx cap open android",
-    "mobile:open:ios": "npm run mobile:prepare && npx cap open ios"
+    "mobile:open:ios": "npm run mobile:prepare && npx cap open ios",
+    "release:check": "node scripts/release-check.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.3.4",

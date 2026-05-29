@@ -52,6 +52,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 
 ## Review notes to prepare
 
+- Run `npm run release:check` before cutting a review build.
 - Demo account credentials, if reviewers need login.
 - Production privacy policy URL.
 - Production support URL or support email.

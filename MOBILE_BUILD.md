@@ -46,6 +46,14 @@ Use this after dependency changes or native project edits:
 npm run mobile:doctor
 ```
 
+Before a release candidate, run the broader release check:
+
+```bash
+npm run release:check
+```
+
+This runs the web tests, syncs Capacitor, checks Capacitor doctor, validates the iOS plist, and verifies the core store-readiness settings that can be checked without Android Studio or full Xcode.
+
 ## Open native projects
 
 ```bash
