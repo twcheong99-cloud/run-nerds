@@ -51,6 +51,7 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 ## Store listing notes
 
 - Privacy policy page: `privacy.html`
+- Safety and medical disclaimer page: `safety.html`
 - The app uses Supabase Auth for account login.
 - Runner profile, goal, plan, activity log, onboarding, and coach chat workspace data are stored in Supabase.
 - AI coach requests may send the current profile, check-in, plan, activity logs, and recent coach conversation to the Supabase Edge Function and OpenAI API.

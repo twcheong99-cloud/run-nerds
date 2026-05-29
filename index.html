@@ -122,6 +122,8 @@
           <div id="authFeedback" class="auth-feedback hidden"></div>
           <p class="legal-link-row">
             <a href="./privacy.html">개인정보 처리 안내</a>
+            <span aria-hidden="true">·</span>
+            <a href="./safety.html">안전 고지</a>
           </p>
         </div>
       </div>
@@ -232,6 +234,9 @@
               <div class="coach-chat">
                 <div id="coachMessages" class="coach-messages"></div>
                 <div id="coachProposal" class="coach-proposal hidden"></div>
+                <p class="coach-safety-note">
+                  통증이나 위험 신호가 있으면 훈련보다 중단과 전문가 상담을 우선하세요. <a href="./safety.html">안전 고지</a>
+                </p>
                 <form id="coachForm" class="coach-form">
                   <textarea name="message" rows="3" placeholder="오늘 몸 상태, 일정 변경, 불안한 점을 코치에게 말해보세요."></textarea>
                   <button type="submit">상담 보내기</button>
@@ -285,7 +290,10 @@
               <span class="badge neutral">runner profile</span>
             </div>
             <div id="profileSummary" class="profile-summary"></div>
-            <a class="profile-legal-link" href="./privacy.html">개인정보 처리 안내</a>
+            <div class="profile-legal-links">
+              <a href="./privacy.html">개인정보 처리 안내</a>
+              <a href="./safety.html">안전 고지</a>
+            </div>
             <button type="button" id="logoutBtn" class="ghost-btn profile-logout">로그아웃</button>
           </section>
         </section>

@@ -323,6 +323,8 @@ button {
 
 .legal-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .legal-actions .ghost-btn {
@@ -902,14 +904,18 @@ textarea:focus {
 }
 
 .legal-link-row a,
-.profile-legal-link {
+.legal-link-row span,
+.profile-legal-links a,
+.coach-safety-note,
+.coach-safety-note a {
   color: var(--muted);
   font-size: 0.82rem;
   text-decoration: none;
 }
 
 .legal-link-row a:hover,
-.profile-legal-link:hover {
+.profile-legal-links a:hover,
+.coach-safety-note a:hover {
   color: var(--accent);
 }
 
@@ -1870,15 +1876,25 @@ textarea:focus {
   margin-top: 12px;
 }
 
-.profile-legal-link {
-  display: block;
+.profile-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
   margin-top: 14px;
-  text-align: center;
 }
 
 .coach-chat {
   display: grid;
   gap: 12px;
+}
+
+.coach-safety-note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(223, 255, 150, 0.16);
+  background: rgba(223, 255, 150, 0.04);
+  line-height: 1.6;
 }
 
 .coach-messages {
