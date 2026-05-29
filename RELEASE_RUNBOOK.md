@@ -35,7 +35,7 @@ Steps:
 1. Run `npm run mobile:sync`.
 2. Open Android Studio with `npm run mobile:open:android`.
 3. Confirm package name `com.runnerds.app`.
-4. Confirm version values in `android/app/build.gradle`:
+4. Confirm version values in `android/app/build.gradle` and `VERSIONING.md`:
    - `versionCode 1`
    - `versionName "1.0"`
 5. Configure release signing in Android Studio or Gradle.
@@ -75,7 +75,7 @@ Steps:
 1. Run `npm run mobile:sync`.
 2. Open Xcode with `npm run mobile:open:ios`.
 3. Confirm bundle ID `com.runnerds.app`.
-4. Confirm version values in Xcode:
+4. Confirm version values in Xcode and `VERSIONING.md`:
    - Marketing Version `1.0`
    - Current Project Version `1`
 5. Select the Apple Developer Team and signing profile.

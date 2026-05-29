@@ -9,7 +9,7 @@
 - App ID / package: `com.runnerds.app`
 - Store readiness gate: `npm run release:check`
 - Legal/support pages: `privacy.html`, `safety.html`, `support.html`
-- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`, `BACKEND_RELEASE.md`
+- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`
 
 남은 실제 제출 blocker:
 

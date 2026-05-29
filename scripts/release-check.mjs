@@ -35,6 +35,12 @@ function assertIncludes(relativePath, needle, label = needle) {
   assert(read(relativePath).includes(needle), `${relativePath} must include ${label}`);
 }
 
+function matchValue(source, pattern, label) {
+  const match = source.match(pattern);
+  assert(Boolean(match), `${label} is missing`);
+  return match?.[1] || "";
+}
+
 run("web tests", "npm", ["test"]);
 run("Capacitor sync", "npm", ["run", "mobile:sync"]);
 run("Capacitor doctor", "npx", ["cap", "doctor"]);
@@ -43,6 +49,7 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
 [
   "README.md",
   "BACKEND_RELEASE.md",
+  "VERSIONING.md",
   "www/index.html",
   "www/privacy.html",
   "www/safety.html",
@@ -63,16 +70,36 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
 assert(!existsSync(path.join(root, "www/env.js")), "www/env.js must not be bundled");
 
 const manifest = JSON.parse(read("manifest.webmanifest"));
+const capacitorConfig = JSON.parse(read("capacitor.config.json"));
+const androidBuild = read("android/app/build.gradle");
+const iosProject = read("ios/App/App.xcodeproj/project.pbxproj");
+const versioning = read("VERSIONING.md");
+const expectedAppId = matchValue(versioning, /Android application ID: `([^`]+)`/, "VERSIONING.md Android application ID");
+const expectedMarketingVersion = matchValue(versioning, /Marketing version: `([^`]+)`/, "VERSIONING.md marketing version");
+const expectedBuildNumber = matchValue(versioning, /Build number: `([^`]+)`/, "VERSIONING.md build number");
+const androidApplicationId = matchValue(androidBuild, /applicationId "([^"]+)"/, "Android applicationId");
+const androidNamespace = matchValue(androidBuild, /namespace = "([^"]+)"/, "Android namespace");
+const androidVersionName = matchValue(androidBuild, /versionName "([^"]+)"/, "Android versionName");
+const androidVersionCode = matchValue(androidBuild, /versionCode\s+(\d+)/, "Android versionCode");
+const iosBundleIds = [...iosProject.matchAll(/PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);/g)].map((match) => match[1]);
+const iosMarketingVersions = [...iosProject.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((match) => match[1]);
+const iosBuildNumbers = [...iosProject.matchAll(/CURRENT_PROJECT_VERSION = ([^;]+);/g)].map((match) => match[1]);
 assert(manifest.display === "standalone", "manifest display must be standalone");
 assert(manifest.orientation === "portrait", "manifest orientation must be portrait");
 assert(manifest.icons?.some((icon) => icon.purpose === "maskable"), "manifest must include a maskable icon");
+assert(capacitorConfig.appId === expectedAppId, "Capacitor appId must match VERSIONING.md");
+assert(androidApplicationId === expectedAppId, "Android applicationId must match VERSIONING.md");
+assert(androidNamespace === expectedAppId, "Android namespace must match VERSIONING.md");
+assert(androidVersionName === expectedMarketingVersion, "Android versionName must match VERSIONING.md");
+assert(androidVersionCode === expectedBuildNumber, "Android versionCode must match VERSIONING.md build number");
+assert(iosBundleIds.length > 0 && iosBundleIds.every((value) => value === expectedAppId), "iOS bundle ids must match VERSIONING.md");
+assert(iosMarketingVersions.length > 0 && iosMarketingVersions.every((value) => value === expectedMarketingVersion), "iOS marketing versions must match VERSIONING.md");
+assert(iosBuildNumbers.length > 0 && iosBuildNumbers.every((value) => value === expectedBuildNumber), "iOS build numbers must match VERSIONING.md");
 
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:allowBackup="false"', "disabled Android backup");
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:fullBackupContent="false"', "disabled Android full backup");
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:usesCleartextTraffic="false"', "disabled cleartext traffic");
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:screenOrientation="portrait"', "portrait Android orientation");
-assertIncludes("android/app/build.gradle", 'applicationId "com.runnerds.app"', "Android application id");
-assertIncludes("android/app/build.gradle", 'versionName "1.0"', "Android version name");
 assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "setNavigationBarColor", "Android navigation bar color handling");
 assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "setStatusBarColor", "Android status bar color handling");
 assertIncludes("styles.css", "env(safe-area-inset-bottom", "CSS bottom safe-area handling");
@@ -80,8 +107,6 @@ assertIncludes("index.html", "viewport-fit=cover", "viewport safe-area handling"
 
 assertIncludes("ios/App/App/Info.plist", "<key>ITSAppUsesNonExemptEncryption</key>", "iOS encryption declaration");
 assertIncludes("ios/App/App/Info.plist", "<false/>", "iOS no non-exempt encryption value");
-assertIncludes("ios/App/App.xcodeproj/project.pbxproj", "PRODUCT_BUNDLE_IDENTIFIER = com.runnerds.app;", "iOS bundle id");
-assertIncludes("ios/App/App.xcodeproj/project.pbxproj", "MARKETING_VERSION = 1.0;", "iOS marketing version");
 
 const executableWebBundle = [
   "www/index.html",
@@ -100,6 +125,7 @@ assert(readme.includes("npm run release:check"), "README.md must document the re
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
+assert(readme.includes("VERSIONING.md"), "README.md must link the versioning checklist");
 assert(readme.includes("Production privacy/support URL"), "README.md must list production URL as a remaining blocker");
 
 const supportPage = read("support.html");
@@ -128,6 +154,7 @@ const storeSubmission = read("STORE_SUBMISSION.md");
 assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must include the data safety draft");
 assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
 assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must reference backend release checks");
+assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must reference versioning checks");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
@@ -136,6 +163,7 @@ assert(releaseRunbook.includes("Stop before review if:"), "RELEASE_RUNBOOK.md mu
 assert(releaseRunbook.includes("activity log scrolling"), "RELEASE_RUNBOOK.md must include activity log scrolling device test");
 assert(releaseRunbook.includes("com.runnerds.app"), "RELEASE_RUNBOOK.md must include the app identifier");
 assert(releaseRunbook.includes("BACKEND_RELEASE.md"), "RELEASE_RUNBOOK.md must reference backend release checks");
+assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must reference versioning checks");
 
 const backendRelease = read("BACKEND_RELEASE.md");
 assert(backendRelease.includes("jnlexemtrjgwskzwybim"), "BACKEND_RELEASE.md must include the Supabase project ref");
