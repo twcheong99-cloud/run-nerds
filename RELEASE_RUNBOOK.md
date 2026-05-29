@@ -91,6 +91,7 @@ Steps:
 8. Archive in Xcode and validate the archive.
 9. Upload to TestFlight first.
 10. Capture App Store screenshots from the tested build using `STORE_SCREENSHOTS.md`.
+11. Confirm Xcode includes `PrivacyInfo.xcprivacy` in the app target resources and that the generated privacy report matches `STORE_SUBMISSION.md`.
 
 Stop before review if:
 
@@ -98,6 +99,7 @@ Stop before review if:
 - The keyboard hides coach input, activity log fields, or submit actions.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - App Store privacy answers differ from `STORE_SUBMISSION.md`.
+- `PrivacyInfo.xcprivacy` is missing from the archive or contradicts the App Store privacy answers.
 - Safety disclaimer or privacy policy pages are inaccessible in the app.
 
 ## Reviewer notes

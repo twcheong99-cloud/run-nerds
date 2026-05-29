@@ -49,6 +49,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Capacitor should package the generated `www` folder, not the repository root.
 - Android app backup is disabled and cleartext HTTP traffic is disabled.
 - iOS declares no non-exempt encryption; the app uses standard HTTPS transport.
+- iOS includes `PrivacyInfo.xcprivacy` in the app target resources. It declares linked, non-tracking collection for app functionality and personalization across email, name, user ID, fitness data, health-related signals, coach messages, and app interaction state.
 
 ## Review notes to prepare
 
@@ -64,6 +65,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Confirmation that the app is not a medical device and does not provide diagnosis or treatment.
 - Explanation that pain and fatigue inputs are used to reduce training load and encourage professional evaluation when needed.
 - Confirmation that there is no advertising, tracking SDK, location collection, contacts access, or payment collection in the current app.
+- Confirmation that the iOS privacy manifest matches the App Store privacy answers before upload.
 
 ## Remaining blockers before real submission
 
@@ -71,6 +73,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Install native build tooling on the release machine: Android Studio/JDK for Android and full Xcode for iOS.
 - Confirm final bundle ID / package name: `com.runnerds.app`.
 - Confirm Android/iOS version values match `VERSIONING.md`.
+- Confirm the iOS privacy manifest still matches the App Store privacy answers.
 - Capture store screenshots on target devices.
 - Test login, signup, coach fallback, workout logging, privacy page, safety page, and support page on a device build.
 - Complete the Android and iOS stop-before-review checks in `RELEASE_RUNBOOK.md`.

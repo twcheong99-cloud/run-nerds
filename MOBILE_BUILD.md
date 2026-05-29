@@ -17,6 +17,7 @@ Native security defaults:
 - Android backup is disabled for the app shell.
 - Android cleartext HTTP traffic is disabled.
 - iOS declares no non-exempt encryption; the app uses ordinary HTTPS/Supabase/OpenAI network transport.
+- iOS includes `PrivacyInfo.xcprivacy` in the app target resources for App Store privacy manifest validation.
 
 ## One-time setup
 
@@ -98,4 +99,5 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 - The app uses Supabase Auth for account login.
 - Runner profile, goal, plan, activity log, onboarding, and coach chat workspace data are stored in Supabase.
 - AI coach requests may send the current profile, check-in, plan, activity logs, and recent coach conversation to the Supabase Edge Function and OpenAI API.
+- The iOS privacy manifest declares linked, non-tracking use of email, name, user ID, fitness/health status, coach messages, and app interaction state for app functionality and personalization.
 - Current support URL candidate: `https://github.com/twcheong99-cloud/run-nerds/issues`

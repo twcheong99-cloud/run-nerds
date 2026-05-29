@@ -45,6 +45,7 @@ run("web tests", "npm", ["test"]);
 run("Capacitor sync", "npm", ["run", "mobile:sync"]);
 run("Capacitor doctor", "npx", ["cap", "doctor"]);
 run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
+run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xcprivacy"]);
 
 [
   "README.md",
@@ -63,6 +64,7 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "ios/App/App/Info.plist",
+  "ios/App/App/PrivacyInfo.xcprivacy",
   "supabase-setup.sql",
   "supabase/functions/coach/index.ts",
 ].forEach(assertFile);
@@ -73,6 +75,7 @@ const manifest = JSON.parse(read("manifest.webmanifest"));
 const capacitorConfig = JSON.parse(read("capacitor.config.json"));
 const androidBuild = read("android/app/build.gradle");
 const iosProject = read("ios/App/App.xcodeproj/project.pbxproj");
+const iosPrivacyManifest = read("ios/App/App/PrivacyInfo.xcprivacy");
 const versioning = read("VERSIONING.md");
 const expectedAppId = matchValue(versioning, /Android application ID: `([^`]+)`/, "VERSIONING.md Android application ID");
 const expectedMarketingVersion = matchValue(versioning, /Marketing version: `([^`]+)`/, "VERSIONING.md marketing version");
@@ -107,6 +110,20 @@ assertIncludes("index.html", "viewport-fit=cover", "viewport safe-area handling"
 
 assertIncludes("ios/App/App/Info.plist", "<key>ITSAppUsesNonExemptEncryption</key>", "iOS encryption declaration");
 assertIncludes("ios/App/App/Info.plist", "<false/>", "iOS no non-exempt encryption value");
+assertIncludes("ios/App/App.xcodeproj/project.pbxproj", "PrivacyInfo.xcprivacy in Resources", "iOS privacy manifest target resource");
+assertIncludes("ios/App/App/PrivacyInfo.xcprivacy", "NSPrivacyTracking", "iOS privacy tracking declaration");
+assertIncludes("ios/App/App/PrivacyInfo.xcprivacy", "<false/>", "iOS no tracking declaration");
+[
+  "NSPrivacyCollectedDataTypeEmailAddress",
+  "NSPrivacyCollectedDataTypeName",
+  "NSPrivacyCollectedDataTypeUserID",
+  "NSPrivacyCollectedDataTypeFitness",
+  "NSPrivacyCollectedDataTypeHealth",
+  "NSPrivacyCollectedDataTypeOtherUserContent",
+  "NSPrivacyCollectedDataTypeProductInteraction",
+].forEach((dataType) => {
+  assert(iosPrivacyManifest.includes(dataType), `iOS privacy manifest must include ${dataType}`);
+});
 
 const executableWebBundle = [
   "www/index.html",
@@ -155,6 +172,7 @@ assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must 
 assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
 assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must reference backend release checks");
 assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must reference versioning checks");
+assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
@@ -164,6 +182,7 @@ assert(releaseRunbook.includes("activity log scrolling"), "RELEASE_RUNBOOK.md mu
 assert(releaseRunbook.includes("com.runnerds.app"), "RELEASE_RUNBOOK.md must include the app identifier");
 assert(releaseRunbook.includes("BACKEND_RELEASE.md"), "RELEASE_RUNBOOK.md must reference backend release checks");
 assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must reference versioning checks");
+assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md must reference the iOS privacy manifest");
 
 const backendRelease = read("BACKEND_RELEASE.md");
 assert(backendRelease.includes("jnlexemtrjgwskzwybim"), "BACKEND_RELEASE.md must include the Supabase project ref");
