@@ -57,6 +57,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Follow `RELEASE_RUNBOOK.md` for signed Android/iOS build and device-test steps.
 - Follow `BACKEND_RELEASE.md` for Supabase Auth, RLS, and Edge Function release checks.
 - Follow `VERSIONING.md` for app identity and build number checks.
+- Follow `ANDROID_PERMISSIONS.md` for Android permission and Play Data safety alignment.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
 - Demo account credentials, if reviewers need login.
@@ -65,6 +66,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Confirmation that the app is not a medical device and does not provide diagnosis or treatment.
 - Explanation that pain and fatigue inputs are used to reduce training load and encourage professional evaluation when needed.
 - Confirmation that there is no advertising, tracking SDK, location collection, contacts access, or payment collection in the current app.
+- Confirmation that the Android manifest only requests `android.permission.INTERNET`.
 - Confirmation that the iOS privacy manifest matches the App Store privacy answers before upload.
 
 ## Remaining blockers before real submission
@@ -78,3 +80,4 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Test login, signup, coach fallback, workout logging, privacy page, safety page, and support page on a device build.
 - Complete the Android and iOS stop-before-review checks in `RELEASE_RUNBOOK.md`.
 - Complete the Supabase/Auth/Edge Function stop-before-review checks in `BACKEND_RELEASE.md`.
+- Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.

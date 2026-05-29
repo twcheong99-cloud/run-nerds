@@ -96,6 +96,7 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 - Release runbook: `RELEASE_RUNBOOK.md`
 - Backend release checklist: `BACKEND_RELEASE.md`
 - Versioning and app identity: `VERSIONING.md`
+- Android permissions and Play Data safety: `ANDROID_PERMISSIONS.md`
 - The app uses Supabase Auth for account login.
 - Runner profile, goal, plan, activity log, onboarding, and coach chat workspace data are stored in Supabase.
 - AI coach requests may send the current profile, check-in, plan, activity logs, and recent coach conversation to the Supabase Edge Function and OpenAI API.

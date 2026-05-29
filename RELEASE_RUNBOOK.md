@@ -20,6 +20,7 @@ npm run release:check
    - Demo reviewer account credentials
    - Store screenshots from signed device builds using `STORE_SCREENSHOTS.md`
 6. Complete the backend release checks in `BACKEND_RELEASE.md`.
+7. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 
 ## Android review build
 
@@ -60,6 +61,7 @@ Stop before review if:
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - The app bundle includes local secrets or `env.js`.
 - Store Data safety answers differ from `STORE_SUBMISSION.md`.
+- Android permissions differ from `ANDROID_PERMISSIONS.md`.
 
 ## iOS review build
 

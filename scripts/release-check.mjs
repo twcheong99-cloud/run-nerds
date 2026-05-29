@@ -49,6 +49,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
 
 [
   "README.md",
+  "ANDROID_PERMISSIONS.md",
   "BACKEND_RELEASE.md",
   "VERSIONING.md",
   "www/index.html",
@@ -74,6 +75,7 @@ assert(!existsSync(path.join(root, "www/env.js")), "www/env.js must not be bundl
 const manifest = JSON.parse(read("manifest.webmanifest"));
 const capacitorConfig = JSON.parse(read("capacitor.config.json"));
 const androidBuild = read("android/app/build.gradle");
+const androidManifest = read("android/app/src/main/AndroidManifest.xml");
 const iosProject = read("ios/App/App.xcodeproj/project.pbxproj");
 const iosPrivacyManifest = read("ios/App/App/PrivacyInfo.xcprivacy");
 const versioning = read("VERSIONING.md");
@@ -87,6 +89,8 @@ const androidVersionCode = matchValue(androidBuild, /versionCode\s+(\d+)/, "Andr
 const iosBundleIds = [...iosProject.matchAll(/PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);/g)].map((match) => match[1]);
 const iosMarketingVersions = [...iosProject.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((match) => match[1]);
 const iosBuildNumbers = [...iosProject.matchAll(/CURRENT_PROJECT_VERSION = ([^;]+);/g)].map((match) => match[1]);
+const androidPermissions = [...androidManifest.matchAll(/<uses-permission[^>]+android:name="([^"]+)"/g)].map((match) => match[1]).sort();
+const allowedAndroidPermissions = ["android.permission.INTERNET"];
 assert(manifest.display === "standalone", "manifest display must be standalone");
 assert(manifest.orientation === "portrait", "manifest orientation must be portrait");
 assert(manifest.icons?.some((icon) => icon.purpose === "maskable"), "manifest must include a maskable icon");
@@ -98,6 +102,7 @@ assert(androidVersionCode === expectedBuildNumber, "Android versionCode must mat
 assert(iosBundleIds.length > 0 && iosBundleIds.every((value) => value === expectedAppId), "iOS bundle ids must match VERSIONING.md");
 assert(iosMarketingVersions.length > 0 && iosMarketingVersions.every((value) => value === expectedMarketingVersion), "iOS marketing versions must match VERSIONING.md");
 assert(iosBuildNumbers.length > 0 && iosBuildNumbers.every((value) => value === expectedBuildNumber), "iOS build numbers must match VERSIONING.md");
+assert(androidPermissions.length === allowedAndroidPermissions.length && androidPermissions.every((value, index) => value === allowedAndroidPermissions[index]), "Android manifest must request only android.permission.INTERNET");
 
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:allowBackup="false"', "disabled Android backup");
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:fullBackupContent="false"', "disabled Android full backup");
@@ -143,6 +148,7 @@ assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release r
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
 assert(readme.includes("VERSIONING.md"), "README.md must link the versioning checklist");
+assert(readme.includes("ANDROID_PERMISSIONS.md"), "README.md must link the Android permissions checklist");
 assert(readme.includes("Production privacy/support URL"), "README.md must list production URL as a remaining blocker");
 
 const supportPage = read("support.html");
@@ -172,6 +178,7 @@ assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must 
 assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
 assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must reference backend release checks");
 assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must reference versioning checks");
+assert(storeSubmission.includes("ANDROID_PERMISSIONS.md"), "STORE_SUBMISSION.md must reference Android permission checks");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
@@ -183,6 +190,7 @@ assert(releaseRunbook.includes("com.runnerds.app"), "RELEASE_RUNBOOK.md must inc
 assert(releaseRunbook.includes("BACKEND_RELEASE.md"), "RELEASE_RUNBOOK.md must reference backend release checks");
 assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must reference versioning checks");
 assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md must reference the iOS privacy manifest");
+assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md must reference Android permission checks");
 
 const backendRelease = read("BACKEND_RELEASE.md");
 assert(backendRelease.includes("jnlexemtrjgwskzwybim"), "BACKEND_RELEASE.md must include the Supabase project ref");
@@ -197,6 +205,12 @@ assertIncludes("supabase-setup.sql", "enable row level security", "Supabase RLS 
 assertIncludes("supabase-setup.sql", "profiles_select_own", "profile owner select policy");
 assertIncludes("supabase-setup.sql", "workspace_select_own", "workspace owner select policy");
 assertIncludes("supabase/functions/coach/index.ts", "coach-contract-v3", "coach contract version");
+
+const androidPermissionsDoc = read("ANDROID_PERMISSIONS.md");
+assert(androidPermissionsDoc.includes("android.permission.INTERNET"), "ANDROID_PERMISSIONS.md must document INTERNET permission");
+assert(androidPermissionsDoc.includes("Permissions not used"), "ANDROID_PERMISSIONS.md must document unused permission families");
+assert(androidPermissionsDoc.includes("Advertising ID"), "ANDROID_PERMISSIONS.md must document no advertising ID");
+assert(androidPermissionsDoc.includes("Play Data safety alignment"), "ANDROID_PERMISSIONS.md must document Play Data safety alignment");
 
 if (warnings.length) {
   console.log("\nWarnings:");
