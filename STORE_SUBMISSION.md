@@ -61,6 +61,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 
 - Replace all support placeholders with a real support contact.
 - Generate native Android/iOS projects and verify app signing.
+- Install native build tooling on the release machine: Android Studio/JDK for Android and full Xcode for iOS.
 - Confirm final bundle ID / package name: `com.runnerds.app`.
 - Capture store screenshots on target devices.
 - Test login, signup, coach fallback, workout logging, privacy page, safety page, and support page on a device build.

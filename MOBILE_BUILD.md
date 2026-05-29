@@ -2,21 +2,25 @@
 
 This project is still a static PWA at the source level. Capacitor should wrap the prepared `www` folder, not the repository root, so local files like `env.js`, tests, and docs do not get bundled into the app.
 
+## Native project status
+
+Capacitor packages and the native project folders are now checked in:
+
+- `android/`
+- `ios/`
+- `package-lock.json`
+
+The native shells are generated from `capacitor.config.json` and the prepared `www` bundle. The Android and iOS apps are locked to portrait orientation to match the mobile web UI.
+
 ## One-time setup
 
-Install the Capacitor packages when you are ready to generate native projects:
+Install dependencies after cloning:
 
 ```bash
-npm install --save-dev @capacitor/cli @capacitor/core
+npm install
 ```
 
-Then create the native projects:
-
-```bash
-npm run mobile:prepare
-npx cap add android
-npx cap add ios
-```
+The native projects already exist. Only run `npx cap add android` or `npx cap add ios` again if a platform folder is intentionally removed and regenerated.
 
 ## Regular sync
 
@@ -28,6 +32,14 @@ npm run mobile:sync
 
 This refreshes `www` from the checked-in web files and syncs that bundle into Android/iOS.
 
+## Health check
+
+Use this after dependency changes or native project edits:
+
+```bash
+npm run mobile:doctor
+```
+
 ## Open native projects
 
 ```bash
@@ -36,6 +48,14 @@ npm run mobile:open:ios
 ```
 
 Android builds require Android Studio and a signing key before Play Store submission. iOS builds require Xcode, an Apple Developer account, bundle signing, app icons, and launch assets before App Store submission.
+
+## Local build prerequisites
+
+The Capacitor projects can be generated and synced in this repository, but native compilation still requires local platform tooling:
+
+- Android: Android Studio, Android SDK, and a working Java Runtime / JDK.
+- iOS: full Xcode selected with `xcode-select`, not only Command Line Tools.
+- Store release: Android signing key, Apple Developer team, bundle signing, and production support/privacy URLs.
 
 ## Current app identity
 

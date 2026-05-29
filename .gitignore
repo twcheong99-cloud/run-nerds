@@ -2,3 +2,4 @@ env.js
 .DS_Store
 supabase/.temp/
 www/
+node_modules/
