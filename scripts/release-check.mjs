@@ -67,6 +67,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "RELEASE_BLOCKERS.md",
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
+  "android/app/src/main/res/values/colors.xml",
   "ios/App/App/Info.plist",
   "ios/App/App/PrivacyInfo.xcprivacy",
   "supabase-setup.sql",
@@ -114,7 +115,11 @@ assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:usesCleartex
 assertIncludes("android/app/src/main/AndroidManifest.xml", 'android:screenOrientation="portrait"', "portrait Android orientation");
 assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "setNavigationBarColor", "Android navigation bar color handling");
 assertIncludes("android/app/src/main/java/com/runnerds/app/MainActivity.java", "setStatusBarColor", "Android status bar color handling");
+assertIncludes("android/app/src/main/res/values/colors.xml", "runnerds_navigation_bar", "Android navigation bar color resource");
+assertIncludes("android/app/src/main/res/values/styles.xml", "android:windowLightNavigationBar", "Android dark navigation icon theme");
 assertIncludes("styles.css", "env(safe-area-inset-bottom", "CSS bottom safe-area handling");
+assertIncludes("styles.css", "--bottom-tabs-safe-padding", "bottom tabs safe-area padding");
+assertIncludes("styles.css", "@media (max-width: 520px)", "native phone viewport shell handling");
 assertIncludes("index.html", "viewport-fit=cover", "viewport safe-area handling");
 
 assertIncludes("ios/App/App/Info.plist", "<key>ITSAppUsesNonExemptEncryption</key>", "iOS encryption declaration");

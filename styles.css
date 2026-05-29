@@ -67,7 +67,8 @@
   --app-outer-gap: 10px;
   --bottom-tabs-base-height: 84px;
   --bottom-tabs-safe-offset: max(6px, var(--safe-bottom));
-  --dashboard-bottom-space: calc(var(--bottom-tabs-base-height) + var(--bottom-tabs-safe-offset) + 16px);
+  --bottom-tabs-safe-padding: 0px;
+  --dashboard-bottom-space: calc(var(--bottom-tabs-base-height) + var(--bottom-tabs-safe-offset) + var(--bottom-tabs-safe-padding) + 16px);
   --native-bar-color: #050d08;
 }
 
@@ -2101,7 +2102,7 @@ textarea:focus {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 0;
-  padding: 8px 10px 10px;
+  padding: 8px 10px calc(10px + var(--bottom-tabs-safe-padding));
   border: 2px solid rgba(122, 255, 152, 0.18);
   background: #050d08;
   box-shadow: 0 -12px 26px rgba(0, 0, 0, 0.28);
@@ -2199,5 +2200,46 @@ textarea:focus {
   .auth-brand,
   .auth-console {
     min-height: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  :root {
+    --app-outer-gap: 0px;
+    --bottom-tabs-safe-offset: 0px;
+    --bottom-tabs-safe-padding: var(--safe-bottom);
+    --dashboard-bottom-space: calc(var(--bottom-tabs-base-height) + var(--bottom-tabs-safe-padding) + 18px);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top, rgba(122, 255, 152, 0.08), transparent 20%),
+      linear-gradient(180deg, #06100a 0%, #071009 46%, var(--native-bar-color) 100%);
+  }
+
+  .app-shell {
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .app-shell.onboarding-active {
+    min-height: 100dvh;
+  }
+
+  .home-dashboard {
+    padding-right: max(12px, var(--safe-right));
+    padding-left: max(12px, var(--safe-left));
+  }
+
+  .bottom-tabs {
+    left: var(--safe-left);
+    right: var(--safe-right);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.3);
   }
 }

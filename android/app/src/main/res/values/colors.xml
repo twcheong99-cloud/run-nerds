@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#06100a</color>
+    <color name="colorPrimaryDark">#050d08</color>
+    <color name="colorAccent">#7aff98</color>
+    <color name="runnerds_status_bar">#06100a</color>
+    <color name="runnerds_navigation_bar">#050d08</color>
+</resources>
