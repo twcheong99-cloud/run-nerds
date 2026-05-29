@@ -1,6 +1,6 @@
 # Store listing draft
 
-Use this as a copy source for Play Console and App Store Connect. Replace URLs and demo credentials before final submission.
+Use this as a copy source for Play Console and App Store Connect. Replace URLs before final submission. Demo credentials must be entered only in the private reviewer-notes fields in Play Console / App Store Connect and must not be committed to this repository.
 
 ## App Identity
 
@@ -107,9 +107,7 @@ The app is not a medical device and does not provide diagnosis or treatment. Pai
 
 There is no advertising SDK, tracking SDK, payment collection, contacts access, location tracking, photos, or videos in the current app.
 
-Before review, provide demo credentials here:
-- Email:
-- Password:
+Before review, provide demo credentials only in the private store console review fields. Do not paste demo email or password into this repository.
 ```
 
 ## Remaining Store Listing Inputs
@@ -117,6 +115,6 @@ Before review, provide demo credentials here:
 - Production privacy policy URL
 - Production account deletion URL
 - Production support URL or final support email
-- Demo account credentials
+- Demo account credentials entered privately in the store console
 - Final app screenshots from signed Android/iOS builds
 - Final age rating and health/fitness declarations in each store console

@@ -183,6 +183,7 @@ assert(supportPage.includes("https://github.com/twcheong99-cloud/run-nerds/issue
 warn(supportPage.includes("GitHub Issues"), "support.html should name the support channel");
 
 const storeListing = read("STORE_LISTING.md");
+const storeReviewNotesDraft = storeListing.split("## Review Notes Draft")[1]?.split("## Remaining Store Listing Inputs")[0] || "";
 assert(storeListing.includes("## Short Description"), "STORE_LISTING.md must include short description copy");
 assert(storeListing.includes("## Full Description"), "STORE_LISTING.md must include full description copy");
 assert(storeListing.includes("## Screenshot Plan"), "STORE_LISTING.md must include a screenshot plan");
@@ -190,8 +191,11 @@ assert(storeListing.includes("STORE_SCREENSHOTS.md"), "STORE_LISTING.md must ref
 assert(storeListing.includes("account-deletion.html"), "STORE_LISTING.md must include account deletion URL placeholder");
 assert(storeListing.includes("## Review Notes Draft"), "STORE_LISTING.md must include review notes");
 assert(storeListing.includes("run-nerds is not a medical app"), "STORE_LISTING.md must include medical disclaimer copy");
+assert(storeListing.includes("private store console review fields"), "STORE_LISTING.md must keep demo credentials in private store console fields");
+assert(!storeListing.includes("- Email:\n- Password:"), "STORE_LISTING.md must not include blank demo credential fields");
+assert(!/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(storeReviewNotesDraft), "STORE_LISTING.md review notes must not commit demo email credentials");
+assert(!/password\s*[:=]\s*\S+/i.test(storeReviewNotesDraft), "STORE_LISTING.md review notes must not commit demo password credentials");
 warn(!storeListing.includes("production URL"), "STORE_LISTING.md still has production URL placeholders");
-warn(!storeListing.includes("- Email:\n- Password:"), "STORE_LISTING.md still needs demo credentials");
 
 const storeScreenshots = read("STORE_SCREENSHOTS.md");
 assert(storeScreenshots.includes("## Required shots"), "STORE_SCREENSHOTS.md must list required screenshots");
@@ -210,6 +214,7 @@ assert(storeSubmission.includes("ANDROID_PERMISSIONS.md"), "STORE_SUBMISSION.md 
 assert(storeSubmission.includes("RELEASE_BLOCKERS.md"), "STORE_SUBMISSION.md must reference release blockers");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must reference account deletion function");
+assert(storeSubmission.includes("private Play Console / App Store Connect reviewer fields"), "STORE_SUBMISSION.md must keep demo credentials private");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
@@ -224,6 +229,7 @@ assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md mu
 assert(releaseRunbook.includes("RELEASE_BLOCKERS.md"), "RELEASE_RUNBOOK.md must reference release blockers");
 assert(releaseRunbook.includes("Account deletion"), "RELEASE_RUNBOOK.md must include account deletion device test");
 assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
+assert(releaseRunbook.includes("private reviewer fields"), "RELEASE_RUNBOOK.md must keep demo credentials private");
 
 const releaseWorkflow = read(".github/workflows/release-check.yml");
 assert(releaseWorkflow.includes("macos-15"), "release-check workflow must use macOS for plutil");
@@ -266,6 +272,7 @@ assert(releaseBlockers.includes("Production Supabase/Auth/Edge Function verifica
 assert(releaseBlockers.includes("Store screenshots from device builds"), "RELEASE_BLOCKERS.md must track device screenshot blocker");
 assert(releaseBlockers.includes("CI confirmation on main"), "RELEASE_BLOCKERS.md must track CI confirmation blocker");
 assert(releaseBlockers.includes("Do not mark the store-readiness goal complete"), "RELEASE_BLOCKERS.md must include completion rule");
+assert(releaseBlockers.includes("never contain the credentials themselves"), "RELEASE_BLOCKERS.md must keep reviewer credentials out of repo docs");
 
 if (warnings.length) {
   console.log("\nWarnings:");

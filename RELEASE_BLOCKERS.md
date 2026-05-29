@@ -16,8 +16,7 @@ This file tracks the remaining work that cannot be fully proven by repository ch
 2. Reviewer demo credentials
    - Evidence needed: reviewer demo account email/password entered in private store review notes.
    - Do not commit the credentials to this repository.
-   - Source docs to update: private store console notes only; `STORE_LISTING.md` should no longer contain blank demo credential placeholders once final copy is prepared outside the repo.
-   - Release check warning today: `STORE_LISTING.md still needs demo credentials`.
+   - Source docs to update: private store console notes only. Repository docs should only say where to enter credentials, never contain the credentials themselves.
 
 3. Android signed build verification
    - Evidence needed: Android Studio/JDK release machine builds a signed `.aab`, installs an internal-test build on a real Android device, and passes `RELEASE_RUNBOOK.md` Android checks.

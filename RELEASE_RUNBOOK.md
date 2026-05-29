@@ -19,7 +19,7 @@ npm run release:check
 7. Fill the final store inputs:
    - Production privacy policy URL
    - Production support URL or support email
-   - Demo reviewer account credentials
+   - Demo reviewer account credentials in the private store console reviewer fields only
    - Store screenshots from signed device builds using `STORE_SCREENSHOTS.md`
 8. Complete the backend release checks in `BACKEND_RELEASE.md`.
 9. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
@@ -115,6 +115,7 @@ Stop before review if:
 Use `STORE_LISTING.md` for the final store copy and reviewer notes. Before submitting, replace placeholders with:
 
 - Demo account email and password
+- Enter demo account email and password only in private reviewer fields, not in repository docs or screenshots.
 - Production privacy policy URL
 - Production support URL or support email
 
