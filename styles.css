@@ -68,6 +68,7 @@
   --bottom-tabs-base-height: 84px;
   --bottom-tabs-safe-offset: max(6px, var(--safe-bottom));
   --dashboard-bottom-space: calc(var(--bottom-tabs-base-height) + var(--bottom-tabs-safe-offset) + 16px);
+  --native-bar-color: #050d08;
 }
 
 * {
@@ -75,7 +76,9 @@
 }
 
 html {
-  background: #020403;
+  min-height: 100%;
+  background: var(--native-bar-color);
+  overscroll-behavior: none;
 }
 
 body {
@@ -89,6 +92,7 @@ body {
     linear-gradient(180deg, #020403 0%, #071009 50%, #09130c 100%);
   position: relative;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
 }
 
 body::before {
@@ -1013,7 +1017,10 @@ textarea:focus {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 82px max(10px, calc((100vw - 430px) / 2)) 92px;
+  padding:
+    calc(12px + var(--safe-top))
+    max(10px, calc((100vw - 430px) / 2), var(--safe-left), var(--safe-right))
+    calc(12px + var(--safe-bottom));
   background:
     linear-gradient(180deg, rgba(2, 6, 3, 0.48), rgba(2, 6, 3, 0.9)),
     rgba(2, 6, 3, 0.68);
@@ -1025,9 +1032,11 @@ textarea:focus {
 .activity-log-dialog {
   width: 100%;
   max-width: 430px;
-  max-height: min(620px, calc(100dvh - 186px));
+  max-height: min(620px, calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   scrollbar-gutter: stable;
   position: relative;
   z-index: 91;
@@ -1315,6 +1324,9 @@ textarea:focus {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: var(--dashboard-bottom-space);
   display: flex;
   flex-direction: column;
   gap: 14px;
