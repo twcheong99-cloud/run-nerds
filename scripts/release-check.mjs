@@ -42,6 +42,7 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
 
 [
   "README.md",
+  "BACKEND_RELEASE.md",
   "www/index.html",
   "www/privacy.html",
   "www/safety.html",
@@ -55,6 +56,8 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "ios/App/App/Info.plist",
+  "supabase-setup.sql",
+  "supabase/functions/coach/index.ts",
 ].forEach(assertFile);
 
 assert(!existsSync(path.join(root, "www/env.js")), "www/env.js must not be bundled");
@@ -96,6 +99,7 @@ assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Ca
 assert(readme.includes("npm run release:check"), "README.md must document the release check");
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
+assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
 assert(readme.includes("Production privacy/support URL"), "README.md must list production URL as a remaining blocker");
 
 const supportPage = read("support.html");
@@ -123,6 +127,7 @@ assert(storeScreenshots.includes("ios-01-onboarding.png"), "STORE_SCREENSHOTS.md
 const storeSubmission = read("STORE_SUBMISSION.md");
 assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must include the data safety draft");
 assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
+assert(storeSubmission.includes("BACKEND_RELEASE.md"), "STORE_SUBMISSION.md must reference backend release checks");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
@@ -130,6 +135,21 @@ assert(releaseRunbook.includes("## iOS review build"), "RELEASE_RUNBOOK.md must 
 assert(releaseRunbook.includes("Stop before review if:"), "RELEASE_RUNBOOK.md must include stop-before-review gates");
 assert(releaseRunbook.includes("activity log scrolling"), "RELEASE_RUNBOOK.md must include activity log scrolling device test");
 assert(releaseRunbook.includes("com.runnerds.app"), "RELEASE_RUNBOOK.md must include the app identifier");
+assert(releaseRunbook.includes("BACKEND_RELEASE.md"), "RELEASE_RUNBOOK.md must reference backend release checks");
+
+const backendRelease = read("BACKEND_RELEASE.md");
+assert(backendRelease.includes("jnlexemtrjgwskzwybim"), "BACKEND_RELEASE.md must include the Supabase project ref");
+assert(backendRelease.includes("supabase functions deploy coach"), "BACKEND_RELEASE.md must include Edge Function deploy command");
+assert(backendRelease.includes("supabase secrets set OPENAI_API_KEY"), "BACKEND_RELEASE.md must document Edge Function secret setup");
+assert(backendRelease.includes("## Database schema and RLS"), "BACKEND_RELEASE.md must document database/RLS release checks");
+assert(backendRelease.includes("## Auth review setup"), "BACKEND_RELEASE.md must document reviewer auth setup");
+assert(backendRelease.includes("## Edge Function QA"), "BACKEND_RELEASE.md must document coach Edge Function QA");
+assert(backendRelease.includes("coach-contract-v3"), "BACKEND_RELEASE.md must include the coach contract version");
+
+assertIncludes("supabase-setup.sql", "enable row level security", "Supabase RLS enablement");
+assertIncludes("supabase-setup.sql", "profiles_select_own", "profile owner select policy");
+assertIncludes("supabase-setup.sql", "workspace_select_own", "workspace owner select policy");
+assertIncludes("supabase/functions/coach/index.ts", "coach-contract-v3", "coach contract version");
 
 if (warnings.length) {
   console.log("\nWarnings:");

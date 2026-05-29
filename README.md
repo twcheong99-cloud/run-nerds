@@ -9,7 +9,7 @@
 - App ID / package: `com.runnerds.app`
 - Store readiness gate: `npm run release:check`
 - Legal/support pages: `privacy.html`, `safety.html`, `support.html`
-- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`
+- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`, `BACKEND_RELEASE.md`
 
 남은 실제 제출 blocker:
 
@@ -18,6 +18,7 @@
 - Production privacy/support URL 확정
 - Reviewer demo account credentials 준비
 - Signed/internal-test device build에서 스토어 스크린샷 촬영
+- Production Supabase Auth/RLS/Edge Function 최종 검증
 
 ## 실행 전 설정
 
@@ -86,6 +87,7 @@ npm run release:check
 - 선택적으로 `OPENAI_MODEL`을 설정할 수 있으며, 기본값은 `gpt-5.2`입니다.
 - 코칭 판단 근거는 `COACHING_KNOWLEDGE.md`에 정리했고, Edge Function 프롬프트는 이 원칙을 매 요청에 포함합니다.
 - 정적 앱 배포와 Supabase Edge Function 배포는 별개입니다. `supabase/functions/coach/index.ts`를 바꾸면 정적 사이트를 다시 배포하는 것만으로는 LLM 프롬프트가 바뀌지 않으므로 `coach` Edge Function도 별도로 배포해야 합니다.
+- 스토어 제출 전 백엔드 점검은 `BACKEND_RELEASE.md`를 따릅니다.
 
 ```bash
 supabase login

@@ -19,6 +19,7 @@ npm run release:check
    - Production support URL or support email
    - Demo reviewer account credentials
    - Store screenshots from signed device builds using `STORE_SCREENSHOTS.md`
+6. Complete the backend release checks in `BACKEND_RELEASE.md`.
 
 ## Android review build
 
@@ -56,6 +57,7 @@ Stop before review if:
 - The activity log form cannot scroll to RPE, pain, memo, and save actions.
 - Android status bar or navigation bar clashes with the app background.
 - Login, signup, or workspace restore fails on a real device.
+- Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - The app bundle includes local secrets or `env.js`.
 - Store Data safety answers differ from `STORE_SUBMISSION.md`.
 
@@ -94,6 +96,7 @@ Stop before review if:
 
 - Safe-area spacing is wrong around the status bar or home indicator.
 - The keyboard hides coach input, activity log fields, or submit actions.
+- Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - App Store privacy answers differ from `STORE_SUBMISSION.md`.
 - Safety disclaimer or privacy policy pages are inaccessible in the app.
 
