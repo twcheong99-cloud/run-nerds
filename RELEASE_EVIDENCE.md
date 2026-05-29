@@ -8,6 +8,7 @@ For sensitive proof, store screenshots or console exports in the private store/t
 
 - Final commit on `main`:
 - GitHub Actions `Release readiness` workflow URL:
+- Checked against `CI_RELEASE.md`: yes / no
 - `npm run release:check` result:
 - Date checked:
 

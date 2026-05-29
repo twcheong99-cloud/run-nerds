@@ -55,7 +55,7 @@ This file tracks the remaining work that cannot be fully proven by repository ch
 
 9. CI confirmation on main
    - Evidence needed: GitHub Actions `Release readiness` workflow passes on the final `main` commit.
-   - Source docs to use: `.github/workflows/release-check.yml`, `RELEASE_RUNBOOK.md`.
+   - Source docs to use: `.github/workflows/release-check.yml`, `CI_RELEASE.md`, `RELEASE_RUNBOOK.md`.
    - Evidence index: `RELEASE_EVIDENCE.md` Final source state section.
 
 ## Completion rule

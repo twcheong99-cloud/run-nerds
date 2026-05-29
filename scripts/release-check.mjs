@@ -81,6 +81,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "STORE_ASSETS.md",
   "STORE_RATING.md",
   "PRODUCTION_URLS.md",
+  "CI_RELEASE.md",
   "RELEASE_RUNBOOK.md",
   "RELEASE_BLOCKERS.md",
   "RELEASE_EVIDENCE.md",
@@ -238,6 +239,7 @@ assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screens
 assert(readme.includes("STORE_ASSETS.md"), "README.md must link the store asset checklist");
 assert(readme.includes("STORE_RATING.md"), "README.md must link the store rating checklist");
 assert(readme.includes("PRODUCTION_URLS.md"), "README.md must link the production URL checklist");
+assert(readme.includes("CI_RELEASE.md"), "README.md must link the CI confirmation checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
 assert(readme.includes("VERSIONING.md"), "README.md must link the versioning checklist");
 assert(readme.includes("ANDROID_PERMISSIONS.md"), "README.md must link the Android permissions checklist");
@@ -297,6 +299,7 @@ assert(storeSubmission.includes("private Play Console / App Store Connect review
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
 assert(releaseRunbook.includes("npm run native:doctor"), "RELEASE_RUNBOOK.md must include native release doctor");
+assert(releaseRunbook.includes("CI_RELEASE.md"), "RELEASE_RUNBOOK.md must reference CI confirmation checklist");
 assert(releaseRunbook.includes("## iOS review build"), "RELEASE_RUNBOOK.md must include iOS review build steps");
 assert(releaseRunbook.includes("Stop before review if:"), "RELEASE_RUNBOOK.md must include stop-before-review gates");
 assert(releaseRunbook.includes("activity log scrolling"), "RELEASE_RUNBOOK.md must include activity log scrolling device test");
@@ -384,6 +387,14 @@ const releaseEvidence = read("RELEASE_EVIDENCE.md");
 assert(releaseEvidence.includes("Do not add reviewer passwords"), "RELEASE_EVIDENCE.md must forbid committed passwords");
 assert(releaseEvidence.includes("signing keys"), "RELEASE_EVIDENCE.md must forbid signing key evidence");
 assert(releaseEvidence.includes("RELEASE_BLOCKERS.md"), "RELEASE_EVIDENCE.md must reference release blockers");
+assert(releaseEvidence.includes("CI_RELEASE.md"), "RELEASE_EVIDENCE.md must reference CI release checklist");
+
+const ciRelease = read("CI_RELEASE.md");
+assert(ciRelease.includes("Release readiness"), "CI_RELEASE.md must document the workflow name");
+assert(ciRelease.includes(".github/workflows/release-check.yml"), "CI_RELEASE.md must document the workflow file");
+assert(ciRelease.includes("npm run release:check"), "CI_RELEASE.md must document the required job");
+assert(ciRelease.includes("twcheong99-cloud/run-nerds/actions/workflows/release-check.yml"), "CI_RELEASE.md must include the workflow URL");
+assert(ciRelease.includes("gh run list"), "CI_RELEASE.md must include GitHub CLI confirmation commands");
 
 const releaseBlockers = read("RELEASE_BLOCKERS.md");
 assert(releaseBlockers.includes("Production privacy and support URLs"), "RELEASE_BLOCKERS.md must track production URL blocker");
@@ -398,6 +409,7 @@ assert(releaseBlockers.includes("Store screenshots from device builds"), "RELEAS
 assert(releaseBlockers.includes("Store icon and launch asset verification"), "RELEASE_BLOCKERS.md must track icon/launch asset blocker");
 assert(releaseBlockers.includes("Store age rating and health declarations"), "RELEASE_BLOCKERS.md must track rating/declaration blocker");
 assert(releaseBlockers.includes("CI confirmation on main"), "RELEASE_BLOCKERS.md must track CI confirmation blocker");
+assert(releaseBlockers.includes("CI_RELEASE.md"), "RELEASE_BLOCKERS.md must reference CI confirmation checklist");
 assert(releaseBlockers.includes("Do not mark the store-readiness goal complete"), "RELEASE_BLOCKERS.md must include completion rule");
 assert(releaseBlockers.includes("never contain the credentials themselves"), "RELEASE_BLOCKERS.md must keep reviewer credentials out of repo docs");
 
