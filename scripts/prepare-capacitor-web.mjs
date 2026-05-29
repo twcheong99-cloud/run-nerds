@@ -8,6 +8,7 @@ const entries = [
   "index.html",
   "privacy.html",
   "safety.html",
+  "support.html",
   "styles.css",
   "app.js",
   "env.public.js",
