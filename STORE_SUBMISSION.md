@@ -53,6 +53,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 ## Review notes to prepare
 
 - Run `npm run release:check` before cutting a review build.
+- Follow `RELEASE_RUNBOOK.md` for signed Android/iOS build and device-test steps.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Demo account credentials, if reviewers need login.
 - Production privacy policy URL.
@@ -68,3 +69,4 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Confirm final bundle ID / package name: `com.runnerds.app`.
 - Capture store screenshots on target devices.
 - Test login, signup, coach fallback, workout logging, privacy page, safety page, and support page on a device build.
+- Complete the Android and iOS stop-before-review checks in `RELEASE_RUNBOOK.md`.

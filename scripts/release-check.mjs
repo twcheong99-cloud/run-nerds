@@ -49,6 +49,7 @@ run("iOS plist lint", "plutil", ["-lint", "ios/App/App/Info.plist"]);
   "MOBILE_BUILD.md",
   "STORE_SUBMISSION.md",
   "STORE_LISTING.md",
+  "RELEASE_RUNBOOK.md",
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "ios/App/App/Info.plist",
@@ -104,6 +105,13 @@ warn(!storeListing.includes("- Email:\n- Password:"), "STORE_LISTING.md still ne
 const storeSubmission = read("STORE_SUBMISSION.md");
 assert(storeSubmission.includes("Data Safety Draft"), "STORE_SUBMISSION.md must include the data safety draft");
 assert(storeSubmission.includes("Remaining blockers before real submission"), "STORE_SUBMISSION.md must list remaining blockers");
+
+const releaseRunbook = read("RELEASE_RUNBOOK.md");
+assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
+assert(releaseRunbook.includes("## iOS review build"), "RELEASE_RUNBOOK.md must include iOS review build steps");
+assert(releaseRunbook.includes("Stop before review if:"), "RELEASE_RUNBOOK.md must include stop-before-review gates");
+assert(releaseRunbook.includes("activity log scrolling"), "RELEASE_RUNBOOK.md must include activity log scrolling device test");
+assert(releaseRunbook.includes("com.runnerds.app"), "RELEASE_RUNBOOK.md must include the app identifier");
 
 if (warnings.length) {
   console.log("\nWarnings:");

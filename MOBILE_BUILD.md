@@ -54,6 +54,8 @@ npm run release:check
 
 This runs the web tests, syncs Capacitor, checks Capacitor doctor, validates the iOS plist, and verifies the core store-readiness settings that can be checked without Android Studio or full Xcode.
 
+For the full store-review build sequence, follow `RELEASE_RUNBOOK.md` after `npm run release:check` passes.
+
 ## Open native projects
 
 ```bash
@@ -89,6 +91,7 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 - Support page: `support.html`
 - Store submission checklist: `STORE_SUBMISSION.md`
 - Store listing draft: `STORE_LISTING.md`
+- Release runbook: `RELEASE_RUNBOOK.md`
 - The app uses Supabase Auth for account login.
 - Runner profile, goal, plan, activity log, onboarding, and coach chat workspace data are stored in Supabase.
 - AI coach requests may send the current profile, check-in, plan, activity logs, and recent coach conversation to the Supabase Edge Function and OpenAI API.
