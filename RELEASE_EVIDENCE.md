@@ -21,6 +21,7 @@ For sensitive proof, store screenshots or console exports in the private store/t
 - Support URL or support email:
 - Evidence location for URL acceptance:
 - Checked against `PRODUCTION_URLS.md`: yes / no
+- `npm run production:urls` result:
 
 ## Reviewer access
 

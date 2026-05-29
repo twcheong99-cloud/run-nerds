@@ -27,6 +27,7 @@ npm run release:check
 9. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 10. Complete the age rating, content rating, and health declaration checks in `STORE_RATING.md`.
 11. Complete the production URL checks in `PRODUCTION_URLS.md`.
+    - When the production origin is available, run `PRODUCTION_ORIGIN=https://... npm run production:urls`.
 12. Fill `RELEASE_EVIDENCE.md` with non-secret evidence locations before submitting for review.
 13. Copy the final `Release readiness` workflow run URL into `RELEASE_EVIDENCE.md`.
 14. Use `STORE_CONSOLE.md` as the final input package while filling Play Console and App Store Connect.

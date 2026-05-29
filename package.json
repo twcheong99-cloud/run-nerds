@@ -8,6 +8,7 @@
     "mobile:open:android": "npm run mobile:prepare && npx cap open android",
     "mobile:open:ios": "npm run mobile:prepare && npx cap open ios",
     "native:doctor": "node scripts/native-release-doctor.mjs",
+    "production:urls": "node scripts/check-production-urls.mjs",
     "release:check": "node scripts/release-check.mjs"
   },
   "devDependencies": {

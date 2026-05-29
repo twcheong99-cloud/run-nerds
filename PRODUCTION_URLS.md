@@ -51,9 +51,18 @@ Before submitting a review build:
 7. Replace the production URL placeholders in `STORE_LISTING.md`.
 8. Keep screenshots or store-console records proving the final URLs were accepted.
 
+After the production origin is known, also run:
+
+```bash
+PRODUCTION_ORIGIN=https://example.netlify.app npm run production:urls
+```
+
+This checks required public pages, manifest content type, service worker cache headers, and verifies that local files such as `env.js`, release docs, scripts, and tests are not publicly served.
+
 ## Stop before submission if
 
 - Any required page returns 404, redirects to login, or uses HTTP instead of HTTPS.
 - The production site serves `env.js`, repository docs, tests, or scripts.
+- `npm run production:urls` fails for the production origin.
 - Store listing URLs still contain `production URL`.
 - The account deletion URL does not explain both in-app deletion and support-channel deletion when login is unavailable.

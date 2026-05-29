@@ -9,6 +9,7 @@ Use this as the final copy-and-check source when filling Play Console and App St
 - Category: Health & Fitness
 - Positioning: fitness coaching and workout logging, not medical diagnosis or treatment
 - Public URL checklist: `PRODUCTION_URLS.md`
+- Production URL script: `PRODUCTION_ORIGIN=https://... npm run production:urls`
 - Evidence template: `RELEASE_EVIDENCE.md`
 
 ## Public URLs

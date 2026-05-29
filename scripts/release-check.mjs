@@ -96,6 +96,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "ios/App/App/Base.lproj/LaunchScreen.storyboard",
   "ios/App/App/PrivacyInfo.xcprivacy",
   "supabase-setup.sql",
+  "scripts/check-production-urls.mjs",
   "scripts/native-release-doctor.mjs",
   "supabase/functions/coach/index.ts",
   "supabase/functions/delete-account/index.ts",
@@ -371,6 +372,7 @@ assert(productionUrls.includes("/support.html"), "PRODUCTION_URLS.md must includ
 assert(productionUrls.includes("www"), "PRODUCTION_URLS.md must require publishing the prepared www bundle");
 assert(productionUrls.includes("Do not publish the repository root"), "PRODUCTION_URLS.md must warn against root publishing");
 assert(productionUrls.includes("env.js"), "PRODUCTION_URLS.md must verify local env is not public");
+assert(productionUrls.includes("npm run production:urls"), "PRODUCTION_URLS.md must document production URL script");
 assert(read("netlify.toml").includes('publish = "www"'), "Netlify must publish prepared www bundle");
 assert(read("netlify.toml").includes('command = "npm run mobile:prepare"'), "Netlify must prepare web bundle before publish");
 assert(read("netlify.toml").includes("Permissions-Policy"), "Netlify must include basic browser permission headers");
@@ -393,6 +395,7 @@ assert(releaseEvidence.includes("Do not add reviewer passwords"), "RELEASE_EVIDE
 assert(releaseEvidence.includes("signing keys"), "RELEASE_EVIDENCE.md must forbid signing key evidence");
 assert(releaseEvidence.includes("RELEASE_BLOCKERS.md"), "RELEASE_EVIDENCE.md must reference release blockers");
 assert(releaseEvidence.includes("CI_RELEASE.md"), "RELEASE_EVIDENCE.md must reference CI release checklist");
+assert(releaseEvidence.includes("npm run production:urls"), "RELEASE_EVIDENCE.md must record production URL script result");
 assert(releaseEvidence.includes("STORE_CONSOLE.md"), "RELEASE_EVIDENCE.md must reference store console input package");
 
 const storeConsole = read("STORE_CONSOLE.md");
@@ -415,6 +418,7 @@ assert(storeConsole.includes("STORE_RATING.md"), "STORE_CONSOLE.md must referenc
 assert(storeConsole.includes("STORE_SCREENSHOTS.md"), "STORE_CONSOLE.md must reference screenshot checklist");
 assert(storeConsole.includes("RELEASE_EVIDENCE.md"), "STORE_CONSOLE.md must reference evidence template");
 assert(storeConsole.includes("Demo credentials"), "STORE_CONSOLE.md must warn about demo credentials");
+assert(storeConsole.includes("npm run production:urls"), "STORE_CONSOLE.md must reference production URL script");
 
 const ciRelease = read("CI_RELEASE.md");
 assert(ciRelease.includes("Release readiness"), "CI_RELEASE.md must document the workflow name");
@@ -445,6 +449,12 @@ assert(nativeDoctor.includes("Java Runtime / JDK"), "native release doctor must 
 assert(nativeDoctor.includes("Android Gradle wrapper"), "native release doctor must check Gradle wrapper");
 assert(nativeDoctor.includes("Xcode selected"), "native release doctor must check Xcode selection");
 assert(nativeDoctor.includes("Supabase CLI"), "native release doctor must check Supabase CLI");
+
+const productionUrlScript = read("scripts/check-production-urls.mjs");
+assert(productionUrlScript.includes("PRODUCTION_ORIGIN"), "production URL script must require PRODUCTION_ORIGIN");
+assert(productionUrlScript.includes("/privacy.html"), "production URL script must check privacy page");
+assert(productionUrlScript.includes("/account-deletion.html"), "production URL script must check account deletion page");
+assert(productionUrlScript.includes("/env.js"), "production URL script must check env.js is not served");
 
 if (warnings.length) {
   console.log("\nWarnings:");
