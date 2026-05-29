@@ -46,6 +46,7 @@ Steps:
 7. Install a debug or internal-test build on a real Android device before upload.
 8. Device-test these flows:
    - Signup and login
+   - Account deletion with a disposable account
    - Onboarding with race goal
    - Onboarding without race goal
    - Today's workout completion and activity log scrolling
@@ -60,6 +61,7 @@ Stop before review if:
 - The activity log form cannot scroll to RPE, pain, memo, and save actions.
 - Android status bar or navigation bar clashes with the app background.
 - Login, signup, or workspace restore fails on a real device.
+- Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - The app bundle includes local secrets or `env.js`.
 - Store Data safety answers differ from `STORE_SUBMISSION.md`.
@@ -86,6 +88,7 @@ Steps:
 6. Build and run on a real iPhone.
 7. Device-test these flows:
    - Signup and login
+   - Account deletion with a disposable account
    - Onboarding with race goal
    - Onboarding without race goal
    - Today's workout completion and activity log scrolling
@@ -101,6 +104,7 @@ Stop before review if:
 
 - Safe-area spacing is wrong around the status bar or home indicator.
 - The keyboard hides coach input, activity log fields, or submit actions.
+- Account deletion cannot be started from My Page or does not clear the disposable test account.
 - Production Supabase Auth, RLS, or coach Edge Function checks from `BACKEND_RELEASE.md` fail.
 - App Store privacy answers differ from `STORE_SUBMISSION.md`.
 - `PrivacyInfo.xcprivacy` is missing from the archive or contradicts the App Store privacy answers.

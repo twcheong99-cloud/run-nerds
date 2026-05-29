@@ -7,6 +7,7 @@ const outputDir = path.join(root, "www");
 const entries = [
   "index.html",
   "privacy.html",
+  "account-deletion.html",
   "safety.html",
   "support.html",
   "styles.css",

@@ -30,7 +30,7 @@ This file tracks the remaining work that cannot be fully proven by repository ch
    - Source docs to use: `RELEASE_RUNBOOK.md`, `VERSIONING.md`, `STORE_SUBMISSION.md`.
 
 5. Production Supabase/Auth/Edge Function verification
-   - Evidence needed: production Supabase project passes signup, login, workspace restore, RLS owner isolation, Edge Function coach response, apply proposal, safety fallback, and local fallback checks.
+   - Evidence needed: production Supabase project passes signup, login, account deletion, workspace restore, RLS owner isolation, Edge Function coach response, apply proposal, safety fallback, and local fallback checks.
    - Source docs to use: `BACKEND_RELEASE.md`.
 
 6. Store screenshots from device builds

@@ -683,6 +683,12 @@ button,
   color: var(--muted);
 }
 
+.danger-btn {
+  border-color: rgba(255, 159, 159, 0.28);
+  background: rgba(255, 159, 159, 0.04);
+  color: var(--danger);
+}
+
 .auth-form,
 .onboarding-step-body,
 .onboarding-stack {
@@ -1886,6 +1892,11 @@ textarea:focus {
 .profile-logout {
   width: 100%;
   margin-top: 12px;
+}
+
+.profile-delete {
+  width: 100%;
+  margin-top: 14px;
 }
 
 .profile-legal-links {

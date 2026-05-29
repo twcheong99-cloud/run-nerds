@@ -55,6 +55,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "VERSIONING.md",
   "www/index.html",
   "www/privacy.html",
+  "www/account-deletion.html",
   "www/safety.html",
   "www/support.html",
   "www/manifest.webmanifest",
@@ -70,6 +71,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "ios/App/App/PrivacyInfo.xcprivacy",
   "supabase-setup.sql",
   "supabase/functions/coach/index.ts",
+  "supabase/functions/delete-account/index.ts",
 ].forEach(assertFile);
 
 assert(!existsSync(path.join(root, "www/env.js")), "www/env.js must not be bundled");
@@ -134,6 +136,7 @@ assertIncludes("ios/App/App/PrivacyInfo.xcprivacy", "<false/>", "iOS no tracking
 
 const executableWebBundle = [
   "www/index.html",
+  "www/account-deletion.html",
   "www/app.js",
   "www/env.public.js",
   "www/js/app-main.js",
@@ -142,6 +145,11 @@ const executableWebBundle = [
 ].map(read).join("\n");
 
 assert(!/OPENAI_API_KEY|service role|SERVICE_ROLE|DATABASE_URL/i.test(executableWebBundle), "executable web bundle must not include server secret names");
+assert(read("www/account-deletion.html").includes("계정 삭제 안내"), "account deletion page must be bundled");
+assert(read("index.html").includes("deleteAccountBtn"), "app must include an in-app account deletion entry point");
+assert(read("js/app-main.js").includes('supabase.functions.invoke("delete-account"'), "app must invoke delete-account Edge Function");
+assert(read("service-worker.js").includes("./account-deletion.html"), "service worker must cache account deletion page");
+assert(read("scripts/prepare-capacitor-web.mjs").includes('"account-deletion.html"'), "Capacitor prepare must copy account deletion page");
 
 const readme = read("README.md");
 assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Capacitor native app path");
@@ -164,6 +172,7 @@ assert(storeListing.includes("## Short Description"), "STORE_LISTING.md must inc
 assert(storeListing.includes("## Full Description"), "STORE_LISTING.md must include full description copy");
 assert(storeListing.includes("## Screenshot Plan"), "STORE_LISTING.md must include a screenshot plan");
 assert(storeListing.includes("STORE_SCREENSHOTS.md"), "STORE_LISTING.md must reference the screenshot checklist");
+assert(storeListing.includes("account-deletion.html"), "STORE_LISTING.md must include account deletion URL placeholder");
 assert(storeListing.includes("## Review Notes Draft"), "STORE_LISTING.md must include review notes");
 assert(storeListing.includes("run-nerds is not a medical app"), "STORE_LISTING.md must include medical disclaimer copy");
 warn(!storeListing.includes("production URL"), "STORE_LISTING.md still has production URL placeholders");
@@ -185,6 +194,7 @@ assert(storeSubmission.includes("VERSIONING.md"), "STORE_SUBMISSION.md must refe
 assert(storeSubmission.includes("ANDROID_PERMISSIONS.md"), "STORE_SUBMISSION.md must reference Android permission checks");
 assert(storeSubmission.includes("RELEASE_BLOCKERS.md"), "STORE_SUBMISSION.md must reference release blockers");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
+assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must reference account deletion function");
 
 const releaseRunbook = read("RELEASE_RUNBOOK.md");
 assert(releaseRunbook.includes("## Android review build"), "RELEASE_RUNBOOK.md must include Android review build steps");
@@ -197,6 +207,7 @@ assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must refere
 assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md must reference the iOS privacy manifest");
 assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md must reference Android permission checks");
 assert(releaseRunbook.includes("RELEASE_BLOCKERS.md"), "RELEASE_RUNBOOK.md must reference release blockers");
+assert(releaseRunbook.includes("Account deletion"), "RELEASE_RUNBOOK.md must include account deletion device test");
 assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
 
 const releaseWorkflow = read(".github/workflows/release-check.yml");
@@ -208,7 +219,9 @@ assert(releaseWorkflow.includes("pull_request"), "release-check workflow must ru
 const backendRelease = read("BACKEND_RELEASE.md");
 assert(backendRelease.includes("jnlexemtrjgwskzwybim"), "BACKEND_RELEASE.md must include the Supabase project ref");
 assert(backendRelease.includes("supabase functions deploy coach"), "BACKEND_RELEASE.md must include Edge Function deploy command");
+assert(backendRelease.includes("supabase functions deploy delete-account"), "BACKEND_RELEASE.md must include account deletion deploy command");
 assert(backendRelease.includes("supabase secrets set OPENAI_API_KEY"), "BACKEND_RELEASE.md must document Edge Function secret setup");
+assert(backendRelease.includes("SUPABASE_SERVICE_ROLE_KEY"), "BACKEND_RELEASE.md must document service role secret setup");
 assert(backendRelease.includes("## Database schema and RLS"), "BACKEND_RELEASE.md must document database/RLS release checks");
 assert(backendRelease.includes("## Auth review setup"), "BACKEND_RELEASE.md must document reviewer auth setup");
 assert(backendRelease.includes("## Edge Function QA"), "BACKEND_RELEASE.md must document coach Edge Function QA");
@@ -218,6 +231,9 @@ assertIncludes("supabase-setup.sql", "enable row level security", "Supabase RLS 
 assertIncludes("supabase-setup.sql", "profiles_select_own", "profile owner select policy");
 assertIncludes("supabase-setup.sql", "workspace_select_own", "workspace owner select policy");
 assertIncludes("supabase/functions/coach/index.ts", "coach-contract-v3", "coach contract version");
+assertIncludes("supabase/functions/delete-account/index.ts", "SUPABASE_SERVICE_ROLE_KEY", "delete-account service role secret");
+assertIncludes("supabase/functions/delete-account/index.ts", "/auth/v1/admin/users", "delete-account auth deletion endpoint");
+assertIncludes("supabase/functions/delete-account/index.ts", "runner_workspaces", "delete-account workspace cleanup");
 
 const androidPermissionsDoc = read("ANDROID_PERMISSIONS.md");
 assert(androidPermissionsDoc.includes("android.permission.INTERNET"), "ANDROID_PERMISSIONS.md must document INTERNET permission");

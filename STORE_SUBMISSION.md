@@ -5,6 +5,7 @@ This file is a working checklist for Play Store / App Store submission. It shoul
 ## Public URLs
 
 - Privacy policy: `privacy.html`
+- Account deletion: `account-deletion.html`
 - Safety / medical disclaimer: `safety.html`
 - Support page: `support.html`
 
@@ -43,6 +44,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Workspace payloads are stored in `runner_workspaces`.
 - Row Level Security policies restrict profile and workspace rows to the authenticated owner.
 - AI coach requests are sent to the Supabase Edge Function `coach`.
+- Account deletion requests are sent to the Supabase Edge Function `delete-account`.
 - The Edge Function calls the OpenAI Responses API only when `OPENAI_API_KEY` is configured.
 - Browser and mobile bundles must not include `OPENAI_API_KEY`, Supabase service role keys, database URLs, or other server secrets.
 - `env.js` is local-only and is ignored by git.
@@ -69,6 +71,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Confirmation that there is no advertising, tracking SDK, location collection, contacts access, or payment collection in the current app.
 - Confirmation that the Android manifest only requests `android.permission.INTERNET`.
 - Confirmation that the iOS privacy manifest matches the App Store privacy answers before upload.
+- Confirmation that account deletion is available from My Page and the public account deletion page.
 
 ## Remaining blockers before real submission
 
@@ -79,6 +82,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Confirm the iOS privacy manifest still matches the App Store privacy answers.
 - Capture store screenshots on target devices.
 - Test login, signup, coach fallback, workout logging, privacy page, safety page, and support page on a device build.
+- Test account deletion with a disposable reviewer account.
 - Complete the Android and iOS stop-before-review checks in `RELEASE_RUNBOOK.md`.
 - Complete the Supabase/Auth/Edge Function stop-before-review checks in `BACKEND_RELEASE.md`.
 - Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.

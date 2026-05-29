@@ -1,6 +1,6 @@
 # Backend release checklist
 
-Use this checklist before a store review build. The mobile app depends on Supabase Auth, public anon configuration, the database schema/RLS policies, and the `coach` Edge Function.
+Use this checklist before a store review build. The mobile app depends on Supabase Auth, public anon configuration, the database schema/RLS policies, the `coach` Edge Function, and the `delete-account` Edge Function.
 
 ## Production project
 
@@ -36,14 +36,22 @@ Deploy the coach Edge Function after changing `supabase/functions/coach/index.ts
 supabase functions deploy coach --project-ref jnlexemtrjgwskzwybim
 ```
 
+Deploy the account deletion Edge Function after changing `supabase/functions/delete-account/index.ts`:
+
+```bash
+supabase functions deploy delete-account --project-ref jnlexemtrjgwskzwybim
+```
+
 Set Edge Function secrets in Supabase, not in frontend files:
 
 ```bash
 supabase secrets set OPENAI_API_KEY=... --project-ref jnlexemtrjgwskzwybim
 supabase secrets set OPENAI_MODEL=gpt-5.2 --project-ref jnlexemtrjgwskzwybim
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=... --project-ref jnlexemtrjgwskzwybim
 ```
 
 `OPENAI_MODEL` is optional. If `OPENAI_API_KEY` is missing or the Edge Function fails, the app should fall back to the local coach path.
+`SUPABASE_SERVICE_ROLE_KEY` is required only inside Supabase Edge Functions and must never be bundled into the app.
 
 ## Database schema and RLS
 
@@ -86,6 +94,14 @@ Test these coach paths on the production Supabase project:
 - Pain/injury language returns conservative safety guidance and does not diagnose.
 - Edge Function unavailable or failing path falls back without blocking the app.
 
+Test these account deletion paths on the production Supabase project:
+
+- Logged-in user can start account deletion from My Page.
+- `delete-account` deletes the authenticated Supabase Auth user.
+- `profiles` and `runner_workspaces` rows for that user are gone after deletion.
+- The app clears the local session and returns to the login screen.
+- A stale or missing token returns a controlled error, not a stack trace.
+
 The response contract version should stay aligned with the frontend tests:
 
 ```text
@@ -99,6 +115,8 @@ Stop before store upload if:
 - `www/env.js` exists after `npm run mobile:sync`.
 - The executable web bundle contains server secret names.
 - Supabase Auth cannot create or restore a reviewer account.
+- Account deletion cannot be started from inside the app.
+- `delete-account` is not deployed or cannot delete a test reviewer account.
 - RLS allows one user to read or write another user's profile/workspace.
 - The `coach` Edge Function returns raw JSON, stack traces, or non-Korean user-facing text.
 - The local fallback coach path is broken when the Edge Function fails.

@@ -88,6 +88,7 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 ## Store listing notes
 
 - Privacy policy page: `privacy.html`
+- Account deletion page: `account-deletion.html`
 - Safety and medical disclaimer page: `safety.html`
 - Support page: `support.html`
 - Store submission checklist: `STORE_SUBMISSION.md`
@@ -98,6 +99,7 @@ Keep `env.js` local-only. The native app should use `env.public.js` plus Supabas
 - Versioning and app identity: `VERSIONING.md`
 - Android permissions and Play Data safety: `ANDROID_PERMISSIONS.md`
 - The app uses Supabase Auth for account login.
+- Account deletion is initiated from My Page and handled by the Supabase Edge Function `delete-account`.
 - Runner profile, goal, plan, activity log, onboarding, and coach chat workspace data are stored in Supabase.
 - AI coach requests may send the current profile, check-in, plan, activity logs, and recent coach conversation to the Supabase Edge Function and OpenAI API.
 - The iOS privacy manifest declares linked, non-tracking use of email, name, user ID, fitness/health status, coach messages, and app interaction state for app functionality and personalization.

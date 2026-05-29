@@ -9,6 +9,7 @@ Use this as a copy source for Play Console and App Store Connect. Replace URLs a
 - Category: Health & Fitness
 - Support URL: `https://github.com/twcheong99-cloud/run-nerds/issues`
 - Privacy Policy URL: production URL for `privacy.html`
+- Account Deletion URL: production URL for `account-deletion.html`
 - Safety / medical disclaimer URL: production URL for `safety.html`
 
 ## Short Description
@@ -114,6 +115,7 @@ Before review, provide demo credentials here:
 ## Remaining Store Listing Inputs
 
 - Production privacy policy URL
+- Production account deletion URL
 - Production support URL or final support email
 - Demo account credentials
 - Final app screenshots from signed Android/iOS builds

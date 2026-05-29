@@ -21,6 +21,7 @@ const dom = {
   authFeedback: document.querySelector("#authFeedback"),
   systemPulse: document.querySelector("#systemPulse"),
   logoutBtn: document.querySelector("#logoutBtn"),
+  deleteAccountBtn: document.querySelector("#deleteAccountBtn"),
   onboardingShell: document.querySelector("#onboardingShell"),
   dashboard: document.querySelector("#dashboard"),
   onboardingForm: document.querySelector("#onboardingForm"),
@@ -726,6 +727,41 @@ async function handleLogout() {
   });
 }
 
+async function handleDeleteAccount() {
+  if (!authSession?.user) return;
+  const firstConfirm = window.confirm("계정을 삭제하면 프로필, 훈련 기록, 코치 대화, 워크스페이스 데이터가 삭제됩니다. 계속할까요?");
+  if (!firstConfirm) return;
+  const typed = window.prompt("정말 삭제하려면 DELETE를 입력해 주세요.");
+  if (typed !== "DELETE") {
+    setAuthFeedback("계정 삭제가 취소되었습니다.", "warning");
+    return;
+  }
+
+  let deletionError = null;
+  await runSystemPulse(["requesting account deletion...", "removing workspace data...", "clearing local session..."], "", {
+    duration: 800,
+    onBeforeDone: async () => {
+      try {
+        const { error } = await supabase.functions.invoke("delete-account", { body: { confirm: "DELETE" } });
+        deletionError = error;
+      } catch (error) {
+        deletionError = error;
+      }
+    },
+  });
+  if (deletionError) {
+    setAuthFeedback(formatErrorMessage(deletionError, "계정 삭제 요청에 실패했습니다. 지원 안내에서 삭제를 요청해 주세요."), "warning");
+    return;
+  }
+  clearSupabaseAuthCache();
+  authSession = null;
+  isFirstConsultationActive = false;
+  initializeState(null);
+  showAuthGate();
+  switchAuthTab("login");
+  setAuthFeedback("계정과 앱 데이터 삭제가 완료되었습니다.", "success");
+}
+
 function handleOnboardingBack() {
   if (state.onboarding.step === 0) return;
   runSystemPulse(["loading previous prompt..."], "이전 단계로 돌아왔어요", {
@@ -800,6 +836,7 @@ export function initApp() {
   dom.loginForm.addEventListener("submit", (event) => handleLogin(event).catch((error) => setAuthFeedback(formatErrorMessage(error, "로그인 처리 중 오류"), "warning")));
   dom.signupForm.addEventListener("submit", (event) => handleSignup(event).catch((error) => setAuthFeedback(formatErrorMessage(error, "회원가입 처리 중 오류"), "warning")));
   dom.logoutBtn.addEventListener("click", () => handleLogout().catch((error) => setAuthFeedback(formatErrorMessage(error, "로그아웃 오류"), "warning")));
+  dom.deleteAccountBtn.addEventListener("click", () => handleDeleteAccount().catch((error) => setAuthFeedback(formatErrorMessage(error, "계정 삭제 오류"), "warning")));
   dom.tabButtons.forEach((button) => button.addEventListener("click", () => switchAppTab(button.dataset.tab)));
   dom.onboardingBackBtn.addEventListener("click", handleOnboardingBack);
   dom.onboardingNextBtn.addEventListener("click", handleOnboardingNext);
