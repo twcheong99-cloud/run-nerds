@@ -40,6 +40,16 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = await req.json();
+  } catch {
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
+  }
+  if (payload.confirm !== "DELETE") {
+    return jsonResponse({ error: "Deletion confirmation is required" }, 400);
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const authorization = req.headers.get("Authorization") || "";

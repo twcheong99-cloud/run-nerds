@@ -232,6 +232,7 @@ assertIncludes("supabase-setup.sql", "profiles_select_own", "profile owner selec
 assertIncludes("supabase-setup.sql", "workspace_select_own", "workspace owner select policy");
 assertIncludes("supabase/functions/coach/index.ts", "coach-contract-v3", "coach contract version");
 assertIncludes("supabase/functions/delete-account/index.ts", "SUPABASE_SERVICE_ROLE_KEY", "delete-account service role secret");
+assertIncludes("supabase/functions/delete-account/index.ts", 'payload.confirm !== "DELETE"', "delete-account confirmation guard");
 assertIncludes("supabase/functions/delete-account/index.ts", "/auth/v1/admin/users", "delete-account auth deletion endpoint");
 assertIncludes("supabase/functions/delete-account/index.ts", "runner_workspaces", "delete-account workspace cleanup");
 
