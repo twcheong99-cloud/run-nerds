@@ -64,6 +64,7 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Follow `STORE_RATING.md` for content rating, age rating, and health/fitness declaration alignment.
 - Follow `PRODUCTION_URLS.md` before entering public store URLs.
 - Follow `RELEASE_BLOCKERS.md` for the remaining external evidence needed before submission.
+- Record non-secret final submission evidence in `RELEASE_EVIDENCE.md`.
 - Use `STORE_LISTING.md` for store copy, screenshot captions, and review notes.
 - Use `STORE_SCREENSHOTS.md` for screenshot setup, QA, and file naming.
 - Use `STORE_ASSETS.md` for icon and launch asset checks.
@@ -95,4 +96,5 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 - Complete the content rating, age rating, and health declaration checks in `STORE_RATING.md`.
 - Complete the production URL checks in `PRODUCTION_URLS.md`.
+- Fill `RELEASE_EVIDENCE.md` with final non-secret evidence locations.
 - Close every external blocker in `RELEASE_BLOCKERS.md`.

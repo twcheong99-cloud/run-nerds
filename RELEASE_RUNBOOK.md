@@ -8,7 +8,7 @@ Use this runbook when preparing the first Play Store or App Store review build. 
 2. Confirm production Supabase settings are in `env.public.js`.
 3. Confirm `env.js` does not exist in the generated `www` bundle.
 4. Confirm the GitHub Actions `Release readiness` workflow is passing on `main`.
-5. Review `RELEASE_BLOCKERS.md` and confirm every external blocker has evidence or is intentionally still open.
+5. Review `RELEASE_BLOCKERS.md` and record non-secret evidence in `RELEASE_EVIDENCE.md`.
 6. Run:
 
 ```bash
@@ -26,6 +26,7 @@ npm run release:check
 9. Complete the Android permission and Play Data safety checks in `ANDROID_PERMISSIONS.md`.
 10. Complete the age rating, content rating, and health declaration checks in `STORE_RATING.md`.
 11. Complete the production URL checks in `PRODUCTION_URLS.md`.
+12. Fill `RELEASE_EVIDENCE.md` with non-secret evidence locations before submitting for review.
 
 ## Android review build
 
@@ -136,3 +137,7 @@ Review note essentials:
 - AI coach requests go through a Supabase Edge Function; server secrets are not bundled in the app.
 - The current app has no advertising SDK, tracking SDK, location tracking, contacts access, photos/videos access, or payments.
 - Age rating and health declarations should follow `STORE_RATING.md`.
+
+## Evidence handoff
+
+Before pressing submit for review, `RELEASE_EVIDENCE.md` should point to the exact workflow run, store-console records, signed build records, production URL checks, backend QA records, and screenshot sets used for the submission. Keep secrets out of the file.

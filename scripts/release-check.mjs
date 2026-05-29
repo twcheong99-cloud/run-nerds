@@ -83,6 +83,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "PRODUCTION_URLS.md",
   "RELEASE_RUNBOOK.md",
   "RELEASE_BLOCKERS.md",
+  "RELEASE_EVIDENCE.md",
   "android/app/src/main/AndroidManifest.xml",
   "android/app/src/main/java/com/runnerds/app/MainActivity.java",
   "android/app/src/main/res/values/colors.xml",
@@ -230,6 +231,7 @@ assert(readme.includes("npm run release:check"), "README.md must document the re
 assert(readme.includes(".github/workflows/release-check.yml"), "README.md must document the release check workflow");
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
 assert(readme.includes("RELEASE_BLOCKERS.md"), "README.md must link the release blockers");
+assert(readme.includes("RELEASE_EVIDENCE.md"), "README.md must link the release evidence template");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
 assert(readme.includes("STORE_ASSETS.md"), "README.md must link the store asset checklist");
 assert(readme.includes("STORE_RATING.md"), "README.md must link the store rating checklist");
@@ -285,6 +287,7 @@ assert(storeSubmission.includes("STORE_RATING.md"), "STORE_SUBMISSION.md must re
 assert(storeSubmission.includes("PRODUCTION_URLS.md"), "STORE_SUBMISSION.md must reference production URL checks");
 assert(storeSubmission.includes("STORE_ASSETS.md"), "STORE_SUBMISSION.md must reference store asset checks");
 assert(storeSubmission.includes("RELEASE_BLOCKERS.md"), "STORE_SUBMISSION.md must reference release blockers");
+assert(storeSubmission.includes("RELEASE_EVIDENCE.md"), "STORE_SUBMISSION.md must reference release evidence");
 assert(storeSubmission.includes("PrivacyInfo.xcprivacy"), "STORE_SUBMISSION.md must reference the iOS privacy manifest");
 assert(storeSubmission.includes("delete-account"), "STORE_SUBMISSION.md must reference account deletion function");
 assert(storeSubmission.includes("private Play Console / App Store Connect reviewer fields"), "STORE_SUBMISSION.md must keep demo credentials private");
@@ -303,6 +306,7 @@ assert(releaseRunbook.includes("STORE_RATING.md"), "RELEASE_RUNBOOK.md must refe
 assert(releaseRunbook.includes("PRODUCTION_URLS.md"), "RELEASE_RUNBOOK.md must reference production URL checks");
 assert(releaseRunbook.includes("STORE_ASSETS.md"), "RELEASE_RUNBOOK.md must reference store asset checks");
 assert(releaseRunbook.includes("RELEASE_BLOCKERS.md"), "RELEASE_RUNBOOK.md must reference release blockers");
+assert(releaseRunbook.includes("RELEASE_EVIDENCE.md"), "RELEASE_RUNBOOK.md must reference release evidence");
 assert(releaseRunbook.includes("Account deletion"), "RELEASE_RUNBOOK.md must include account deletion device test");
 assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
 assert(releaseRunbook.includes("private reviewer fields"), "RELEASE_RUNBOOK.md must keep demo credentials private");
@@ -360,8 +364,27 @@ assert(read("netlify.toml").includes('publish = "www"'), "Netlify must publish p
 assert(read("netlify.toml").includes('command = "npm run mobile:prepare"'), "Netlify must prepare web bundle before publish");
 assert(read("netlify.toml").includes("Permissions-Policy"), "Netlify must include basic browser permission headers");
 
+const releaseEvidence = read("RELEASE_EVIDENCE.md");
+[
+  "Final source state",
+  "Production URLs",
+  "Reviewer access",
+  "Android signed build",
+  "iOS signed build",
+  "Production backend",
+  "Store screenshots",
+  "Store declarations",
+  "Final stop-before-review audit",
+].forEach((section) => {
+  assert(releaseEvidence.includes(`## ${section}`), `RELEASE_EVIDENCE.md must include ${section}`);
+});
+assert(releaseEvidence.includes("Do not add reviewer passwords"), "RELEASE_EVIDENCE.md must forbid committed passwords");
+assert(releaseEvidence.includes("signing keys"), "RELEASE_EVIDENCE.md must forbid signing key evidence");
+assert(releaseEvidence.includes("RELEASE_BLOCKERS.md"), "RELEASE_EVIDENCE.md must reference release blockers");
+
 const releaseBlockers = read("RELEASE_BLOCKERS.md");
 assert(releaseBlockers.includes("Production privacy and support URLs"), "RELEASE_BLOCKERS.md must track production URL blocker");
+assert(releaseBlockers.includes("RELEASE_EVIDENCE.md"), "RELEASE_BLOCKERS.md must reference release evidence");
 assert(releaseBlockers.includes("PRODUCTION_URLS.md"), "RELEASE_BLOCKERS.md must reference production URL checklist");
 assert(releaseBlockers.includes("Reviewer demo credentials"), "RELEASE_BLOCKERS.md must track reviewer credentials blocker");
 assert(releaseBlockers.includes("Android signed build verification"), "RELEASE_BLOCKERS.md must track Android signed build blocker");

@@ -10,7 +10,7 @@
 - Store readiness gate: `npm run release:check`
 - CI gate: `.github/workflows/release-check.yml`
 - Legal/support pages: `privacy.html`, `safety.html`, `support.html`
-- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `STORE_ASSETS.md`, `STORE_RATING.md`, `PRODUCTION_URLS.md`, `RELEASE_RUNBOOK.md`, `RELEASE_BLOCKERS.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
+- Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `STORE_ASSETS.md`, `STORE_RATING.md`, `PRODUCTION_URLS.md`, `RELEASE_RUNBOOK.md`, `RELEASE_BLOCKERS.md`, `RELEASE_EVIDENCE.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
 
 남은 실제 제출 blocker:
 
@@ -21,6 +21,7 @@
 - Reviewer demo account credentials 준비
 - Signed/internal-test device build에서 스토어 스크린샷 촬영
 - Store age rating / health declarations 입력 및 증거 보관
+- `RELEASE_EVIDENCE.md` 기준으로 외부 증거 정리
 - Production Supabase Auth/RLS/Edge Function 최종 검증
 
 ## 실행 전 설정
