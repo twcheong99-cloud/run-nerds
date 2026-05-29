@@ -1,4 +1,4 @@
-const CACHE_NAME = "run-nerds-family-test-v15";
+const CACHE_NAME = "run-nerds-family-test-v16";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,8 @@ const APP_SHELL = [
   "./manifest.webmanifest",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
+  "./assets/icon-maskable-192.png",
+  "./assets/icon-maskable-512.png",
   "./assets/apple-touch-icon.png",
   "./js/app-main.js",
   "./js/coach-apply.js",
