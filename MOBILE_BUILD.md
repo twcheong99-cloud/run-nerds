@@ -12,6 +12,12 @@ Capacitor packages and the native project folders are now checked in:
 
 The native shells are generated from `capacitor.config.json` and the prepared `www` bundle. The Android and iOS apps are locked to portrait orientation to match the mobile web UI.
 
+Native security defaults:
+
+- Android backup is disabled for the app shell.
+- Android cleartext HTTP traffic is disabled.
+- iOS declares no non-exempt encryption; the app uses ordinary HTTPS/Supabase/OpenAI network transport.
+
 ## One-time setup
 
 Install dependencies after cloning:

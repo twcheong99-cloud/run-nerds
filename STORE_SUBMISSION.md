@@ -47,6 +47,8 @@ Use this as the starting point for the Google Play Data safety form and App Stor
 - Browser and mobile bundles must not include `OPENAI_API_KEY`, Supabase service role keys, database URLs, or other server secrets.
 - `env.js` is local-only and is ignored by git.
 - Capacitor should package the generated `www` folder, not the repository root.
+- Android app backup is disabled and cleartext HTTP traffic is disabled.
+- iOS declares no non-exempt encryption; the app uses standard HTTPS transport.
 
 ## Review notes to prepare
 
