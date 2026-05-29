@@ -8,6 +8,7 @@
 - Native shell: Android/iOS Capacitor 프로젝트 체크인 완료
 - App ID / package: `com.runnerds.app`
 - Store readiness gate: `npm run release:check`
+- CI gate: `.github/workflows/release-check.yml`
 - Legal/support pages: `privacy.html`, `safety.html`, `support.html`
 - Store docs: `STORE_SUBMISSION.md`, `STORE_LISTING.md`, `STORE_SCREENSHOTS.md`, `RELEASE_RUNBOOK.md`, `BACKEND_RELEASE.md`, `VERSIONING.md`, `ANDROID_PERMISSIONS.md`
 
@@ -102,6 +103,8 @@ npm run release:check
 ```
 
 `npm test`는 LLM 코치 응답 정규화, 요일/횟수 요구사항 병합, 임시 조정 해제 동작을 확인합니다. `npm run release:check`는 스토어 제출 전 기본 게이트입니다.
+
+GitHub Actions의 `Release readiness` 워크플로도 `main` push와 pull request에서 같은 릴리즈 체크를 실행합니다.
 
 ## 보안 주의
 

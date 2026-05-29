@@ -49,6 +49,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
 
 [
   "README.md",
+  ".github/workflows/release-check.yml",
   "ANDROID_PERMISSIONS.md",
   "BACKEND_RELEASE.md",
   "VERSIONING.md",
@@ -144,6 +145,7 @@ assert(!/OPENAI_API_KEY|service role|SERVICE_ROLE|DATABASE_URL/i.test(executable
 const readme = read("README.md");
 assert(readme.includes("Capacitor Android/iOS"), "README.md must describe the Capacitor native app path");
 assert(readme.includes("npm run release:check"), "README.md must document the release check");
+assert(readme.includes(".github/workflows/release-check.yml"), "README.md must document the release check workflow");
 assert(readme.includes("RELEASE_RUNBOOK.md"), "README.md must link the release runbook");
 assert(readme.includes("STORE_SCREENSHOTS.md"), "README.md must link the screenshot checklist");
 assert(readme.includes("BACKEND_RELEASE.md"), "README.md must link the backend release checklist");
@@ -191,6 +193,13 @@ assert(releaseRunbook.includes("BACKEND_RELEASE.md"), "RELEASE_RUNBOOK.md must r
 assert(releaseRunbook.includes("VERSIONING.md"), "RELEASE_RUNBOOK.md must reference versioning checks");
 assert(releaseRunbook.includes("PrivacyInfo.xcprivacy"), "RELEASE_RUNBOOK.md must reference the iOS privacy manifest");
 assert(releaseRunbook.includes("ANDROID_PERMISSIONS.md"), "RELEASE_RUNBOOK.md must reference Android permission checks");
+assert(releaseRunbook.includes("Release readiness"), "RELEASE_RUNBOOK.md must reference the CI release readiness workflow");
+
+const releaseWorkflow = read(".github/workflows/release-check.yml");
+assert(releaseWorkflow.includes("macos-15"), "release-check workflow must use macOS for plutil");
+assert(releaseWorkflow.includes("npm ci"), "release-check workflow must install with npm ci");
+assert(releaseWorkflow.includes("npm run release:check"), "release-check workflow must run npm run release:check");
+assert(releaseWorkflow.includes("pull_request"), "release-check workflow must run on pull requests");
 
 const backendRelease = read("BACKEND_RELEASE.md");
 assert(backendRelease.includes("jnlexemtrjgwskzwybim"), "BACKEND_RELEASE.md must include the Supabase project ref");
