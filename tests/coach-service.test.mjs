@@ -88,6 +88,29 @@ function makeSession(id, patch = {}) {
 }
 
 {
+  const stale = buildPlan(defaultProfile, {
+    ...defaultCheckin,
+    fatigue: "high",
+    pain: "worrying",
+    sleep: "poor",
+    schedule: "chaotic",
+    updatedAt: "2026-05-20",
+  }, { today: "2026-06-08" });
+  const fresh = buildPlan(defaultProfile, {
+    ...defaultCheckin,
+    fatigue: "high",
+    pain: "worrying",
+    sleep: "poor",
+    schedule: "chaotic",
+    updatedAt: "2026-06-08",
+  }, { today: "2026-06-08" });
+
+  assert.equal(stale.meta.safety.level, "green");
+  assert.equal(fresh.meta.safety.level, "yellow");
+  assert.ok(stale.plan.some((session) => session.type === "quality"));
+}
+
+{
   const taper = buildPlan({
     ...defaultProfile,
     goalRace: "서울하프마라톤",
@@ -421,6 +444,38 @@ function makeSession(id, patch = {}) {
 }
 
 {
+  const previousPlan = currentPlan.map((session) => (
+    session.id === "thu" ? { ...session, title: "지난주 완료한 목요일", status: "complete" } : session
+  ));
+  const nextPlan = currentPlan.map((session) => ({ ...session, title: `이번 주 새 계획 ${session.id}` }));
+  const merged = mergePlanWithTrainingHistory(nextPlan, previousPlan, {
+    "2026-05-28": { date: "2026-05-28", dayId: "thu", source: "manual", distance: "6" },
+  }, {
+    currentWeekStart: "2026-06-01",
+    preservePreviousStatus: false,
+  });
+
+  assert.equal(merged.find((session) => session.id === "thu").title, "이번 주 새 계획 thu");
+  assert.equal(merged.find((session) => session.id === "thu").status, "planned");
+}
+
+{
+  const previousPlan = currentPlan.map((session) => (
+    session.id === "thu" ? { ...session, title: "이번 주 기록된 목요일", status: "complete" } : session
+  ));
+  const nextPlan = currentPlan.map((session) => ({ ...session, title: `이번 주 새 계획 ${session.id}` }));
+  const merged = mergePlanWithTrainingHistory(nextPlan, previousPlan, {
+    "2026-06-04": { date: "2026-06-04", dayId: "thu", source: "manual", distance: "6" },
+  }, {
+    currentWeekStart: "2026-06-01",
+    preservePreviousStatus: false,
+  });
+
+  assert.equal(merged.find((session) => session.id === "thu").title, "이번 주 기록된 목요일");
+  assert.equal(merged.find((session) => session.id === "thu").status, "complete");
+}
+
+{
   const nextPlan = currentPlan.map((session) => (
     session.id === "thu" ? { ...session, title: "회복 조깅 4km", distance: "4km" } : session
   ));
@@ -556,6 +611,54 @@ function makeSession(id, patch = {}) {
   assert.equal(context.totalDistanceKm, 7.2);
   assert.equal(context.weeklyReviews[0].summary, "지난주 피로 높음");
   assert.equal(context.recentLogs[0].source, "weekly-review");
+}
+
+{
+  const request = __coachServiceTest.buildCoachRequest({
+    message: "이번 주 계획 수정해줘",
+    state: {
+      profile: defaultProfile,
+      checkin: {
+        ...defaultCheckin,
+        fatigue: "high",
+        pain: "worrying",
+        sleep: "poor",
+        schedule: "chaotic",
+        updatedAt: "2026-05-20",
+      },
+      plan: currentPlan,
+      planMeta: {},
+      activityLogs: {},
+      coachChat: { stage: "idle", pendingPlan: null, messages: [] },
+    },
+  });
+
+  assert.equal(request.checkin.fatigue, "medium");
+  assert.equal(request.checkin.pain, "none");
+  assert.equal(request.checkin.sleep, "okay");
+  assert.equal(request.checkin.schedule, "stable");
+}
+
+{
+  assert.equal(__homeTest.formatActivityLogSummary({
+    source: "condition-check-in",
+    status: "complete",
+    reason: "fatigue",
+  }), "컨디션 체크 · 피로");
+  assert.equal(__homeTest.isFreshCheckin({ updatedAt: "2026-06-02" }, new Date(2026, 5, 8)), true);
+  assert.equal(__homeTest.isFreshCheckin({ updatedAt: "2026-05-31" }, new Date(2026, 5, 8)), false);
+  assert.equal(__homeTest.getPhysicalStatusLevel({
+    bodyCondition: "normal",
+    painStatus: "none",
+    checkin: { updatedAt: "2026-05-31", fatigue: "high", pain: "worrying" },
+    today: new Date(2026, 5, 8),
+  }).level, "green");
+  assert.equal(__homeTest.getPhysicalStatusLevel({
+    bodyCondition: "normal",
+    painStatus: "none",
+    checkin: { updatedAt: "2026-06-08", fatigue: "high", pain: "none" },
+    today: new Date(2026, 5, 8),
+  }).level, "yellow");
 }
 
 {

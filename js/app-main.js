@@ -217,6 +217,7 @@ function initializeState(loaded) {
     state.plan = result.plan;
     state.planMeta = result.meta;
   }
+  refreshPlanForCurrentWeek();
 }
 
 function fillForm(form, values) {
@@ -343,9 +344,30 @@ function readProfileForm() {
 
 function rebuildPlanKeepingProgress(nextSelectedId) {
   const result = buildPlan(state.profile, state.checkin);
-  state.plan = mergePlanWithTrainingHistory(result.plan, state.plan, state.activityLogs);
+  const previousWeekStart = state.planMeta?.season?.currentWeekStart || "";
+  const currentWeekStart = result.meta?.season?.currentWeekStart || "";
+  state.plan = mergePlanWithTrainingHistory(result.plan, state.plan, state.activityLogs, {
+    currentWeekStart,
+    preservePreviousStatus: previousWeekStart === currentWeekStart,
+  });
   state.planMeta = result.meta;
   state.selectedDayId = nextSelectedId || state.plan.find((session) => session.type === "quality")?.id || state.plan[0]?.id || null;
+}
+
+function refreshPlanForCurrentWeek() {
+  const result = buildPlan(state.profile, state.checkin);
+  const previousWeekStart = state.planMeta?.season?.currentWeekStart || "";
+  const currentWeekStart = result.meta?.season?.currentWeekStart || "";
+  if (previousWeekStart && previousWeekStart === currentWeekStart) return;
+  state.plan = mergePlanWithTrainingHistory(result.plan, state.plan, state.activityLogs, {
+    currentWeekStart,
+    preservePreviousStatus: false,
+  });
+  state.planMeta = result.meta;
+  state.selectedDayId = state.plan.find((session) => session.id === state.selectedDayId)?.id
+    || state.plan.find((session) => session.type === "quality")?.id
+    || state.plan[0]?.id
+    || null;
 }
 
 function mergeCoachMeta(meta) {
@@ -394,6 +416,12 @@ function saveActivityLog(activityDate, log) {
           savedAt: new Date().toISOString(),
         },
       };
+      state.checkin = {
+        ...state.checkin,
+        pain: log.pain === "sharp" ? "worrying" : log.pain === "light" ? "light" : state.checkin.pain,
+        fatigue: log.rpe === "hard" ? "high" : state.checkin.fatigue,
+        updatedAt: activityDate,
+      };
       updateSession(log.dayId, { status: "complete" }, { silent: true });
     },
   });
@@ -432,6 +460,7 @@ function saveWorkoutStatusNote(activityDate, note) {
         ...checkinPatch,
         confidence: note.status === "skipped" || note.status === "failed" ? "steady" : checkinPatch.confidence || state.checkin.confidence,
         comment: commentParts.join(" / "),
+        updatedAt: activityDate,
       };
       updateSession(note.dayId, { status: note.status }, { silent: true });
     },
@@ -441,7 +470,6 @@ function saveWorkoutStatusNote(activityDate, note) {
 function saveWeeklyReview(reviewKey, review) {
   runSystemPulse(["summarizing last week...", "updating recovery context...", "syncing coach state..."], "주간 체크를 저장했어요", {
     onBeforeDone: () => {
-      const rangeText = review.range?.start && review.range?.end ? `${review.range.start}~${review.range.end}` : "weekly review";
       state.activityLogs = {
         ...(state.activityLogs || {}),
         [reviewKey]: {
@@ -450,16 +478,6 @@ function saveWeeklyReview(reviewKey, review) {
           source: "weekly-review",
           savedAt: new Date().toISOString(),
         },
-      };
-      state.checkin = {
-        ...state.checkin,
-        fatigue: review.fatigue || state.checkin.fatigue,
-        pain: review.pain || state.checkin.pain,
-        confidence: review.fatigue === "high" || review.pain === "worrying" ? "steady" : state.checkin.confidence,
-        comment: [
-          state.checkin.comment,
-          `${rangeText} 주간 체크: ${review.summary || "summary saved"}${review.memo ? ` / ${review.memo}` : ""}`,
-        ].filter(Boolean).join(" / "),
       };
       syncUI();
       persistWorkspaceSoon();

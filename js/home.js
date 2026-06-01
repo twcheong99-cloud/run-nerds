@@ -40,6 +40,25 @@ function getPreviousWeekRange(date = new Date()) {
   return { start: formatLocalDateKey(start), end: formatLocalDateKey(end) };
 }
 
+function diffDays(from, to) {
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function parseLocalDateKey(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isFreshCheckin(checkin, date = new Date()) {
+  const updatedAt = parseLocalDateKey(checkin?.updatedAt);
+  if (!updatedAt) return false;
+  return diffDays(updatedAt, date) >= 0 && diffDays(updatedAt, date) <= 6;
+}
+
 function getLogsInRange(activityLogs = {}, start, end) {
   return Object.values(activityLogs || {})
     .filter((log) => {
@@ -136,7 +155,8 @@ function formatPainStatus(pain) {
   return pain;
 }
 
-function getPhysicalStatusLevel({ bodyCondition, painStatus, checkin }) {
+function getPhysicalStatusLevel({ bodyCondition, painStatus, checkin, today = new Date() }) {
+  const freshCheckin = isFreshCheckin(checkin, today) ? checkin : {};
   if (painStatus === "sharp" || /날카|심한|악화|sharp|severe/.test(String(painStatus || ""))) {
     return {
       level: "red",
@@ -150,9 +170,9 @@ function getPhysicalStatusLevel({ bodyCondition, painStatus, checkin }) {
     bodyCondition === "cautious" ||
     bodyCondition === "tired" ||
     bodyCondition === "heavy" ||
-    checkin?.fatigue === "high" ||
-    checkin?.sleep === "poor" ||
-    checkin?.pain === "worrying"
+    freshCheckin?.fatigue === "high" ||
+    freshCheckin?.sleep === "poor" ||
+    freshCheckin?.pain === "worrying"
   ) {
     return {
       level: "yellow",
@@ -169,6 +189,17 @@ function getPhysicalStatusLevel({ bodyCondition, painStatus, checkin }) {
 
 function formatActivityLogSummary(log) {
   if (!log) return "";
+  if (log.source === "condition-check-in") {
+    const reasonLabel = {
+      good: "가벼움",
+      fatigue: "피로",
+      pain: "통증",
+      sleep: "수면 부족",
+      stress: "생활 스트레스",
+      other: "기타",
+    }[log.reason] || "컨디션 기록";
+    return `컨디션 체크 · ${reasonLabel}`;
+  }
   if (log.source === "coach-check-in") {
     const statusLabel = log.status === "skipped" ? "미실행" : "실패";
     const reasonLabel = {
@@ -459,6 +490,7 @@ export function renderTodayWorkout(ctx) {
   const session = state.plan.find((item) => item.id === todayId) || state.plan[0];
   if (!session) return;
   const activityLog = state.activityLogs?.[todayDateKey];
+  const isRecoveryDay = session.type === "rest" || session.type === "mobility";
   state.selectedDayId = session.id;
   dom.todayFocusBadge.textContent = `${session.day} focus`;
   dom.todayWorkoutCard.innerHTML = `
@@ -492,14 +524,14 @@ export function renderTodayWorkout(ctx) {
           <button type="button" class="ghost-btn compact-btn" id="closeActivityLogBtn">닫기</button>
         </div>
         <div class="activity-log-grid">
-          <label>거리(km)<input name="distance" type="number" min="0" step="0.1" value="${escapeHtml(activityLog?.distance || "")}" placeholder="예: 8.2" /></label>
-          <label>시간<input name="duration" value="${escapeHtml(activityLog?.duration || "")}" placeholder="예: 48:30" /></label>
+          <label>거리(km)<input name="distance" type="number" min="0" step="0.1" value="${activityLog?.source === "manual" ? escapeHtml(activityLog?.distance || "") : ""}" placeholder="예: 8.2" /></label>
+          <label>시간<input name="duration" value="${activityLog?.source === "manual" ? escapeHtml(activityLog?.duration || "") : ""}" placeholder="예: 48:30" /></label>
           <label>RPE<select name="rpe">
-            <option value="" ${!activityLog?.rpe ? "selected" : ""}>선택</option>
-            ${["easy", "target", "hard"].map((value) => `<option value="${value}" ${activityLog?.rpe === value ? "selected" : ""}>${value}</option>`).join("")}
+            <option value="" ${activityLog?.source !== "manual" || !activityLog?.rpe ? "selected" : ""}>선택</option>
+            ${["easy", "target", "hard"].map((value) => `<option value="${value}" ${activityLog?.source === "manual" && activityLog?.rpe === value ? "selected" : ""}>${value}</option>`).join("")}
           </select></label>
           <label>통증<select name="pain">
-            ${["none", "light", "sharp"].map((value) => `<option value="${value}" ${activityLog?.pain === value ? "selected" : ""}>${value}</option>`).join("")}
+            ${["none", "light", "sharp"].map((value) => `<option value="${value}" ${activityLog?.source === "manual" && activityLog?.pain === value ? "selected" : ""}>${value}</option>`).join("")}
           </select></label>
         </div>
         <div class="coach-note-field hidden" id="postRunCoachStep">
@@ -509,7 +541,7 @@ export function renderTodayWorkout(ctx) {
           </div>
           <label>
             <span>YOU</span>
-            <textarea name="memo" rows="3" placeholder="예: 후반에 종아리가 묵직했고 호흡은 괜찮았어.">${escapeHtml(activityLog?.memo || "")}</textarea>
+            <textarea name="memo" rows="3" placeholder="예: 후반에 종아리가 묵직했고 호흡은 괜찮았어.">${activityLog?.source === "manual" ? escapeHtml(activityLog?.memo || "") : ""}</textarea>
           </label>
         </div>
         <div class="activity-log-actions">
@@ -596,7 +628,7 @@ export function renderTodayWorkout(ctx) {
   dom.todayWorkoutCard.querySelectorAll("[data-status]").forEach((button) => {
     button.addEventListener("click", () => {
       if (button.dataset.status === "complete") {
-        if (session.type === "rest" || session.type === "mobility") {
+        if (isRecoveryDay) {
           runSystemPulse(["opening condition check-in...", "preparing coach question..."], "컨디션 체크인을 열었어요", {
             onBeforeDone: () => openStatusNoteModal("complete", "condition"),
           });
@@ -683,7 +715,7 @@ export function renderTodayWorkout(ctx) {
 }
 
 export function renderWeekMiniCalendar(ctx) {
-  const { dom, state, updateSession, saveWeeklyReview } = ctx;
+  const { dom, state, saveWeeklyReview } = ctx;
   const todayId = getTodayDayId();
   const completedCount = state.plan.filter((session) => session.status === "complete").length;
   const hasTemporarySchedule = hasActiveTemporarySchedule(state.checkin, state.profile);
@@ -740,24 +772,16 @@ export function renderWeekMiniCalendar(ctx) {
       </div>
     ` : ""}
     ${state.plan.map((session) => `
-    <article class="mini-day-card ${session.id === todayId ? "today" : ""}">
+    <article class="mini-day-card ${session.id === todayId ? "today" : ""} status-${escapeHtml(session.status || "planned")}">
       <div class="mini-day-head">
         <span class="mini-day-name">${session.day}</span>
         <span class="badge neutral">${formatStatus(session.status)}</span>
       </div>
       <p class="mini-day-title">${getCompactLabel(session)}</p>
       <p class="mini-day-copy">${getSessionMeta(session)}</p>
-      <div class="mini-status-row">
-        <button type="button" class="status-btn ${session.status === "complete" ? "active complete" : ""}" data-id="${session.id}" data-status="complete">완료</button>
-        <button type="button" class="status-btn ${session.status === "failed" ? "active failed" : ""}" data-id="${session.id}" data-status="failed">실패</button>
-        <button type="button" class="status-btn ${session.status === "skipped" ? "active skipped" : ""}" data-id="${session.id}" data-status="skipped">미실행</button>
-      </div>
     </article>
   `).join("")}
   `;
-  dom.weekMiniCalendar.querySelectorAll("[data-id]").forEach((button) => {
-    button.addEventListener("click", () => updateSession(button.dataset.id, { status: button.dataset.status }));
-  });
   dom.weekMiniCalendar.querySelector("#weeklyReviewForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(event.currentTarget).entries());
@@ -772,6 +796,9 @@ export function renderWeekMiniCalendar(ctx) {
 
 export const __homeTest = {
   hasActiveTemporarySchedule,
+  formatActivityLogSummary,
+  getPhysicalStatusLevel,
+  isFreshCheckin,
   summarizeWeeklyActivity,
   getWeeklyReviewKey,
 };

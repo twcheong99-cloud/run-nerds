@@ -517,7 +517,7 @@ function buildCoachRequest({ message, state }) {
     message,
     applyIntent: hasApplyIntent(message),
     profile: state.profile,
-    checkin: state.checkin,
+    checkin: getCurrentCheckinForCoach(state.checkin),
     planMeta: state.planMeta || {},
     plan: state.plan,
     activityLogs: state.activityLogs || {},
@@ -537,6 +537,39 @@ function parseDateKey(value) {
 
 function getActivityDate(log, key) {
   return parseDateKey(log?.date) || parseDateKey(key);
+}
+
+function dateFromKey(value) {
+  const key = parseDateKey(value);
+  if (!key) return null;
+  const [year, month, day] = key.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function diffDays(from, to) {
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function isFreshCheckin(checkin, today = new Date()) {
+  const updatedAt = dateFromKey(checkin?.updatedAt);
+  if (!updatedAt) return false;
+  const ageDays = diffDays(updatedAt, today);
+  return ageDays >= 0 && ageDays <= 6;
+}
+
+function getCurrentCheckinForCoach(checkin = {}, today = new Date()) {
+  if (isFreshCheckin(checkin, today)) return checkin;
+  const hasTemporarySchedule = Boolean(checkin?.temporaryAvailableDays || checkin?.temporaryPreferredDays || checkin?.temporaryLongRunDay);
+  return {
+    ...checkin,
+    fatigue: "medium",
+    pain: "none",
+    sleep: "okay",
+    schedule: hasTemporarySchedule ? checkin.schedule || "stable" : "stable",
+  };
 }
 
 function getRecentActivityEntries(activityLogs = {}, limit = 14) {
@@ -755,6 +788,7 @@ export const __coachServiceTest = {
   hasApplyIntent,
   buildActivityContext,
   buildCoachRequest,
+  getCurrentCheckinForCoach,
   mergeExplicitTrainingPreference,
   normalizeCoachResponse,
   normalizeWeeklyPlan,

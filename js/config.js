@@ -47,6 +47,7 @@ export const defaultCheckin = {
   schedule: "stable",
   confidence: "steady",
   comment: "",
+  updatedAt: "",
   temporaryAvailableDays: null,
   temporaryPreferredDays: "",
   temporaryLongRunDay: "",

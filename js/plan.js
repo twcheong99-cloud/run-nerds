@@ -99,6 +99,29 @@ function formatDate(date) {
   ].join("-");
 }
 
+function isFreshCheckin(checkin, today = new Date()) {
+  const updatedAt = parseDateOnly(checkin?.updatedAt);
+  if (!updatedAt) return false;
+  const ageDays = diffDays(updatedAt, today);
+  return ageDays >= 0 && ageDays <= 6;
+}
+
+function getCurrentCheckin(checkin, today = new Date()) {
+  if (isFreshCheckin(checkin, today)) return checkin;
+  const hasTemporarySchedule = Boolean(
+    checkin?.temporaryAvailableDays
+    || checkin?.temporaryPreferredDays
+    || checkin?.temporaryLongRunDay
+  );
+  return {
+    ...checkin,
+    fatigue: "medium",
+    pain: "none",
+    sleep: "okay",
+    schedule: hasTemporarySchedule ? checkin?.schedule || "stable" : "stable",
+  };
+}
+
 function phaseForWeek(profile, weekStart, today = new Date()) {
   const raceDate = parseDateOnly(profile.goalDate);
   const raceType = profile.raceType || "half";
@@ -383,17 +406,26 @@ export function mergePreviousProgress(nextPlan, previousPlan) {
   });
 }
 
-function hasRecordedTraining(session, activityLogs = {}) {
-  if (!session) return false;
-  if (session.status && session.status !== "planned") return true;
-  return Object.values(activityLogs || {}).some((log) => log?.dayId === session.id);
+function isLogInWeek(log, weekStart) {
+  if (!weekStart) return true;
+  const date = parseDateOnly(log?.date);
+  const start = parseDateOnly(weekStart);
+  return Boolean(date && start && weekContains(start, date));
 }
 
-export function mergePlanWithTrainingHistory(nextPlan, previousPlan, activityLogs = {}) {
+function hasRecordedTraining(session, activityLogs = {}, weekStart = "") {
+  if (!session) return false;
+  return Object.values(activityLogs || {}).some((log) => log?.dayId === session.id && isLogInWeek(log, weekStart));
+}
+
+export function mergePlanWithTrainingHistory(nextPlan, previousPlan, activityLogs = {}, options = {}) {
   const prevMap = new Map((previousPlan || []).map((session) => [session.id, session]));
+  const preservePreviousStatus = options.preservePreviousStatus !== false;
+  const weekStart = options.currentWeekStart || "";
   return nextPlan.map((session) => {
     const prev = prevMap.get(session.id);
-    if (hasRecordedTraining(prev, activityLogs)) return prev;
+    if (preservePreviousStatus && prev?.status && prev.status !== "planned") return prev;
+    if (hasRecordedTraining(prev, activityLogs, weekStart)) return prev;
     return { ...session, status: "planned", note: "", debrief: null };
   });
 }
@@ -402,16 +434,17 @@ export function buildPlan(profile, checkin, options = {}) {
   const mileage = Number(profile.weeklyMileage) || 24;
   const today = options.today ? startOfDay(parseDateOnly(options.today) || new Date(options.today)) : startOfDay(new Date());
   const weekStart = mondayOf(today);
+  const currentCheckin = getCurrentCheckin(checkin, today);
   const phase = phaseForWeek(profile, weekStart, today);
-  const safety = getSafetyState(profile, checkin);
-  const tight = checkin.schedule === "chaotic";
+  const safety = getSafetyState(profile, currentCheckin);
+  const tight = currentCheckin.schedule === "chaotic";
   const soft = safety.level !== "green" || profile.fatigue === "heavy" || phase.kind === "post-race";
-  const temporaryAvailableDays = Number(checkin.temporaryAvailableDays || 0);
+  const temporaryAvailableDays = Number(currentCheckin.temporaryAvailableDays || 0);
   const availableDays = clamp(temporaryAvailableDays || Number(profile.availableDays) || 4, 2, 5);
   const phaseRunCap = phase.kind === "post-race" ? 2 : phase.kind === "race-week" ? Math.min(availableDays, 3) : availableDays;
   const effectiveRunDays = tight && !temporaryAvailableDays ? Math.min(phaseRunCap, 2) : phaseRunCap;
-  const preferredDays = parsePreferredDays(checkin.temporaryPreferredDays || profile.preferredDays);
-  const longRunDay = checkin.temporaryLongRunDay || profile.longRunDay || "sat";
+  const preferredDays = parsePreferredDays(currentCheckin.temporaryPreferredDays || profile.preferredDays);
+  const longRunDay = currentCheckin.temporaryLongRunDay || profile.longRunDay || "sat";
   const qualityDay = preferredDays.find((day) => day !== longRunDay && !["mon", "fri"].includes(day)) || "tue";
   const targetMileage = Math.max(8, Math.round(mileage * phase.mileageFactor));
   const longRunKm = phase.includeLongRun ? clamp(Math.round(targetMileage * (soft ? Math.min(phase.longRunFactor, 0.32) : phase.longRunFactor)), 6, phase.longRunCap || 8) : 0;

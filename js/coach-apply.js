@@ -32,7 +32,11 @@ export function buildPlanStats(plan) {
 
 function rebuildPlanKeepingProgress(state) {
   const result = buildPlan(state.profile, state.checkin);
-  const plan = mergePlanWithTrainingHistory(result.plan, state.plan, state.activityLogs);
+  const currentWeekStart = result.meta?.season?.currentWeekStart || "";
+  const plan = mergePlanWithTrainingHistory(result.plan, state.plan, state.activityLogs, {
+    currentWeekStart,
+    preservePreviousStatus: state.planMeta?.season?.currentWeekStart === currentWeekStart,
+  });
   return {
     ...state,
     plan,
@@ -75,6 +79,18 @@ function clearTemporarySchedule(checkin) {
   };
 }
 
+function getLocalDateKey(date = new Date()) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function patchHasCurrentCondition(checkinPatch = {}) {
+  return ["fatigue", "pain", "sleep", "schedule", "confidence"].some((key) => hasOwn(checkinPatch, key));
+}
+
 export function applyCoachPlanToState(currentState, pendingPlan) {
   const beforeSnapshot = getAppliedStateSnapshot(currentState);
   let nextState = {
@@ -85,6 +101,10 @@ export function applyCoachPlanToState(currentState, pendingPlan) {
 
   if (pendingPlan.checkin && Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays") && pendingPlan.checkin.temporaryAvailableDays === null) {
     nextState.checkin.temporaryAvailableDays = null;
+  }
+
+  if (patchHasCurrentCondition(pendingPlan.checkin)) {
+    nextState.checkin.updatedAt = getLocalDateKey();
   }
 
   if (!hasTemporaryPatch(pendingPlan) && isWholePlanScope(pendingPlan)) {
@@ -101,7 +121,11 @@ export function applyCoachPlanToState(currentState, pendingPlan) {
     if (!pendingPlan.checkin || !hasOwn(pendingPlan.checkin, "temporaryLongRunDay")) {
       nextState.checkin.temporaryLongRunDay = "";
     }
-    nextState.plan = mergePlanWithTrainingHistory(pendingPlan.weeklyPlan, currentState.plan, currentState.activityLogs);
+    const currentWeekStart = currentState.planMeta?.season?.currentWeekStart || buildPlan(nextState.profile, nextState.checkin).meta?.season?.currentWeekStart || "";
+    nextState.plan = mergePlanWithTrainingHistory(pendingPlan.weeklyPlan, currentState.plan, currentState.activityLogs, {
+      currentWeekStart,
+      preservePreviousStatus: true,
+    });
     const rebuiltMeta = buildPlan(nextState.profile, nextState.checkin).meta;
     nextState.planMeta = {
       ...rebuiltMeta,
