@@ -7,6 +7,7 @@ type CoachRequest = {
   planMeta?: Record<string, unknown>;
   plan?: unknown[];
   activityLogs?: Record<string, unknown>;
+  activityContext?: Record<string, unknown>;
   coachChat?: {
     stage?: string;
     pendingPlan?: unknown;
@@ -22,6 +23,7 @@ type CoachResponse = {
     originalMessage?: string;
     checkin?: Record<string, unknown>;
     profile?: Record<string, unknown>;
+    planMeta?: Record<string, unknown>;
     weeklyPlan?: Array<Record<string, unknown>>;
   };
   safety: {
@@ -53,6 +55,8 @@ Evidence base to apply:
 - During race taper or high fatigue, reduce volume while preserving light race-specific rhythm only when there is no pain signal.
 - For pain or injury language, choose rest, mobility, easy alternatives, or professional evaluation guidance. Never diagnose.
 - Treat the plan as part of a multi-week season, not a weekly template to copy. Use goalDate, raceType, recent activity, current planMeta.season, and today's context to decide whether this week is base, build, race-specific, taper, race week, or post-race recovery.
+- Use activityContext as the compact source of truth for recent daily training logs, rest/mobility condition check-ins, missed-session reasons, and weekly review answers. When modifying plans, explicitly weigh repeated fatigue, pain, sleep, and schedule signals from these logs instead of relying only on the current checkin fields.
+- Weekly reviews are usually saved on Monday and summarize the previous week. Treat them as reflective user feedback, then reconcile them with the raw daily logs.
 - A past race must not be repeated in the next weekly plan. If the goal race date is already behind the runner, propose recovery and next-goal conversation rather than another half/full marathon session.
 - Every planned session must have a clear purpose that explains why it belongs in this week of the season. Generic "keep fitness" rationale is not enough for quality, long run, race week, taper, or recovery sessions.
 
@@ -81,6 +85,16 @@ Return only JSON matching this shape:
       "notes": "...",
       "coachNotes": "..."
     },
+    "planMeta": {
+      "season": {
+        "phase": "base | specific-build | taper | race-week | post-race | next-goal-bridge",
+        "label": "current season phase label",
+        "reason": "why the whole plan is structured this way",
+        "weeks": [
+          { "weekStart": "YYYY-MM-DD", "label": "week label", "targetMileage": 32, "longRunKm": 14, "reason": "why this week differs from the others" }
+        ]
+      }
+    },
     "weeklyPlan": [
       {
         "id": "mon",
@@ -106,6 +120,7 @@ Plan editing rules:
 - If proposing a plan change, include a complete weeklyPlan with exactly 7 sessions, one for each id: mon, tue, wed, thu, fri, sat, sun.
 - If you only need to change one or two days, you may still return only those changed sessions in weeklyPlan; the app will merge them into the current plan. Prefer a complete 7-day plan for larger changes.
 - Treat weeklyPlan as the new plan for unstarted sessions. The app will cleanly replace old planned sessions.
+- If the user asks to rebuild the whole plan, one month, several weeks, or the season, include planMeta.season.weeks with week-by-week rationale and also include the current week's weeklyPlan. Do not limit whole-plan requests to one modified day.
 - If the runner has already logged or marked a session, keep that past training record conceptually intact. Modify only the remaining forward plan.
 - weeklyPlan session type must be one of exactly: rest, mobility, easy, quality, long, recovery. Use quality for tempo, threshold, interval, hills, and other workout sessions.
 - weeklyPlan intensity must be one of exactly: rest, easy, moderate, steady, hard. Use moderate for tempo/threshold and hard only for clearly hard interval work.
@@ -207,6 +222,7 @@ function validateResponse(value: unknown, originalMessage: string): CoachRespons
           originalMessage,
           checkin: typeof pendingRaw.checkin === "object" && pendingRaw.checkin ? pendingRaw.checkin as Record<string, unknown> : {},
           profile: typeof pendingRaw.profile === "object" && pendingRaw.profile ? pendingRaw.profile as Record<string, unknown> : {},
+          planMeta: typeof pendingRaw.planMeta === "object" && pendingRaw.planMeta ? pendingRaw.planMeta as Record<string, unknown> : {},
           weeklyPlan: Array.isArray(pendingRaw.weeklyPlan) ? pendingRaw.weeklyPlan as Array<Record<string, unknown>> : [],
         }
       : null,
@@ -257,6 +273,7 @@ Deno.serve(async (req) => {
           planMeta: payload.planMeta || {},
           plan: payload.plan || [],
           activityLogs: payload.activityLogs || {},
+          activityContext: payload.activityContext || {},
           coachChat: payload.coachChat || {},
         })}`,
       text: { format: { type: "json_object" } },

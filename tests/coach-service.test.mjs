@@ -47,6 +47,9 @@ function makeSession(id, patch = {}) {
   assert.match(edgeSource, /text === "pain" \|\| text === "fatigue" \|\| text === "schedule"/);
   assert.match(edgeSource, /multi-week season/);
   assert.match(edgeSource, /past race must not be repeated/);
+  assert.match(edgeSource, /planMeta\.season\.weeks/);
+  assert.match(edgeSource, /activityContext/);
+  assert.match(edgeSource, /Weekly reviews are usually saved on Monday/);
 }
 
 {
@@ -149,6 +152,41 @@ function makeSession(id, patch = {}) {
   assert.equal(response.pendingPlan.checkin.temporaryAvailableDays, undefined);
   assert.equal(response.pendingPlan.checkin.temporaryPreferredDays, undefined);
   assert.equal(response.meta.fallbackReason, "coach-contract-unverified");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "proposal",
+    reply: "전체 시즌 계획을 4주 흐름으로 다시 잡았어.",
+    pendingPlan: {
+      concern: "race",
+      planMeta: {
+        season: {
+          phase: "specific-build",
+          label: "4주 하프 빌드",
+          reason: "2주는 볼륨을 올리고, 1주는 테이퍼, 마지막 주는 레이스 실행으로 갑니다.",
+          weeks: [
+            { weekStart: "2026-06-01", label: "1주차 빌드", targetMileage: 30, longRunKm: 14, reason: "기초 볼륨을 안전하게 회복합니다." },
+            { weekStart: "2026-06-08", label: "2주차 피크", targetMileage: 34, longRunKm: 17, reason: "대회 특이성을 가장 크게 쌓습니다." },
+            { weekStart: "2026-06-15", label: "3주차 테이퍼", targetMileage: 24, longRunKm: 12, reason: "피로를 낮추고 리듬만 남깁니다." },
+            { weekStart: "2026-06-22", label: "4주차 레이스", targetMileage: 18, longRunKm: 21.1, reason: "레이스 실행을 우선합니다." },
+          ],
+        },
+      },
+    },
+    meta: { contractVersion: "coach-contract-v3" },
+  }, {
+    stage: "clarifying",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+    planMeta: {},
+  }, "한 달 전체 계획을 다시 짜줘");
+
+  assert.equal(response.stage, "proposal");
+  assert.equal(response.pendingPlan.planMeta.season.label, "4주 하프 빌드");
+  assert.equal(response.pendingPlan.planMeta.season.weeks.length, 4);
+  assert.equal(response.pendingPlan.weeklyPlan, null);
 }
 
 {
@@ -420,6 +458,41 @@ function makeSession(id, patch = {}) {
 {
   const result = applyCoachPlanToState({
     profile: defaultProfile,
+    checkin: {
+      ...defaultCheckin,
+      temporaryAvailableDays: 2,
+      temporaryPreferredDays: "tue, thu",
+      temporaryLongRunDay: "sun",
+    },
+    plan: currentPlan,
+    activityLogs: {},
+    planMeta: {},
+    selectedDayId: "tue",
+  }, {
+    source: "llm-coach",
+    originalMessage: "한 달 전체 계획을 다시 짜줘",
+    planMeta: {
+      season: {
+        phase: "specific-build",
+        label: "4주 하프 빌드",
+        reason: "주차별 목적이 다른 전체 계획입니다.",
+        weeks: [
+          { weekStart: "2026-06-01", label: "1주차", targetMileage: 30, longRunKm: 14, reason: "기초 볼륨" },
+        ],
+      },
+    },
+  });
+
+  assert.equal(result.applied, true);
+  assert.equal(result.state.checkin.temporaryAvailableDays, null);
+  assert.equal(result.state.checkin.temporaryPreferredDays, "");
+  assert.equal(result.state.checkin.temporaryLongRunDay, "");
+  assert.equal(result.state.planMeta.season.label, "4주 하프 빌드");
+}
+
+{
+  const result = applyCoachPlanToState({
+    profile: defaultProfile,
     checkin: defaultCheckin,
     plan: currentPlan,
     activityLogs: {},
@@ -446,6 +519,43 @@ function makeSession(id, patch = {}) {
     temporaryPreferredDays: "화, 목",
     temporaryLongRunDay: "",
   }, defaultProfile), true);
+}
+
+{
+  const summary = __homeTest.summarizeWeeklyActivity({
+    "2026-06-02": { date: "2026-06-02", source: "manual", distance: "6", status: "complete", pain: "none" },
+    "2026-06-04": { date: "2026-06-04", source: "coach-check-in", status: "skipped", reason: "schedule", memo: "야근" },
+    "2026-06-06": { date: "2026-06-06", source: "condition-check-in", status: "complete", reason: "fatigue", memo: "수면 부족" },
+    "weekly-review-2026-06-01": { date: "2026-06-08", source: "weekly-review", summary: "ignore current review" },
+  }, new Date(2026, 5, 8));
+
+  assert.equal(__homeTest.getWeeklyReviewKey(new Date(2026, 5, 8)), "weekly-review-2026-06-08");
+  assert.equal(summary.range.start, "2026-06-01");
+  assert.equal(summary.range.end, "2026-06-07");
+  assert.equal(summary.logs.length, 3);
+  assert.equal(summary.runLogs.length, 1);
+  assert.equal(summary.checkins.length, 2);
+  assert.equal(summary.completed, 2);
+  assert.equal(summary.missed, 1);
+  assert.equal(summary.distance, 6);
+  assert.equal(summary.fatigueSignals, 1);
+  assert.match(summary.text, /컨디션 체크 2회/);
+}
+
+{
+  const context = __coachServiceTest.buildActivityContext({
+    "2026-06-02": { date: "2026-06-02", source: "manual", distance: "7.2", rpe: "5", pain: "none", memo: "좋았음" },
+    "2026-06-03": { date: "2026-06-03", source: "condition-check-in", status: "complete", sessionType: "rest", reason: "pain", memo: "종아리 통증" },
+    "weekly-review-2026-06-01": { date: "2026-06-08", source: "weekly-review", fatigue: "high", pain: "worrying", summary: "지난주 피로 높음" },
+  });
+
+  assert.equal(context.counts.manualRuns, 1);
+  assert.equal(context.counts.conditionCheckins, 1);
+  assert.equal(context.counts.weeklyReviews, 1);
+  assert.equal(context.counts.painSignals, 1);
+  assert.equal(context.totalDistanceKm, 7.2);
+  assert.equal(context.weeklyReviews[0].summary, "지난주 피로 높음");
+  assert.equal(context.recentLogs[0].source, "weekly-review");
 }
 
 {
@@ -528,13 +638,17 @@ function makeSession(id, patch = {}) {
       profile: defaultProfile,
       checkin: defaultCheckin,
       plan: currentPlan,
-      activityLogs: {},
+      activityLogs: {
+        "2026-06-03": { date: "2026-06-03", source: "condition-check-in", status: "complete", reason: "fatigue", memo: "잠을 못 잠" },
+      },
       coachChat: { stage: "idle", pendingPlan: null, messages: [] },
       onboarding: {},
     },
   });
 
   assert.equal(calls.length, 2);
+  assert.equal(calls[0].activityContext.counts.conditionCheckins, 1);
+  assert.equal(calls[1].activityContext.counts.conditionCheckins, 1);
   assert.match(calls[1].message, /STRUCTURED APP UPDATE REQUIRED/);
   assert.equal(response.pendingPlan.weeklyPlan.find((session) => session.id === "thu").title, "회복 조깅 4km");
 }

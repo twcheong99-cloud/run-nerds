@@ -40,6 +40,41 @@ function rebuildPlanKeepingProgress(state) {
   };
 }
 
+function hasOwn(object, key) {
+  return Boolean(object && Object.hasOwn(object, key));
+}
+
+function hasTemporaryPatch(pendingPlan) {
+  return hasOwn(pendingPlan.checkin, "temporaryAvailableDays")
+    || hasOwn(pendingPlan.checkin, "temporaryPreferredDays")
+    || hasOwn(pendingPlan.checkin, "temporaryLongRunDay");
+}
+
+function isWholePlanScope(pendingPlan) {
+  const text = [
+    pendingPlan.originalMessage,
+    pendingPlan.meta?.summary,
+    pendingPlan.planMeta?.season?.label,
+    pendingPlan.planMeta?.season?.reason,
+  ].filter(Boolean).join(" ");
+  return Boolean(
+    pendingPlan.planMeta?.season
+    || pendingPlan.profile?.goalDate
+    || pendingPlan.profile?.goalRace
+    || pendingPlan.profile?.raceType
+    || /전체|장기|시즌|한\s*달|1\s*달|4주|8주|12주|계획\s*다시|다시\s*짜/i.test(text)
+  );
+}
+
+function clearTemporarySchedule(checkin) {
+  return {
+    ...checkin,
+    temporaryAvailableDays: null,
+    temporaryPreferredDays: "",
+    temporaryLongRunDay: "",
+  };
+}
+
 export function applyCoachPlanToState(currentState, pendingPlan) {
   const beforeSnapshot = getAppliedStateSnapshot(currentState);
   let nextState = {
@@ -52,14 +87,18 @@ export function applyCoachPlanToState(currentState, pendingPlan) {
     nextState.checkin.temporaryAvailableDays = null;
   }
 
+  if (!hasTemporaryPatch(pendingPlan) && isWholePlanScope(pendingPlan)) {
+    nextState.checkin = clearTemporarySchedule(nextState.checkin);
+  }
+
   if (Array.isArray(pendingPlan.weeklyPlan) && pendingPlan.weeklyPlan.length) {
-    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryAvailableDays")) {
+    if (!pendingPlan.checkin || !hasOwn(pendingPlan.checkin, "temporaryAvailableDays")) {
       nextState.checkin.temporaryAvailableDays = null;
     }
-    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryPreferredDays")) {
+    if (!pendingPlan.checkin || !hasOwn(pendingPlan.checkin, "temporaryPreferredDays")) {
       nextState.checkin.temporaryPreferredDays = "";
     }
-    if (!pendingPlan.checkin || !Object.hasOwn(pendingPlan.checkin, "temporaryLongRunDay")) {
+    if (!pendingPlan.checkin || !hasOwn(pendingPlan.checkin, "temporaryLongRunDay")) {
       nextState.checkin.temporaryLongRunDay = "";
     }
     nextState.plan = mergePlanWithTrainingHistory(pendingPlan.weeklyPlan, currentState.plan, currentState.activityLogs);
@@ -78,6 +117,7 @@ export function applyCoachPlanToState(currentState, pendingPlan) {
     || null;
   nextState.planMeta = {
     ...(nextState.planMeta || {}),
+    ...(pendingPlan.planMeta || {}),
     source: pendingPlan.source || nextState.planMeta?.source || "local-coach-engine",
     fallbackReason: pendingPlan.source === "llm-fallback" ? "used-local-coach-engine" : "none",
     coach: pendingPlan.meta || nextState.planMeta?.coach || null,
@@ -85,6 +125,6 @@ export function applyCoachPlanToState(currentState, pendingPlan) {
 
   return {
     state: nextState,
-    applied: getAppliedStateSnapshot(nextState) !== beforeSnapshot,
+    applied: getAppliedStateSnapshot(nextState) !== beforeSnapshot || Boolean(pendingPlan.planMeta),
   };
 }

@@ -1138,6 +1138,38 @@ textarea:focus {
   color: var(--warning);
 }
 
+.weekly-review-card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1.5px solid rgba(122, 255, 152, 0.22);
+  background:
+    linear-gradient(180deg, rgba(122, 255, 152, 0.055), rgba(122, 255, 152, 0.018)),
+    rgba(7, 18, 11, 0.9);
+}
+
+.weekly-review-card strong {
+  font-family: var(--display-font);
+  font-size: 1.25rem;
+  line-height: 1.05;
+}
+
+.weekly-review-card > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.weekly-review-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 @keyframes scrim-in {
   from {
     opacity: 0;
@@ -2021,6 +2053,13 @@ textarea:focus {
   letter-spacing: 0.1em;
 }
 
+.coach-preview-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
 .coach-patch-preview {
   display: grid;
   gap: 6px;
@@ -2061,7 +2100,7 @@ textarea:focus {
 
 .coach-plan-preview-row {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(34px, 0.28fr) minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   min-height: 28px;

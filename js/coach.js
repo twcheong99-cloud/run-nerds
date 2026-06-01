@@ -122,6 +122,33 @@ function renderPlanPreview(plan, currentPlan) {
   `;
 }
 
+function renderSeasonPreview(planMeta) {
+  const season = planMeta?.season;
+  if (!season) return "";
+  const weeks = Array.isArray(season.weeks) ? season.weeks.slice(0, 6) : [];
+  if (!season.label && !season.reason && !weeks.length) return "";
+  return `
+    <div class="coach-plan-preview" aria-label="제안된 전체 시즌 계획">
+      <span>SEASON</span>
+      ${season.label ? `
+        <div class="coach-plan-preview-row">
+          <span>전체</span>
+          <strong>${escapeHtml(season.label)}</strong>
+          <em>${escapeHtml(season.phase || "")}</em>
+        </div>
+      ` : ""}
+      ${season.reason ? `<p class="coach-preview-note">${escapeHtml(season.reason)}</p>` : ""}
+      ${weeks.map((week, index) => `
+        <div class="coach-plan-preview-row">
+          <span>${escapeHtml(week.weekStart || `${index + 1}주차`)}</span>
+          <strong>${escapeHtml(week.label || "시즌 주차")}</strong>
+          <em>${escapeHtml(week.targetMileage ? `${week.targetMileage}km` : "")}</em>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function formatPatchKey(key) {
   return {
     fatigue: "피로",
@@ -299,6 +326,7 @@ export function renderCoachTab(ctx) {
         <p>캘린더는 아직 바뀌지 않았습니다. 반영하면 AI 코치가 제안한 이번 주 훈련표가 앱에 적용됩니다.</p>
         ${renderPatchPreview("PROFILE", pendingPlan.profile)}
         ${renderPatchPreview("CHECK-IN", pendingPlan.checkin)}
+        ${renderSeasonPreview(pendingPlan.planMeta)}
         ${renderPlanPreview(pendingPlan.weeklyPlan, state.plan)}
       </div>
       <button type="button" id="applyCoachPlanBtn">계획 반영</button>

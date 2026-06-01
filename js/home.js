@@ -6,8 +6,81 @@ export function getTodayDayId() {
   return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()];
 }
 
+function formatLocalDateKey(date = new Date()) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 function getTodayDateKey() {
-  return new Date().toISOString().slice(0, 10);
+  return formatLocalDateKey(new Date());
+}
+
+function addDays(date, days) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function getWeekStart(date = new Date()) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = start.getDay();
+  start.setDate(start.getDate() + (day === 0 ? -6 : 1 - day));
+  return start;
+}
+
+function getWeeklyReviewKey(date = new Date()) {
+  return `weekly-review-${formatLocalDateKey(getWeekStart(date))}`;
+}
+
+function getPreviousWeekRange(date = new Date()) {
+  const thisWeekStart = getWeekStart(date);
+  const start = addDays(thisWeekStart, -7);
+  const end = addDays(thisWeekStart, -1);
+  return { start: formatLocalDateKey(start), end: formatLocalDateKey(end) };
+}
+
+function getLogsInRange(activityLogs = {}, start, end) {
+  return Object.values(activityLogs || {})
+    .filter((log) => {
+      const date = String(log?.date || "");
+      return date >= start && date <= end && !String(log?.source || "").startsWith("weekly-review");
+    })
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+}
+
+function summarizeWeeklyActivity(activityLogs = {}, date = new Date()) {
+  const range = getPreviousWeekRange(date);
+  const logs = getLogsInRange(activityLogs, range.start, range.end);
+  const runLogs = logs.filter((log) => log.source === "manual");
+  const checkins = logs.filter((log) => log.source === "condition-check-in" || log.source === "coach-check-in");
+  const completed = logs.filter((log) => log.status === "complete" || log.source === "manual").length;
+  const missed = logs.filter((log) => log.status === "skipped" || log.status === "failed").length;
+  const distance = runLogs.reduce((sum, log) => sum + (Number(log.distance) || 0), 0);
+  const painSignals = logs.filter((log) => log.pain === "sharp" || log.reason === "pain" || /통증|아픔|아파/.test(String(log.memo || ""))).length;
+  const fatigueSignals = logs.filter((log) => log.reason === "fatigue" || /피로|무거|지침|잠|수면/.test(String(log.memo || ""))).length;
+  const summaryParts = [
+    `${range.start}~${range.end}`,
+    `기록 ${logs.length}개`,
+    `완료 ${completed}회`,
+    missed ? `미실행/실패 ${missed}회` : "",
+    runLogs.length ? `러닝 ${distance.toFixed(1).replace(/\.0$/, "")}km` : "",
+    checkins.length ? `컨디션 체크 ${checkins.length}회` : "",
+    painSignals ? `통증 신호 ${painSignals}회` : "",
+    fatigueSignals ? `피로 신호 ${fatigueSignals}회` : "",
+  ].filter(Boolean);
+  return {
+    range,
+    logs,
+    runLogs,
+    checkins,
+    completed,
+    missed,
+    distance,
+    painSignals,
+    fatigueSignals,
+    text: summaryParts.join(" · "),
+  };
 }
 
 export function renderHome(ctx) {
@@ -154,6 +227,22 @@ function buildStatusCoachQuestion(status, values) {
   if (values.reason === "fatigue") return "피로 때문에 쉬었다면 수면, 다리 무거움, 전신 피로 중 무엇이 컸는지 알려줘. 회복을 훈련으로 계산할게.";
   if (values.reason === "pain") return "통증 때문에 쉬었다면 부위와 통증 강도, 내일도 뛸 수 있을지 알려줘. 다음 훈련은 안전 쪽으로 볼게.";
   return "오늘 미실행한 이유를 조금만 더 말해줘. 코칭에서는 못 뛴 이유까지 같이 보고 다음 훈련을 조정할게.";
+}
+
+function buildConditionCoachQuestion(values = {}) {
+  if (values.reason === "good") return "좋아. 쉬거나 보강한 뒤 몸이 가벼웠다면 어떤 부분이 좋아졌는지 적어줘. 다음 증량 판단에 쓰겠습니다.";
+  if (values.reason === "fatigue") return "휴식/보강 후에도 피로가 남았다면 다리 무거움, 전신 피로, 수면 중 무엇이 컸는지 알려줘.";
+  if (values.reason === "pain") return "통증 신호가 있었다면 부위, 강도, 움직일 때 심해지는지 적어줘. 다음 계획은 안전 쪽으로 조정할게.";
+  if (values.reason === "sleep") return "수면이 부족했다면 몇 시간 정도였고, 몸이 무거운지 정신 피로가 큰지 알려줘.";
+  if (values.reason === "stress") return "생활 스트레스가 컸다면 이번 주 훈련을 줄여야 할 정도인지 한 줄로 적어줘.";
+  return "오늘 쉬거나 몸을 돌본 뒤 현재 컨디션을 한 줄로 적어줘. 이 기록이 다음 계획 조정의 재료가 됩니다.";
+}
+
+function buildWeeklyReviewQuestion(summary) {
+  if (summary.painSignals) return "지난주 기록에 통증 신호가 보여요. 지금 남아 있는 불편 부위와 이번 주 훈련을 줄여야 할 정도인지 알려줘.";
+  if (summary.fatigueSignals || summary.missed) return "지난주는 피로/미실행 신호가 있었어요. 지금 다리 피로, 수면, 이번 주 가능 시간을 같이 알려줘.";
+  if (summary.runLogs.length) return "지난주 훈련은 기록상 이어졌어요. 지금 몸이 받아들인 느낌과 이번 주 올려도 될지 알려줘.";
+  return "지난주 기록이 많지 않아요. 지금 몸상태와 이번 주 현실적으로 가능한 훈련 리듬을 알려줘.";
 }
 
 function normalizeDayList(value) {
@@ -441,7 +530,7 @@ export function renderTodayWorkout(ctx) {
         <input type="hidden" name="status" id="statusNoteStatus" />
         <div class="activity-log-grid">
           <label id="statusProgressField">어디까지 했나요?<input name="progress" placeholder="예: 워밍업 후 2km에서 중단" /></label>
-          <label>가장 큰 이유<select name="reason">
+          <label id="statusReasonField"><span>가장 큰 이유</span><select name="reason">
             <option value="fatigue">피로</option>
             <option value="pain">통증</option>
             <option value="schedule">일정</option>
@@ -464,25 +553,55 @@ export function renderTodayWorkout(ctx) {
       </form>
     </div>
   `;
-  const openStatusNoteModal = (status) => {
+  const openStatusNoteModal = (status, mode = "training") => {
     const modal = dom.todayWorkoutCard.querySelector("#statusNoteModal");
     const statusField = modal?.querySelector("#statusNoteStatus");
     const title = modal?.querySelector("#statusNoteTitle");
     const progressField = modal?.querySelector("#statusProgressField");
+    const reasonField = modal?.querySelector("#statusReasonField");
+    const reasonSelect = modal?.querySelector("select[name='reason']");
     const question = modal?.querySelector("#statusCoachQuestion");
-    if (!modal || !statusField || !title || !progressField || !question) return;
+    if (!modal || !statusField || !title || !progressField || !question || !reasonSelect) return;
     statusField.value = status;
-    title.textContent = status === "failed" ? "실패 이유 기록" : "미실행 이유 기록";
-    progressField.classList.toggle("hidden", status === "skipped");
-    question.textContent = status === "failed"
-      ? "어디까지 했고 어떤 불편 때문에 멈췄는지 알려줘. 다음 훈련 조정에 반영할게."
-      : "오늘 훈련을 못 한 이유를 알려줘. 일정, 피로, 통증 중 무엇이 컸는지 보고 다음 흐름을 맞출게.";
+    const isCondition = mode === "condition";
+    title.textContent = isCondition ? "컨디션 체크인" : status === "failed" ? "실패 이유 기록" : "미실행 이유 기록";
+    progressField.classList.toggle("hidden", isCondition || status === "skipped");
+    const reasonLabel = reasonField?.querySelector("span");
+    if (reasonLabel) reasonLabel.textContent = isCondition ? "오늘 몸상태" : "가장 큰 이유";
+    reasonSelect.innerHTML = isCondition
+      ? [
+          ["good", "가벼움"],
+          ["fatigue", "피로"],
+          ["pain", "통증"],
+          ["sleep", "수면 부족"],
+          ["stress", "생활 스트레스"],
+          ["other", "기타"],
+        ].map(([value, label]) => `<option value="${value}">${label}</option>`).join("")
+      : [
+          ["fatigue", "피로"],
+          ["pain", "통증"],
+          ["schedule", "일정"],
+          ["pace", "강도/페이스"],
+          ["weather", "날씨"],
+          ["other", "기타"],
+        ].map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+    question.textContent = isCondition
+      ? buildConditionCoachQuestion({ reason: reasonSelect.value })
+      : status === "failed"
+        ? "어디까지 했고 어떤 불편 때문에 멈췄는지 알려줘. 다음 훈련 조정에 반영할게."
+        : "오늘 훈련을 못 한 이유를 알려줘. 일정, 피로, 통증 중 무엇이 컸는지 보고 다음 흐름을 맞출게.";
     setActivityLogOpen(true);
     modal.classList.remove("hidden");
   };
   dom.todayWorkoutCard.querySelectorAll("[data-status]").forEach((button) => {
     button.addEventListener("click", () => {
       if (button.dataset.status === "complete") {
+        if (session.type === "rest" || session.type === "mobility") {
+          runSystemPulse(["opening condition check-in...", "preparing coach question..."], "컨디션 체크인을 열었어요", {
+            onBeforeDone: () => openStatusNoteModal("complete", "condition"),
+          });
+          return;
+        }
         runSystemPulse(["opening workout log...", "preparing coach prompt..."], "훈련 기록을 열었어요", {
           onBeforeDone: () => {
             setActivityLogOpen(true);
@@ -541,31 +660,38 @@ export function renderTodayWorkout(ctx) {
   dom.todayWorkoutCard.querySelector("#statusNoteForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(event.currentTarget).entries());
-    const status = values.status === "skipped" ? "skipped" : "failed";
+    const status = values.status === "complete" ? "complete" : values.status === "skipped" ? "skipped" : "failed";
     setActivityLogOpen(false);
     dom.todayWorkoutCard.querySelector("#statusNoteModal")?.classList.add("hidden");
     saveWorkoutStatusNote(todayDateKey, {
       dayId: session.id,
+      sessionType: session.type,
       status,
       progress: values.progress,
       reason: values.reason,
-      coachQuestion: buildStatusCoachQuestion(status, values),
+      coachQuestion: status === "complete" ? buildConditionCoachQuestion(values) : buildStatusCoachQuestion(status, values),
       memo: values.memo,
     });
   });
   dom.todayWorkoutCard.querySelector("#statusNoteForm select[name='reason']")?.addEventListener("change", (event) => {
     const form = event.currentTarget.form;
     const values = Object.fromEntries(new FormData(form).entries());
-    form.querySelector("#statusCoachQuestion").textContent = buildStatusCoachQuestion(values.status, values);
+    form.querySelector("#statusCoachQuestion").textContent = values.status === "complete"
+      ? buildConditionCoachQuestion(values)
+      : buildStatusCoachQuestion(values.status, values);
   });
 }
 
 export function renderWeekMiniCalendar(ctx) {
-  const { dom, state, updateSession } = ctx;
+  const { dom, state, updateSession, saveWeeklyReview } = ctx;
   const todayId = getTodayDayId();
   const completedCount = state.plan.filter((session) => session.status === "complete").length;
   const hasTemporarySchedule = hasActiveTemporarySchedule(state.checkin, state.profile);
   const season = state.planMeta?.season;
+  const today = new Date();
+  const weeklySummary = summarizeWeeklyActivity(state.activityLogs, today);
+  const weeklyReviewKey = getWeeklyReviewKey(today);
+  const shouldAskWeeklyReview = today.getDay() === 1 && !state.activityLogs?.[weeklyReviewKey] && typeof saveWeeklyReview === "function";
   const getCompactLabel = (session) => {
     if (session.type === "rest") return "휴식";
     if (session.type === "mobility") return "보강";
@@ -577,6 +703,30 @@ export function renderWeekMiniCalendar(ctx) {
   };
   dom.weekSummaryBadge.textContent = `${completedCount}/${state.plan.length} complete${hasTemporarySchedule ? " · temporary" : season?.label ? ` · ${season.label}` : ""}`;
   dom.weekMiniCalendar.innerHTML = `
+    ${shouldAskWeeklyReview ? `
+      <form class="weekly-review-card" id="weeklyReviewForm">
+        <span class="mini-day-name">weekly review</span>
+        <strong>지난주 훈련을 먼저 정리할게요.</strong>
+        <p>${escapeHtml(weeklySummary.text)}</p>
+        <div class="coach-message coach">
+          <span>COACH</span>
+          <p>${escapeHtml(buildWeeklyReviewQuestion(weeklySummary))}</p>
+        </div>
+        <div class="activity-log-grid">
+          <label>현재 피로<select name="fatigue">
+            <option value="low">가벼움</option>
+            <option value="medium" selected>보통</option>
+            <option value="high">높음</option>
+          </select></label>
+          <label>통증<select name="pain">
+            <option value="none" selected>없음</option>
+            <option value="worrying">주의 신호</option>
+          </select></label>
+        </div>
+        <label class="weekly-review-note">지금 몸상태<textarea name="memo" rows="3" placeholder="예: 롱런 다음날 종아리가 뻐근했고 수면은 괜찮았어."></textarea></label>
+        <button type="submit" class="submit-pixel-btn">주간 체크 저장</button>
+      </form>
+    ` : ""}
     ${season?.reason ? `
       <div class="week-override-note">
         ${escapeHtml(season.label || "장기 계획")}
@@ -608,8 +758,20 @@ export function renderWeekMiniCalendar(ctx) {
   dom.weekMiniCalendar.querySelectorAll("[data-id]").forEach((button) => {
     button.addEventListener("click", () => updateSession(button.dataset.id, { status: button.dataset.status }));
   });
+  dom.weekMiniCalendar.querySelector("#weeklyReviewForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+    saveWeeklyReview(weeklyReviewKey, {
+      ...values,
+      range: weeklySummary.range,
+      summary: weeklySummary.text,
+      coachQuestion: buildWeeklyReviewQuestion(weeklySummary),
+    });
+  });
 }
 
 export const __homeTest = {
   hasActiveTemporarySchedule,
+  summarizeWeeklyActivity,
+  getWeeklyReviewKey,
 };

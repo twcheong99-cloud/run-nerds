@@ -27,6 +27,7 @@ const ALLOWED_STAGES = new Set(["idle", "clarifying", "proposal"]);
 const ALLOWED_SAFETY_LEVELS = new Set(["green", "yellow", "red"]);
 const ALLOWED_SESSION_TYPES = new Set(["rest", "mobility", "easy", "quality", "long", "recovery"]);
 const ALLOWED_INTENSITIES = new Set(["rest", "easy", "moderate", "steady", "hard"]);
+const ALLOWED_SEASON_PHASES = new Set(["base", "specific-build", "taper", "race-week", "post-race", "next-goal-bridge"]);
 const RACE_EVENT_TYPES = {
   half: { title: "하프마라톤 레이스", distance: "21.1km", duration: "목표 기록 기준", raceLabel: "하프마라톤" },
   full: { title: "마라톤 레이스", distance: "42.2km", duration: "목표 기록 기준", raceLabel: "마라톤" },
@@ -202,6 +203,7 @@ function pendingPlanHasChanges(pendingPlan, fallback = {}) {
   if (!pendingPlan) return false;
   return patchHasChanges(pendingPlan.profile, fallback.profile)
     || patchHasChanges(pendingPlan.checkin, fallback.checkin)
+    || patchHasChanges(pendingPlan.planMeta, fallback.planMeta)
     || planHasChanges(pendingPlan.weeklyPlan, fallback.currentPlan);
 }
 
@@ -313,6 +315,29 @@ function normalizeWeeklyPlan(rawPlan, previousPlan = []) {
   }
   if (nextByDay.size !== DAY_ORDER.length) return null;
   return DAY_ORDER.map((dayId) => nextByDay.get(dayId));
+}
+
+function normalizeSeasonPlan(rawPlanMeta) {
+  const rawSeason = rawPlanMeta?.season || rawPlanMeta;
+  if (!rawSeason || typeof rawSeason !== "object") return null;
+  const weeks = Array.isArray(rawSeason.weeks)
+    ? rawSeason.weeks.map((week) => ({
+        weekStart: trimText(week?.weekStart, 20),
+        label: trimText(week?.label, 80),
+        targetMileage: Math.min(180, Math.max(0, Number(week?.targetMileage) || 0)),
+        longRunKm: Math.min(42.2, Math.max(0, Number(week?.longRunKm) || 0)),
+        reason: trimText(week?.reason, 220),
+      })).filter((week) => week.label && week.reason).slice(0, 12)
+    : [];
+  const phase = ALLOWED_SEASON_PHASES.has(String(rawSeason.phase || "")) ? String(rawSeason.phase) : "";
+  const season = {
+    ...(phase ? { phase } : {}),
+    label: trimText(rawSeason.label, 80),
+    reason: trimText(rawSeason.reason || rawSeason.summary, 260),
+    ...(weeks.length ? { weeks } : {}),
+  };
+  if (!season.label && !season.reason && !weeks.length) return null;
+  return { season };
 }
 
 function extractTrainingPreference(message) {
@@ -496,6 +521,7 @@ function buildCoachRequest({ message, state }) {
     planMeta: state.planMeta || {},
     plan: state.plan,
     activityLogs: state.activityLogs || {},
+    activityContext: buildActivityContext(state.activityLogs || {}),
     coachChat: {
       stage: state.coachChat?.stage || "idle",
       pendingPlan: state.coachChat?.pendingPlan || null,
@@ -504,12 +530,84 @@ function buildCoachRequest({ message, state }) {
   };
 }
 
+function parseDateKey(value) {
+  const text = String(value || "");
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : "";
+}
+
+function getActivityDate(log, key) {
+  return parseDateKey(log?.date) || parseDateKey(key);
+}
+
+function getRecentActivityEntries(activityLogs = {}, limit = 14) {
+  return Object.entries(activityLogs || {})
+    .map(([key, log]) => ({ key, log, date: getActivityDate(log, key) }))
+    .filter((entry) => entry.date)
+    .sort((a, b) => {
+      const dateOrder = b.date.localeCompare(a.date);
+      if (dateOrder) return dateOrder;
+      return String(b.log?.savedAt || "").localeCompare(String(a.log?.savedAt || ""));
+    })
+    .slice(0, limit);
+}
+
+function summarizeActivityLog(entry) {
+  const { key, date, log } = entry;
+  return {
+    key,
+    date,
+    source: String(log?.source || "unknown"),
+    dayId: String(log?.dayId || ""),
+    sessionType: String(log?.sessionType || ""),
+    status: String(log?.status || ""),
+    reason: String(log?.reason || ""),
+    distance: String(log?.distance || ""),
+    duration: String(log?.duration || ""),
+    rpe: String(log?.rpe || ""),
+    pain: String(log?.pain || ""),
+    fatigue: String(log?.fatigue || ""),
+    summary: String(log?.summary || ""),
+    memo: String(log?.memo || "").slice(0, 280),
+  };
+}
+
+function buildActivityContext(activityLogs = {}) {
+  const entries = getRecentActivityEntries(activityLogs, 21);
+  const recentLogs = entries.map(summarizeActivityLog);
+  const weeklyReviews = recentLogs.filter((log) => log.source === "weekly-review").slice(0, 4);
+  const dailyLogs = recentLogs.filter((log) => log.source !== "weekly-review");
+  const manualRuns = dailyLogs.filter((log) => log.source === "manual");
+  const conditionCheckins = dailyLogs.filter((log) => log.source === "condition-check-in");
+  const coachCheckins = dailyLogs.filter((log) => log.source === "coach-check-in");
+  const missed = dailyLogs.filter((log) => log.status === "skipped" || log.status === "failed");
+  const painSignals = dailyLogs.filter((log) => log.pain === "sharp" || log.reason === "pain" || /통증|아파|아픔|무릎|발목|종아리|햄스트링/.test(log.memo));
+  const fatigueSignals = dailyLogs.filter((log) => log.reason === "fatigue" || log.reason === "sleep" || /피로|무거|지침|잠|수면/.test(log.memo));
+  const totalDistanceKm = manualRuns.reduce((sum, log) => sum + (Number.parseFloat(log.distance) || 0), 0);
+
+  return {
+    window: "recent 21 saved entries, newest first",
+    counts: {
+      dailyLogs: dailyLogs.length,
+      manualRuns: manualRuns.length,
+      conditionCheckins: conditionCheckins.length,
+      coachCheckins: coachCheckins.length,
+      weeklyReviews: weeklyReviews.length,
+      missed: missed.length,
+      painSignals: painSignals.length,
+      fatigueSignals: fatigueSignals.length,
+    },
+    totalDistanceKm: Number(totalDistanceKm.toFixed(1)),
+    recentLogs: recentLogs.slice(0, 14),
+    weeklyReviews,
+  };
+}
+
 function buildRepairCoachRequest({ message, state, previousReply }) {
   return buildCoachRequest({
     message: [
       "STRUCTURED APP UPDATE REQUIRED.",
       "The previous coach reply claimed a change, but the app could not apply it because it had no effective pendingPlan/profile/checkin/weeklyPlan changes.",
-      "Return JSON only. If the user's request changes the app, include pendingPlan with concrete profile/checkin fields and/or changed weeklyPlan sessions. Do not say you changed the app unless pendingPlan contains effective changes.",
+      "Return JSON only. If the user's request changes the app, include pendingPlan with concrete profile/checkin fields, planMeta.season for whole-season changes, and/or changed weeklyPlan sessions. Do not say you changed the app unless pendingPlan contains effective changes.",
       `Original user message: ${message}`,
       `Previous unusable reply: ${previousReply || ""}`,
     ].join("\n"),
@@ -538,6 +636,7 @@ function normalizeCoachResponse(response, fallback, message) {
         originalMessage: rawPendingPlan.originalMessage || fallback.pendingPlan?.originalMessage,
         checkin: normalizeCheckinPatch(rawPendingPlan.checkin),
         profile: normalizeProfilePatch(rawPendingPlan.profile),
+        planMeta: normalizeSeasonPlan(rawPendingPlan.planMeta || raw.planMeta),
         weeklyPlan: normalizeWeeklyPlan(rawPendingPlan.weeklyPlan || raw.weeklyPlan, fallback.currentPlan),
         meta: raw.meta || null,
         source: "llm-coach",
@@ -580,6 +679,7 @@ function buildFallbackReply({ message, state, reason }) {
     currentPlan: state.plan,
     profile: state.profile,
     checkin: state.checkin,
+    planMeta: state.planMeta,
   });
   return {
     ...fallback,
@@ -653,6 +753,8 @@ export async function requestCoachReply({ supabase, authSession, message, state 
 
 export const __coachServiceTest = {
   hasApplyIntent,
+  buildActivityContext,
+  buildCoachRequest,
   mergeExplicitTrainingPreference,
   normalizeCoachResponse,
   normalizeWeeklyPlan,

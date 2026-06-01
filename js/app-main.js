@@ -243,6 +243,7 @@ function syncUI() {
     updateSession,
     saveActivityLog,
     saveWorkoutStatusNote,
+    saveWeeklyReview,
     switchAppTab,
     sendCoachMessage,
     applyCoachPlan,
@@ -399,15 +400,26 @@ function saveActivityLog(activityDate, log) {
 }
 
 function saveWorkoutStatusNote(activityDate, note) {
-  const statusLabel = note.status === "skipped" ? "미실행" : "실패";
-  runSystemPulse(["parsing coach check-in...", "updating recovery context...", "syncing coach state..."], "코칭에 반영했어요", {
+  const isConditionCheck = note.status === "complete";
+  const statusLabel = isConditionCheck ? "컨디션 체크" : note.status === "skipped" ? "미실행" : "실패";
+  const checkinPatch = {};
+  if (note.reason === "good") {
+    checkinPatch.fatigue = "low";
+    checkinPatch.pain = "none";
+    checkinPatch.confidence = "high";
+  }
+  if (note.reason === "fatigue") checkinPatch.fatigue = "high";
+  if (note.reason === "pain") checkinPatch.pain = "worrying";
+  if (note.reason === "sleep") checkinPatch.sleep = "poor";
+  if (note.reason === "stress" || note.reason === "schedule") checkinPatch.schedule = "chaotic";
+  runSystemPulse(["parsing coach check-in...", "updating recovery context...", "syncing coach state..."], isConditionCheck ? "컨디션을 저장했어요" : "코칭에 반영했어요", {
     onBeforeDone: () => {
       state.activityLogs = {
         ...(state.activityLogs || {}),
         [activityDate]: {
           ...note,
           date: activityDate,
-          source: "coach-check-in",
+          source: isConditionCheck ? "condition-check-in" : "coach-check-in",
           savedAt: new Date().toISOString(),
         },
       };
@@ -417,13 +429,40 @@ function saveWorkoutStatusNote(activityDate, note) {
       ].filter(Boolean);
       state.checkin = {
         ...state.checkin,
-        fatigue: note.reason === "fatigue" ? "high" : state.checkin.fatigue,
-        pain: note.reason === "pain" ? "worrying" : state.checkin.pain,
-        schedule: note.reason === "schedule" ? "chaotic" : state.checkin.schedule,
-        confidence: note.status === "skipped" || note.status === "failed" ? "steady" : state.checkin.confidence,
+        ...checkinPatch,
+        confidence: note.status === "skipped" || note.status === "failed" ? "steady" : checkinPatch.confidence || state.checkin.confidence,
         comment: commentParts.join(" / "),
       };
       updateSession(note.dayId, { status: note.status }, { silent: true });
+    },
+  });
+}
+
+function saveWeeklyReview(reviewKey, review) {
+  runSystemPulse(["summarizing last week...", "updating recovery context...", "syncing coach state..."], "주간 체크를 저장했어요", {
+    onBeforeDone: () => {
+      const rangeText = review.range?.start && review.range?.end ? `${review.range.start}~${review.range.end}` : "weekly review";
+      state.activityLogs = {
+        ...(state.activityLogs || {}),
+        [reviewKey]: {
+          ...review,
+          date: getLocalDateKey(),
+          source: "weekly-review",
+          savedAt: new Date().toISOString(),
+        },
+      };
+      state.checkin = {
+        ...state.checkin,
+        fatigue: review.fatigue || state.checkin.fatigue,
+        pain: review.pain || state.checkin.pain,
+        confidence: review.fatigue === "high" || review.pain === "worrying" ? "steady" : state.checkin.confidence,
+        comment: [
+          state.checkin.comment,
+          `${rangeText} 주간 체크: ${review.summary || "summary saved"}${review.memo ? ` / ${review.memo}` : ""}`,
+        ].filter(Boolean).join(" / "),
+      };
+      syncUI();
+      persistWorkspaceSoon();
     },
   });
 }
