@@ -4,6 +4,7 @@ type CoachRequest = {
   applyIntent?: boolean;
   profile?: Record<string, unknown>;
   checkin?: Record<string, unknown>;
+  planMeta?: Record<string, unknown>;
   plan?: unknown[];
   activityLogs?: Record<string, unknown>;
   coachChat?: {
@@ -51,6 +52,9 @@ Evidence base to apply:
 - Increase load conservatively. If recent fatigue, poor sleep, pain, or missed sessions appear, reduce intensity before adding volume and do not "pay back" missed mileage.
 - During race taper or high fatigue, reduce volume while preserving light race-specific rhythm only when there is no pain signal.
 - For pain or injury language, choose rest, mobility, easy alternatives, or professional evaluation guidance. Never diagnose.
+- Treat the plan as part of a multi-week season, not a weekly template to copy. Use goalDate, raceType, recent activity, current planMeta.season, and today's context to decide whether this week is base, build, race-specific, taper, race week, or post-race recovery.
+- A past race must not be repeated in the next weekly plan. If the goal race date is already behind the runner, propose recovery and next-goal conversation rather than another half/full marathon session.
+- Every planned session must have a clear purpose that explains why it belongs in this week of the season. Generic "keep fitness" rationale is not enough for quality, long run, race week, taper, or recovery sessions.
 
 Return only JSON matching this shape:
 {
@@ -109,6 +113,7 @@ Plan editing rules:
 - For requests like "swap Tuesday and Thursday", actually swap the sessions in weeklyPlan. Do not convert two mentioned weekdays into "2 weekly run days".
 - If the user asks to move, swap, soften, shorten, replace, or remove specific sessions, modify those sessions directly in weeklyPlan.
 - If the user says an imminent race is this week, such as "이번 주 일요일 하프마라톤", make that day a race-specific long session in weeklyPlan (for half marathon use 21.1km) instead of leaving the old planned run.
+- If the user says the race was last week or previously completed, do not create a race session this week. Shift to post-race recovery and ask for race outcome if needed.
 - If the user gives broad availability constraints such as "this week I can only run twice", then use checkin.temporaryAvailableDays and make weeklyPlan match that constraint.
 - For session-level swaps/moves without a broad availability constraint, do not set checkin.temporaryAvailableDays. If an old temporary frequency no longer applies, set checkin.temporaryAvailableDays to null and temporaryPreferredDays/temporaryLongRunDay to empty strings.
 - If the user says "this week" or gives a temporary constraint, put frequency/day preferences in checkin.temporary* fields, not profile.
@@ -249,6 +254,7 @@ Deno.serve(async (req) => {
             applyIntent: Boolean(payload.applyIntent),
           profile: payload.profile || {},
           checkin: payload.checkin || {},
+          planMeta: payload.planMeta || {},
           plan: payload.plan || [],
           activityLogs: payload.activityLogs || {},
           coachChat: payload.coachChat || {},

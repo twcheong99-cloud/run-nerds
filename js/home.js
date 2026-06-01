@@ -565,6 +565,7 @@ export function renderWeekMiniCalendar(ctx) {
   const todayId = getTodayDayId();
   const completedCount = state.plan.filter((session) => session.status === "complete").length;
   const hasTemporarySchedule = hasActiveTemporarySchedule(state.checkin, state.profile);
+  const season = state.planMeta?.season;
   const getCompactLabel = (session) => {
     if (session.type === "rest") return "휴식";
     if (session.type === "mobility") return "보강";
@@ -574,8 +575,14 @@ export function renderWeekMiniCalendar(ctx) {
     const parts = [session.distance, session.duration].filter((item) => item && item !== "-");
     return parts.length ? parts.join(" · ") : session.subtitle;
   };
-  dom.weekSummaryBadge.textContent = `${completedCount}/${state.plan.length} complete${hasTemporarySchedule ? " · temporary" : ""}`;
+  dom.weekSummaryBadge.textContent = `${completedCount}/${state.plan.length} complete${hasTemporarySchedule ? " · temporary" : season?.label ? ` · ${season.label}` : ""}`;
   dom.weekMiniCalendar.innerHTML = `
+    ${season?.reason ? `
+      <div class="week-override-note">
+        ${escapeHtml(season.label || "장기 계획")}
+        <span>${escapeHtml(season.reason)}</span>
+      </div>
+    ` : ""}
     ${hasTemporarySchedule ? `
       <div class="week-override-note">
         이번 주 임시 조정 적용 중

@@ -63,8 +63,9 @@ export function applyCoachPlanToState(currentState, pendingPlan) {
       nextState.checkin.temporaryLongRunDay = "";
     }
     nextState.plan = mergePlanWithTrainingHistory(pendingPlan.weeklyPlan, currentState.plan, currentState.activityLogs);
+    const rebuiltMeta = buildPlan(nextState.profile, nextState.checkin).meta;
     nextState.planMeta = {
-      ...(currentState.planMeta || {}),
+      ...rebuiltMeta,
       stats: buildPlanStats(nextState.plan),
     };
   } else {

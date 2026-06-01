@@ -341,6 +341,7 @@ function extractTrainingPreference(message) {
 
 function extractRaceEvent(message) {
   const text = String(message || "").toLowerCase();
+  if (/지난\s*주|저번\s*주|전주|지난\s*일요일|저번\s*일요일|이미|끝났|완주했|뛰었/.test(text)) return null;
   const raceType = /하프|half/.test(text)
     ? "half"
     : /풀|마라톤|marathon|42\.?2/.test(text)
@@ -492,6 +493,7 @@ function buildCoachRequest({ message, state }) {
     applyIntent: hasApplyIntent(message),
     profile: state.profile,
     checkin: state.checkin,
+    planMeta: state.planMeta || {},
     plan: state.plan,
     activityLogs: state.activityLogs || {},
     coachChat: {

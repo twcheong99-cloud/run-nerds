@@ -45,6 +45,75 @@ function makeSession(id, patch = {}) {
   assert.match(edgeSource, /hasPendingPatch/);
   assert.match(edgeSource, /hasTopLevelPatch \|\| hasPendingPatch \? "proposal"/);
   assert.match(edgeSource, /text === "pain" \|\| text === "fatigue" \|\| text === "schedule"/);
+  assert.match(edgeSource, /multi-week season/);
+  assert.match(edgeSource, /past race must not be repeated/);
+}
+
+{
+  const postRace = buildPlan({
+    ...defaultProfile,
+    goalRace: "서울하프마라톤",
+    goalDate: "2026-05-24",
+    raceType: "half",
+    goalTime: "1:45",
+  }, defaultCheckin, { today: "2026-06-01" });
+
+  assert.equal(postRace.meta.season.phase, "post-race");
+  assert.equal(postRace.plan.some((session) => session.title.includes("하프마라톤 레이스")), false);
+  assert.equal(postRace.plan.some((session) => session.distance === "21.1km"), false);
+  assert.equal(postRace.plan.some((session) => session.type === "quality"), false);
+  assert.ok(postRace.plan.every((session) => session.purpose && session.purpose.length > 12));
+  assert.match(postRace.meta.season.reason, /이미 끝난/);
+  assert.match(postRace.meta.summary, /레이스 반복이 아니라 회복/);
+  assert.ok(postRace.meta.season.weeks.some((week) => week.label.includes("다음 목표 전환")));
+}
+
+{
+  const raceWeek = buildPlan({
+    ...defaultProfile,
+    goalRace: "서울하프마라톤",
+    goalDate: "2026-06-07",
+    raceType: "half",
+    goalTime: "1:45",
+  }, defaultCheckin, { today: "2026-06-01" });
+  const sunday = raceWeek.plan.find((session) => session.id === "sun");
+
+  assert.equal(raceWeek.meta.season.phase, "race-week");
+  assert.equal(sunday.title, "하프마라톤 레이스");
+  assert.equal(sunday.distance, "21.1km");
+  assert.match(sunday.purpose, /훈련량을 채우는 날이 아니라/);
+}
+
+{
+  const taper = buildPlan({
+    ...defaultProfile,
+    goalRace: "서울하프마라톤",
+    goalDate: "2026-06-14",
+    raceType: "half",
+    goalTime: "1:45",
+  }, defaultCheckin, { today: "2026-06-01" });
+  const longRun = taper.plan.find((session) => session.type === "long");
+
+  assert.equal(taper.meta.season.phase, "taper");
+  assert.notEqual(longRun.distance, "21.1km");
+  assert.ok(Number.parseInt(longRun.distance, 10) <= 14);
+  assert.ok(taper.meta.season.weeks.some((week) => week.label.includes("레이스 주간")));
+}
+
+{
+  const build = buildPlan({
+    ...defaultProfile,
+    goalRace: "서울하프마라톤",
+    goalDate: "2026-06-28",
+    raceType: "half",
+    goalTime: "1:45",
+  }, defaultCheckin, { today: "2026-06-01" });
+  const weekLabels = build.meta.season.weeks.map((week) => week.label).join(" / ");
+
+  assert.equal(build.meta.season.phase, "specific-build");
+  assert.match(weekLabels, /대회 특이성 빌드/);
+  assert.match(weekLabels, /테이퍼/);
+  assert.match(weekLabels, /레이스 주간/);
 }
 
 {
@@ -244,6 +313,22 @@ function makeSession(id, patch = {}) {
 
 {
   const response = __coachServiceTest.normalizeCoachResponse({
+    stage: "idle",
+    reply: "지난주 하프마라톤 이후에는 회복을 우선하자.",
+    pendingPlan: null,
+  }, {
+    stage: "idle",
+    reply: "fallback",
+    pendingPlan: null,
+    currentPlan,
+  }, "전주에 하프마라톤이 있었어. 이번 주 계획에 또 넣지 말고 회복으로 봐줘");
+
+  assert.equal(response.pendingPlan, null);
+  assert.equal(response.stage, "idle");
+}
+
+{
+  const response = __coachServiceTest.normalizeCoachResponse({
     stage: "proposal",
     reply: "기본 루틴으로 돌릴게.",
     pendingPlan: {
@@ -329,6 +414,7 @@ function makeSession(id, patch = {}) {
   assert.equal(result.state.plan.find((session) => session.id === "thu").title, "회복 조깅 4km");
   assert.equal(result.state.selectedDayId, "thu");
   assert.equal(result.state.planMeta.source, "llm-coach");
+  assert.ok(result.state.planMeta.season?.label);
 }
 
 {

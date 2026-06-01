@@ -1,5 +1,12 @@
 import { DAY_LABELS, DAY_ORDER } from "./config.js";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const RACE_DISTANCES = {
+  "10k": 10,
+  half: 21.1,
+  full: 42.2,
+};
+
 export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
@@ -50,6 +57,198 @@ function estimateEasyCue(raceType) {
   return "하프 목표 페이스보다 여유 있는 이지 강도";
 }
 
+function parseDateOnly(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date, days) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function diffDays(from, to) {
+  return Math.round((startOfDay(to).getTime() - startOfDay(from).getTime()) / MS_PER_DAY);
+}
+
+function dayIdForDate(date) {
+  return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][date.getDay()];
+}
+
+function mondayOf(date) {
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  return addDays(startOfDay(date), diff);
+}
+
+function weekContains(weekStart, date) {
+  const offset = diffDays(weekStart, date);
+  return offset >= 0 && offset <= 6;
+}
+
+function formatDate(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function phaseForWeek(profile, weekStart, today = new Date()) {
+  const raceDate = parseDateOnly(profile.goalDate);
+  const raceType = profile.raceType || "half";
+  const base = {
+    kind: "base",
+    label: "기초 축적",
+    weekRole: "대회까지 시간이 남아 있어 무리한 피크보다 꾸준한 볼륨과 기본 리듬을 쌓는 주간입니다.",
+    sessionReason: "장기 목표를 향한 기초 체력과 반복 가능한 루틴을 만드는 역할입니다.",
+    mileageFactor: 0.9,
+    longRunFactor: 0.34,
+    longRunCap: raceType === "full" ? 28 : raceType === "half" ? 18 : 12,
+    qualityMode: "aerobic",
+    includeQuality: true,
+    includeLongRun: true,
+    raceDayId: "",
+    daysToRace: null,
+    weeksToRace: null,
+  };
+  if (!raceDate) return base;
+
+  const weekEnd = addDays(weekStart, 6);
+  const daysToRace = diffDays(today, raceDate);
+  const weeksToRace = Math.ceil(diffDays(weekStart, raceDate) / 7);
+  const raceDayId = weekContains(weekStart, raceDate) ? dayIdForDate(raceDate) : "";
+  const daysSinceRaceAtWeekStart = diffDays(raceDate, weekStart);
+  if (daysSinceRaceAtWeekStart > 13) {
+    return {
+      ...base,
+      kind: "next-goal-bridge",
+      label: "다음 목표 전환",
+      weekRole: "이전 레이스 회복기가 끝났으므로 새 레이스를 반복하지 않고 기본 루틴과 다음 목표 선택을 준비합니다.",
+      sessionReason: "이전 대회 자극을 무리하게 반복하지 않고 다음 목표를 세울 수 있는 지속 가능한 리듬을 회복합니다.",
+      mileageFactor: 0.75,
+      longRunFactor: 0.28,
+      longRunCap: raceType === "full" ? 20 : raceType === "half" ? 12 : 8,
+      qualityMode: "aerobic",
+      daysToRace,
+      weeksToRace,
+    };
+  }
+  if (daysSinceRaceAtWeekStart > 0) {
+    return {
+      ...base,
+      kind: "post-race",
+      label: "레이스 후 회복",
+      weekRole: "목표 레이스가 이미 끝난 뒤라 새 하프/풀 세션을 반복하지 않고 회복과 상태 확인을 우선합니다.",
+      sessionReason: "레이스 자극을 흡수하고 통증/피로 신호를 확인해 다음 목표로 넘어가기 위한 회복 목적입니다.",
+      mileageFactor: 0.35,
+      longRunFactor: 0,
+      longRunCap: 0,
+      qualityMode: "none",
+      includeQuality: false,
+      includeLongRun: false,
+      raceDayId: "",
+      daysToRace,
+      weeksToRace,
+    };
+  }
+  if (raceDate >= weekStart && raceDate <= weekEnd) {
+    return {
+      ...base,
+      kind: "race-week",
+      label: "레이스 주간",
+      weekRole: "이번 주가 목표 레이스 주간이므로 훈련량을 채우기보다 피로를 줄이고 레이스 실행력을 보존합니다.",
+      sessionReason: "대회 당일에 몸을 신선하게 만들기 위해 볼륨을 낮추고 짧은 리듬만 남깁니다.",
+      mileageFactor: 0.45,
+      longRunFactor: 0,
+      longRunCap: 0,
+      qualityMode: "sharpen",
+      includeQuality: true,
+      includeLongRun: false,
+      raceDayId,
+      daysToRace,
+      weeksToRace: 0,
+    };
+  }
+  if (weeksToRace <= 2) {
+    return {
+      ...base,
+      kind: "taper",
+      label: "테이퍼",
+      weekRole: "대회 1~2주 전이라 훈련 효과를 새로 만들기보다 누적 피로를 줄이고 가벼운 목표 리듬만 확인합니다.",
+      sessionReason: "볼륨을 줄여 회복을 만들되 레이스 감각이 무뎌지지 않도록 짧고 통제된 자극을 둡니다.",
+      mileageFactor: weeksToRace <= 1 ? 0.6 : 0.75,
+      longRunFactor: weeksToRace <= 1 ? 0.24 : 0.3,
+      longRunCap: raceType === "full" ? 22 : raceType === "half" ? 14 : 8,
+      qualityMode: "sharpen",
+      includeQuality: true,
+      includeLongRun: true,
+      raceDayId: "",
+      daysToRace,
+      weeksToRace,
+    };
+  }
+  if (weeksToRace <= 6) {
+    return {
+      ...base,
+      kind: "specific-build",
+      label: "대회 특이성 빌드",
+      weekRole: "대회 3~6주 전이라 주간 볼륨과 롱런을 점진적으로 키우되 피로가 남지 않는 선에서 특이성을 쌓습니다.",
+      sessionReason: "목표 거리와 리듬에 가까워지는 자극을 만들면서 다음 테이퍼가 의미 있게 작동하도록 합니다.",
+      mileageFactor: weeksToRace <= 3 ? 1.02 : 0.96,
+      longRunFactor: 0.4,
+      longRunCap: raceType === "full" ? 32 : raceType === "half" ? 19 : 13,
+      qualityMode: "specific",
+      includeQuality: true,
+      includeLongRun: true,
+      raceDayId: "",
+      daysToRace,
+      weeksToRace,
+    };
+  }
+  return {
+    ...base,
+    daysToRace,
+    weeksToRace,
+  };
+}
+
+function buildSeasonPlan(profile, today, baseMileage) {
+  const start = mondayOf(today);
+  const raceDate = parseDateOnly(profile.goalDate);
+  const weekCount = raceDate ? clamp(Math.ceil(Math.max(0, diffDays(start, raceDate) + 1) / 7) + 1, 4, 8) : 4;
+  return Array.from({ length: weekCount }, (_, index) => {
+    const weekStart = addDays(start, index * 7);
+    const phase = phaseForWeek(profile, weekStart, today);
+    const targetMileage = Math.round(baseMileage * phase.mileageFactor);
+    const longRunKm = phase.includeLongRun
+      ? clamp(Math.round(targetMileage * phase.longRunFactor), 6, phase.longRunCap || 6)
+      : 0;
+    const raceText = phase.raceDayId ? ` · ${DAY_LABELS[phase.raceDayId]} 레이스` : "";
+    return {
+      weekStart: formatDate(weekStart),
+      label: `${index + 1}주차 · ${phase.label}${raceText}`,
+      targetMileage,
+      longRunKm,
+      reason: phase.weekRole,
+    };
+  });
+}
+
+function phaseFocusText(phase, tight) {
+  if (phase.kind === "post-race") return "레이스 반복이 아니라 회복 조깅, 휴식, 몸 상태 확인";
+  if (phase.kind === "next-goal-bridge") return "다음 목표를 정하기 전 기본 루틴 회복";
+  if (phase.kind === "race-week") return "훈련량보다 신선도와 레이스 실행";
+  if (phase.kind === "taper") return "볼륨을 줄이고 짧은 목표 리듬만 남기는 것";
+  if (phase.kind === "specific-build") return "롱런과 목표 리듬을 점진적으로 키우는 것";
+  return tight ? "제한된 일정 안에서도 핵심 세션과 롱런을 지키는 것" : "품질 세션과 롱런의 균형";
+}
+
 function createSession(input) {
   return { ...input, day: DAY_LABELS[input.id], note: input.note || "", status: input.status || "planned", debrief: input.debrief || null };
 }
@@ -75,10 +274,10 @@ function mobilitySession(id, compact) {
   });
 }
 
-function easySession(id, km, raceType, subtitle = "회복성 볼륨 확보") {
+function easySession(id, km, raceType, subtitle = "회복성 볼륨 확보", phase = null) {
   return createSession({
     id, type: "easy", title: `이지런 ${km}km`, subtitle,
-    purpose: "강도를 올리지 않고 주간 볼륨과 러닝 감각을 안정적으로 유지합니다.",
+    purpose: phase ? `${phase.sessionReason} 강도를 올리지 않고 주간 볼륨과 러닝 감각을 안정적으로 유지합니다.` : "강도를 올리지 않고 주간 볼륨과 러닝 감각을 안정적으로 유지합니다.",
     success: "대화 가능한 강도로 끝나고 다음 날 피로가 과하지 않으면 성공입니다.",
     failure: "다리가 무거우면 거리보다 강도를 더 낮추는 쪽이 맞습니다.",
     next: "다음 핵심 세션이나 롱런의 바탕이 됩니다.",
@@ -87,23 +286,34 @@ function easySession(id, km, raceType, subtitle = "회복성 볼륨 확보") {
   });
 }
 
-function recoverySession(id) {
+function recoverySession(id, phase = null, km = 5) {
   return createSession({
-    id, type: "recovery", title: "회복 조깅 5km", subtitle: "긴 세션 다음날 감각 회복",
-    purpose: "피로를 풀면서도 다음 주 연결 감각을 유지합니다.",
+    id, type: "recovery", title: `회복 조깅 ${km}km`, subtitle: phase?.kind === "post-race" ? "레이스 후 회복 확인" : "긴 세션 다음날 감각 회복",
+    purpose: phase ? `${phase.sessionReason} 피로를 풀면서도 다음 주 연결 감각을 유지합니다.` : "피로를 풀면서도 다음 주 연결 감각을 유지합니다.",
     success: "상쾌하게 끝나거나, 피로가 크면 과감히 휴식해도 괜찮습니다.",
     failure: "생략해도 주간 핵심을 해친 것은 아닙니다.",
     next: "다음 체크인의 좋은 입력이 됩니다.",
-    intensity: "easy", duration: "30~40분", distance: "5km", blocks: ["워밍업 5분", "편안한 조깅 25~30분", "정리운동 5분"],
+    intensity: "easy", duration: `${km * 6}~${km * 8}분`, distance: `${km}km`, blocks: ["워밍업 5분", "편안한 조깅", "정리운동 5분"],
   });
 }
 
-function qualitySession(id, profile, km, soft) {
-  if (soft) return easySession(id, km, profile.raceType, "강도 대신 감각 회복 우선");
+function qualitySession(id, profile, km, soft, phase = null) {
+  if (soft || phase?.qualityMode === "none") return easySession(id, km, profile.raceType, "강도 대신 감각 회복 우선", phase);
+  if (phase?.qualityMode === "sharpen") {
+    return createSession({
+      id, type: "quality", title: "레이스 리듬 확인", subtitle: "짧게 깨우고 길게 쉬는 테이퍼 자극",
+      purpose: `${phase.sessionReason} 새 피로를 만들지 않고 목표 리듬을 짧게 확인합니다.`,
+      success: "짧은 구간에서 리듬만 확인하고 더 하고 싶은 여유를 남기면 성공입니다.",
+      failure: "무겁거나 통증이 있으면 가속 구간을 빼고 이지런으로 끝냅니다.",
+      next: "남은 주간은 회복을 우선해 레이스 또는 롱런에 신선하게 연결합니다.",
+      intensity: "moderate", duration: "35~50분", distance: `${km}km`,
+      blocks: ["워밍업 12~15분", "목표 리듬 2~4분 x 3회 / 충분한 조깅 회복", "쿨다운 10분"],
+    });
+  }
   if (profile.qualityFocus === "interval") {
     return createSession({
       id, type: "quality", title: "인터벌 세션", subtitle: "짧은 반복으로 속도 감각 확보",
-      purpose: "10K~하프 구간의 효율을 높이되 과도한 고통보다는 리듬을 익히는 데 집중합니다.",
+      purpose: `${phase?.sessionReason || "이번 주 핵심 자극입니다."} 10K~하프 구간의 효율을 높이되 과도한 고통보다는 리듬을 익히는 데 집중합니다.`,
       success: "후반에도 폼이 무너지지 않고 반복 간 회복이 되면 적절합니다.",
       failure: "반복 수를 줄여도 괜찮고 페이스 집착보다 자세 유지가 우선입니다.",
       next: "다음 이지런이 자극을 흡수합니다.",
@@ -114,7 +324,7 @@ function qualitySession(id, profile, km, soft) {
   if (profile.qualityFocus === "steady") {
     return createSession({
       id, type: "quality", title: "스테디 런", subtitle: "무리 없이 오래 유지하는 리듬 훈련",
-      purpose: "레이스 페이스보다 약간 여유 있는 강도로 지속 능력을 키웁니다.",
+      purpose: `${phase?.sessionReason || "이번 주 핵심 자극입니다."} 레이스 페이스보다 약간 여유 있는 강도로 지속 능력을 키웁니다.`,
       success: "중간 이후에도 페이스와 호흡이 안정적이면 성공입니다.",
       failure: "힘들면 시간을 줄여도 되고 이번 주 피로 신호로 해석하면 됩니다.",
       next: "롱런 전 유산소 리듬을 정리합니다.",
@@ -124,7 +334,7 @@ function qualitySession(id, profile, km, soft) {
   }
   return createSession({
     id, type: "quality", title: "템포 세션", subtitle: "기록 확인이 아니라 목표 리듬 적응",
-    purpose: "하프/풀 준비에 필요한 안정적인 템포 감각을 익히는 핵심 세션입니다.",
+    purpose: `${phase?.sessionReason || "이번 주 핵심 자극입니다."} 하프/풀 준비에 필요한 안정적인 템포 감각을 익히는 핵심 세션입니다.`,
     success: "끝나고 한 단계 더 할 수 있을 듯한 여유가 남으면 적절합니다.",
     failure: "페이스가 안 나와도 현재 피로의 신호일 뿐 주간 전체 실패는 아닙니다.",
     next: "주중 이지런이 자극을 흡수하고 롱런으로 연결됩니다.",
@@ -133,16 +343,35 @@ function qualitySession(id, profile, km, soft) {
   });
 }
 
-function longRunSession(id, km, raceType, tight) {
+function longRunSession(id, km, raceType, tight, phase = null) {
   const cue = raceType === "full" ? "후반 20분은 자세와 보급 리듬 유지에 집중" : "후반 15분은 페이스보다 자세와 호흡 안정에 집중";
   return createSession({
     id, type: "long", title: `롱런 ${km}km`, subtitle: tight ? "제한된 일정 안에서 지켜야 할 주간 핵심" : "이번 주의 가장 중요한 세션",
-    purpose: "거리 적응과 지구력 형성이 목적이며 한 번 빠르게 뛰는 것보다 시즌 흐름에 더 중요합니다.",
+    purpose: `${phase?.sessionReason || "이번 주 장거리 적응을 위한 세션입니다."} 거리 적응과 지구력 형성이 목적이며 한 번 빠르게 뛰는 것보다 시즌 흐름에 더 중요합니다.`,
     success: "후반에 자세가 크게 무너지지 않고 여유를 남기면 성공입니다.",
     failure: "거리 미달이어도 다음 주 증량으로 보상하지 않습니다. 현재 상태를 반영해 다시 잡으면 됩니다.",
     next: "다음 날 회복 조깅 또는 휴식으로 연결합니다.",
     intensity: "steady", duration: `${km * 6 + 10}~${km * 7 + 15}분`, distance: `${km}km`,
     blocks: ["워밍업 10분", `${km}km 이지~steady`, cue, "종료 후 수분과 탄수화물 보충"],
+  });
+}
+
+function raceSession(id, profile, phase) {
+  const distance = RACE_DISTANCES[profile.raceType] || RACE_DISTANCES.half;
+  const label = profile.raceType === "full" ? "마라톤" : profile.raceType === "10k" ? "10K" : "하프마라톤";
+  return createSession({
+    id,
+    type: "long",
+    title: `${label} 레이스`,
+    subtitle: "훈련이 아니라 목표 레이스 실행",
+    purpose: `${phase.weekRole} 오늘은 훈련량을 채우는 날이 아니라 목표 레이스를 안전하게 실행하는 날입니다.`,
+    success: "초반을 여유 있게 열고 후반까지 자세, 호흡, 보급 리듬을 유지하면 성공입니다.",
+    failure: "통증, 어지러움, 흉통 같은 위험 신호가 있으면 기록보다 중단 판단을 우선합니다.",
+    next: "다음 주는 회복 주간으로 전환해 레이스 자극을 흡수합니다.",
+    intensity: profile.raceType === "10k" ? "hard" : "steady",
+    duration: "목표 기록 기준",
+    distance: `${distance}km`,
+    blocks: ["워밍업 10~15분", `${label} ${distance}km`, "종료 후 수분, 탄수화물, 통증 체크"],
   });
 }
 
@@ -169,34 +398,50 @@ export function mergePlanWithTrainingHistory(nextPlan, previousPlan, activityLog
   });
 }
 
-export function buildPlan(profile, checkin) {
+export function buildPlan(profile, checkin, options = {}) {
   const mileage = Number(profile.weeklyMileage) || 24;
+  const today = options.today ? startOfDay(parseDateOnly(options.today) || new Date(options.today)) : startOfDay(new Date());
+  const weekStart = mondayOf(today);
+  const phase = phaseForWeek(profile, weekStart, today);
   const safety = getSafetyState(profile, checkin);
   const tight = checkin.schedule === "chaotic";
-  const soft = safety.level !== "green" || profile.fatigue === "heavy";
+  const soft = safety.level !== "green" || profile.fatigue === "heavy" || phase.kind === "post-race";
   const temporaryAvailableDays = Number(checkin.temporaryAvailableDays || 0);
   const availableDays = clamp(temporaryAvailableDays || Number(profile.availableDays) || 4, 2, 5);
-  const effectiveRunDays = tight && !temporaryAvailableDays ? Math.min(availableDays, 2) : availableDays;
+  const phaseRunCap = phase.kind === "post-race" ? 2 : phase.kind === "race-week" ? Math.min(availableDays, 3) : availableDays;
+  const effectiveRunDays = tight && !temporaryAvailableDays ? Math.min(phaseRunCap, 2) : phaseRunCap;
   const preferredDays = parsePreferredDays(checkin.temporaryPreferredDays || profile.preferredDays);
   const longRunDay = checkin.temporaryLongRunDay || profile.longRunDay || "sat";
   const qualityDay = preferredDays.find((day) => day !== longRunDay && !["mon", "fri"].includes(day)) || "tue";
-  const longRunKm = clamp(Math.round(mileage * (soft ? 0.32 : 0.38)), 8, profile.raceType === "full" ? 28 : 22);
-  const easyKm = clamp(Math.round(mileage * 0.18), 5, 10);
-  const qualityKm = clamp(Math.round(mileage * 0.22), 6, 12);
+  const targetMileage = Math.max(8, Math.round(mileage * phase.mileageFactor));
+  const longRunKm = phase.includeLongRun ? clamp(Math.round(targetMileage * (soft ? Math.min(phase.longRunFactor, 0.32) : phase.longRunFactor)), 6, phase.longRunCap || 8) : 0;
+  const easyKm = clamp(Math.round(targetMileage * 0.18), phase.kind === "post-race" ? 3 : 4, phase.kind === "race-week" ? 7 : 10);
+  const qualityKm = clamp(Math.round(targetMileage * (phase.qualityMode === "sharpen" ? 0.14 : 0.22)), 5, phase.qualityMode === "sharpen" ? 8 : 12);
   const supplementalDays = Array.from(new Set([...preferredDays, "thu", "sun", "sat", "wed"].filter((day) => day !== longRunDay && day !== qualityDay)));
 
   const sessionsByDay = new Map();
-  sessionsByDay.set(longRunDay, longRunSession(longRunDay, longRunKm, profile.raceType, tight));
-  sessionsByDay.set(qualityDay, qualitySession(qualityDay, profile, qualityKm, soft));
+  if (phase.raceDayId) {
+    sessionsByDay.set(phase.raceDayId, raceSession(phase.raceDayId, profile, phase));
+  } else if (phase.includeLongRun) {
+    sessionsByDay.set(longRunDay, longRunSession(longRunDay, longRunKm, profile.raceType, tight, phase));
+  }
+  if (phase.includeQuality && qualityDay !== phase.raceDayId) {
+    sessionsByDay.set(qualityDay, qualitySession(qualityDay, profile, qualityKm, soft, phase));
+  }
 
   supplementalDays.slice(0, Math.max(0, effectiveRunDays - 2)).forEach((day, index, days) => {
     if (sessionsByDay.has(day)) return;
     if (!tight && index === days.length - 1 && effectiveRunDays >= 4) {
-      sessionsByDay.set(day, recoverySession(day));
+      sessionsByDay.set(day, recoverySession(day, phase));
       return;
     }
-    sessionsByDay.set(day, easySession(day, easyKm, profile.raceType));
+    sessionsByDay.set(day, easySession(day, easyKm, profile.raceType, phase.kind === "race-week" ? "테이퍼 이지런" : "회복성 볼륨 확보", phase));
   });
+
+  if (phase.kind === "post-race" && !sessionsByDay.size) {
+    const recoveryDay = preferredDays.find((day) => !["mon", "fri"].includes(day)) || "thu";
+    sessionsByDay.set(recoveryDay, recoverySession(recoveryDay, phase, 4));
+  }
 
   if (!sessionsByDay.has("wed") && effectiveRunDays >= 4 && !tight) sessionsByDay.set("wed", mobilitySession("wed", false));
 
@@ -219,11 +464,23 @@ export function buildPlan(profile, checkin) {
       source: !profile.goalRace || !profile.goalTime ? "fallback-plan" : "local-coach-engine",
       fallbackReason: !profile.goalRace || !profile.goalTime ? "목표 대회 또는 목표 기록 정보가 부족해 기본 주간 플랜으로 생성" : "none",
       summary: [
-        `${profile.name || "러너"}님은 이번 주에 ${soft ? "회복 우선" : "리듬 유지"} 주간으로 가져갑니다.`,
-        `핵심은 ${tight ? "제한된 일정 안에서도 핵심 세션과 롱런을 지키는 것" : "품질 세션과 롱런의 균형"}입니다.`,
+        `${profile.name || "러너"}님은 이번 주에 ${phase.label} / ${soft ? "회복 우선" : "리듬 유지"} 주간으로 가져갑니다.`,
+        phase.weekRole,
+        `핵심은 ${phaseFocusText(phase, tight)}입니다.`,
         safety.message,
       ].join(" "),
       safety,
+      season: {
+        generatedAt: formatDate(today),
+        currentWeekStart: formatDate(weekStart),
+        phase: phase.kind,
+        label: phase.label,
+        daysToRace: phase.daysToRace,
+        weeksToRace: phase.weeksToRace,
+        targetMileage,
+        reason: phase.weekRole,
+        weeks: buildSeasonPlan(profile, today, mileage),
+      },
       stats: {
         plannedMileage,
         runDays: plan.filter((session) => ["easy", "quality", "long", "recovery"].includes(session.type)).length,
