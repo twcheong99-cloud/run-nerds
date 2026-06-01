@@ -1,7 +1,7 @@
 const origin = (process.env.PRODUCTION_ORIGIN || "").replace(/\/+$/, "");
 
 if (!origin) {
-  console.error("Set PRODUCTION_ORIGIN, for example: PRODUCTION_ORIGIN=https://example.netlify.app npm run production:urls");
+  console.error("Set PRODUCTION_ORIGIN, for example: PRODUCTION_ORIGIN=https://example.vercel.app npm run production:urls");
   process.exit(1);
 }
 

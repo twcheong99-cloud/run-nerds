@@ -13,9 +13,9 @@ Publish the prepared `www` bundle and verify these paths on the production domai
 - `/manifest.webmanifest`
 - `/service-worker.js`
 
-## Netlify deployment
+## Vercel deployment
 
-This repository's Netlify config builds the production web bundle with:
+This repository's Vercel config builds the production web bundle with:
 
 ```bash
 npm run mobile:prepare
@@ -31,7 +31,7 @@ Do not publish the repository root for a store-facing production site. The root 
 
 ## URL values to paste into stores
 
-Replace `<production-origin>` with the deployed HTTPS origin, for example `https://example.netlify.app` or a custom domain.
+Replace `<production-origin>` with the deployed HTTPS origin, for example `https://example.vercel.app` or a custom domain.
 
 - Privacy Policy URL: `<production-origin>/privacy.html`
 - Account Deletion URL: `<production-origin>/account-deletion.html`
@@ -54,7 +54,7 @@ Before submitting a review build:
 After the production origin is known, also run:
 
 ```bash
-PRODUCTION_ORIGIN=https://example.netlify.app npm run production:urls
+PRODUCTION_ORIGIN=https://example.vercel.app npm run production:urls
 ```
 
 This checks required public pages, manifest content type, service worker cache headers, and verifies that local files such as `env.js`, release docs, scripts, and tests are not publicly served.

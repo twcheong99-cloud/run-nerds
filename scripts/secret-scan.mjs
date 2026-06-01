@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
@@ -52,6 +52,7 @@ for (const file of trackedFiles) {
   if (skippedExtensions.has(path.extname(file))) continue;
 
   const absolutePath = path.join(root, file);
+  if (!existsSync(absolutePath)) continue;
   const source = readFileSync(absolutePath, "utf8");
 
   for (const pattern of patterns) {

@@ -50,7 +50,7 @@ python3 -m http.server 4173
 
 ## 가족 테스트 배포
 
-이 앱은 PWA로 설정되어 있어 Netlify나 Vercel 같은 정적 호스팅에 배포할 수 있습니다.
+이 앱은 PWA로 설정되어 있어 Vercel 같은 정적 호스팅에 배포할 수 있습니다.
 
 포함된 PWA 파일:
 
@@ -58,9 +58,9 @@ python3 -m http.server 4173
 - `service-worker.js`: 기본 정적 파일 캐싱과 최소 오프라인 로딩
 - `assets/icon-192.png`, `assets/icon-512.png`, `assets/apple-touch-icon.png`: 홈 화면 아이콘
 - `STORE_ASSETS.md`: 스토어 아이콘과 런치 자산 체크리스트
-- `netlify.toml`: Netlify 정적 배포와 PWA 헤더 설정
+- `vercel.json`: Vercel 정적 배포와 PWA 헤더 설정
 
-Netlify에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를 사이트로 연결하면 `netlify.toml`이 `npm run mobile:prepare`로 `www` 번들을 만들고 그 폴더만 공개합니다. 운영 URL을 스토어에 넣기 전에는 `PRODUCTION_URLS.md`를 따라 공개 페이지를 확인합니다.
+Vercel에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를 프로젝트로 연결하면 `vercel.json`이 `npm run mobile:prepare`로 `www` 번들을 만들고 그 폴더만 공개합니다. 최종 테스트 URL이나 운영 URL을 공유하기 전에는 `PRODUCTION_URLS.md`를 따라 공개 페이지를 확인합니다.
 
 ## 모바일 앱 빌드
 

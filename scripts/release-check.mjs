@@ -84,6 +84,7 @@ run("iOS privacy manifest lint", "plutil", ["-lint", "ios/App/App/PrivacyInfo.xc
   "STORE_ASSETS.md",
   "STORE_RATING.md",
   "PRODUCTION_URLS.md",
+  "vercel.json",
   "CI_RELEASE.md",
   "RELEASE_RUNBOOK.md",
   "RELEASE_BLOCKERS.md",
@@ -371,6 +372,7 @@ assert(storeRating.includes("does not request location, camera, microphone, cont
 assert(storeRating.includes("Official references"), "STORE_RATING.md must include official reference context");
 
 const productionUrls = read("PRODUCTION_URLS.md");
+const vercelConfig = JSON.parse(read("vercel.json"));
 assert(productionUrls.includes("/privacy.html"), "PRODUCTION_URLS.md must include privacy URL path");
 assert(productionUrls.includes("/account-deletion.html"), "PRODUCTION_URLS.md must include account deletion URL path");
 assert(productionUrls.includes("/safety.html"), "PRODUCTION_URLS.md must include safety URL path");
@@ -379,9 +381,14 @@ assert(productionUrls.includes("www"), "PRODUCTION_URLS.md must require publishi
 assert(productionUrls.includes("Do not publish the repository root"), "PRODUCTION_URLS.md must warn against root publishing");
 assert(productionUrls.includes("env.js"), "PRODUCTION_URLS.md must verify local env is not public");
 assert(productionUrls.includes("npm run production:urls"), "PRODUCTION_URLS.md must document production URL script");
-assert(read("netlify.toml").includes('publish = "www"'), "Netlify must publish prepared www bundle");
-assert(read("netlify.toml").includes('command = "npm run mobile:prepare"'), "Netlify must prepare web bundle before publish");
-assert(read("netlify.toml").includes("Permissions-Policy"), "Netlify must include basic browser permission headers");
+assert(vercelConfig.buildCommand === "npm run mobile:prepare", "Vercel must prepare web bundle before publish");
+assert(vercelConfig.outputDirectory === "www", "Vercel must publish prepared www bundle");
+const vercelHeaders = JSON.stringify(vercelConfig.headers || []);
+assert(vercelHeaders.includes("X-Content-Type-Options"), "Vercel must include X-Content-Type-Options header");
+assert(vercelHeaders.includes("Referrer-Policy"), "Vercel must include Referrer-Policy header");
+assert(vercelHeaders.includes("Permissions-Policy"), "Vercel must include browser permissions header");
+assert(vercelHeaders.includes("/service-worker.js") && vercelHeaders.includes("no-cache"), "Vercel must avoid aggressive service worker caching");
+assert(vercelHeaders.includes("/manifest.webmanifest") && vercelHeaders.includes("application/manifest+json"), "Vercel must serve manifest content type");
 
 const releaseEvidence = read("RELEASE_EVIDENCE.md");
 [

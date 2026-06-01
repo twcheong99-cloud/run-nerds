@@ -36,12 +36,12 @@ npm run security:scan
 npm run release:check
 ```
 
-3. Decide the production URL first.
+3. Decide the Vercel final-candidate URL first.
 
-This is the cleanest next move because the only known local warning is about production URL placeholders. Once the real production origin exists, run:
+This is the cleanest next move because the only known local warning is about production URL placeholders. The immediate goal is a polished final-candidate build for internal/family testing, not a same-day store submission. Once the real Vercel origin exists, run:
 
 ```sh
-PRODUCTION_ORIGIN=https://your-production-domain.example npm run production:urls
+PRODUCTION_ORIGIN=https://your-vercel-domain.example npm run production:urls
 ```
 
 Then update:
@@ -90,4 +90,4 @@ Do not commit reviewer credentials. Put them only in the private reviewer notes 
 
 ## Best first action
 
-Use the production URL as tomorrow's anchor. Once the deployed domain is confirmed and `npm run production:urls` passes, the rest of the store checklist becomes much more mechanical.
+Use the Vercel final-candidate URL as today's anchor. Once the deployed domain is confirmed and `npm run production:urls` passes, internal testing can focus on app polish while the stricter store checklist remains available for later.
