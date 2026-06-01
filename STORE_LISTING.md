@@ -8,9 +8,9 @@ Use this as a copy source for Play Console and App Store Connect. `STORE_CONSOLE
 - Bundle ID / Package name: `com.runnerds.app`
 - Category: Health & Fitness
 - Support URL: `https://github.com/twcheong99-cloud/run-nerds/issues`
-- Privacy Policy URL: production URL for `privacy.html`
-- Account Deletion URL: production URL for `account-deletion.html`
-- Safety / medical disclaimer URL: production URL for `safety.html`
+- Privacy Policy URL: `https://run-nerds.vercel.app/privacy.html`
+- Account Deletion URL: `https://run-nerds.vercel.app/account-deletion.html`
+- Safety / medical disclaimer URL: `https://run-nerds.vercel.app/safety.html`
 
 ## Short Description
 
@@ -112,10 +112,10 @@ Before review, provide demo credentials only in the private store console review
 
 ## Remaining Store Listing Inputs
 
-- Production privacy policy URL
-- Production account deletion URL
-- Production support URL or final support email
-- Production URL verification using `PRODUCTION_URLS.md`
+- Production privacy policy URL: `https://run-nerds.vercel.app/privacy.html`
+- Production account deletion URL: `https://run-nerds.vercel.app/account-deletion.html`
+- Production support URL or final support email: `https://run-nerds.vercel.app/support.html`
+- Production URL verification using `PRODUCTION_URLS.md`: passed for `https://run-nerds.vercel.app` on 2026-06-01
 - Demo account credentials entered privately in the store console
 - Final app screenshots from signed Android/iOS builds
 - Final age rating and health/fitness declarations in each store console, using `STORE_RATING.md`

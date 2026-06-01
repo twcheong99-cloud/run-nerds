@@ -9,19 +9,18 @@ For sensitive proof, store screenshots or console exports in the private store/t
 - Final commit on `main`:
 - GitHub Actions `Release readiness` workflow URL:
 - Checked against `CI_RELEASE.md`: yes / no
-- `npm run release:check` result:
-- Date checked:
+- `npm run release:check` result: passed locally on 2026-06-01
 
 ## Production URLs
 
-- Production origin:
-- Privacy policy URL:
-- Account deletion URL:
-- Safety / medical disclaimer URL:
-- Support URL or support email:
-- Evidence location for URL acceptance:
-- Checked against `PRODUCTION_URLS.md`: yes / no
-- `npm run production:urls` result:
+- Production origin: `https://run-nerds.vercel.app`
+- Privacy policy URL: `https://run-nerds.vercel.app/privacy.html`
+- Account deletion URL: `https://run-nerds.vercel.app/account-deletion.html`
+- Safety / medical disclaimer URL: `https://run-nerds.vercel.app/safety.html`
+- Support URL or support email: `https://run-nerds.vercel.app/support.html`
+- Evidence location for URL acceptance: Vercel deployment `https://run-nerds.vercel.app`
+- Checked against `PRODUCTION_URLS.md`: yes
+- `npm run production:urls` result: passed on 2026-06-01 for `https://run-nerds.vercel.app`
 
 ## Reviewer access
 

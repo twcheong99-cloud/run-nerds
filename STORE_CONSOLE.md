@@ -14,12 +14,14 @@ Use this as the final copy-and-check source when filling Play Console and App St
 
 ## Public URLs
 
-Replace `<production-origin>` only after `PRODUCTION_URLS.md` passes.
+Current verified Vercel origin for final-candidate testing: `https://run-nerds.vercel.app`.
 
-- Privacy Policy URL: `<production-origin>/privacy.html`
-- Account Deletion URL: `<production-origin>/account-deletion.html`
-- Safety / medical disclaimer URL: `<production-origin>/safety.html`
-- Support URL: `<production-origin>/support.html` or the final support channel accepted by the store console
+Replace `<production-origin>` only after `PRODUCTION_URLS.md` passes for the final store submission origin.
+
+- Privacy Policy URL: `https://run-nerds.vercel.app/privacy.html`
+- Account Deletion URL: `https://run-nerds.vercel.app/account-deletion.html`
+- Safety / medical disclaimer URL: `https://run-nerds.vercel.app/safety.html`
+- Support URL: `https://run-nerds.vercel.app/support.html` or the final support channel accepted by the store console
 
 ## Listing copy
 

@@ -3,3 +3,4 @@ env.js
 supabase/.temp/
 www/
 node_modules/
+.vercel

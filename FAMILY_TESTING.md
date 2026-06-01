@@ -10,6 +10,12 @@ Vercel에 배포한 최종 후보 URL을 가족이나 내부 테스터에게 공
 https://run-nerds.vercel.app
 ```
 
+Current final-candidate URL:
+
+```text
+https://run-nerds.vercel.app
+```
+
 ## iPhone에서 앱처럼 설치
 
 1. Safari에서 테스트 URL을 엽니다.
