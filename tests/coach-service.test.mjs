@@ -88,6 +88,17 @@ function makeSession(id, patch = {}) {
 }
 
 {
+  const note = __homeTest.buildCoachPlanNote({
+    plan: currentPlan,
+    planMeta: buildPlan(defaultProfile, defaultCheckin).meta,
+  });
+
+  assert.ok(note.bullets.some(([label]) => label === "왜 이렇게 짰나"));
+  assert.ok(note.bullets.some(([label]) => label === "장기 기대효과"));
+  assert.ok(note.metrics.some(([label]) => label === "핵심 세션"));
+}
+
+{
   const stale = buildPlan(defaultProfile, {
     ...defaultCheckin,
     fatigue: "high",
@@ -796,6 +807,34 @@ function makeSession(id, patch = {}) {
   assert.equal(applied.applied, true);
   assert.equal(applied.state.checkin.temporaryAvailableDays, 2);
   assert.equal(applied.state.plan.filter((session) => ["easy", "quality", "long", "recovery"].includes(session.type)).length, 2);
+}
+
+{
+  const limitError = Object.assign(new Error("Edge Function returned a non-2xx status code"), {
+    context: new Response(JSON.stringify({ error: "daily-coach-limit", limit: 10 }), { status: 429 }),
+  });
+  const supabase = {
+    functions: {
+      invoke: async () => ({ data: null, error: limitError }),
+    },
+  };
+  const response = await requestCoachReply({
+    supabase,
+    authSession: { access_token: "test-token" },
+    message: "오늘 너무 피곤한데 계획 좀 바꿔줘",
+    state: {
+      profile: defaultProfile,
+      checkin: defaultCheckin,
+      plan: currentPlan,
+      activityLogs: {},
+      coachChat: { stage: "idle", pendingPlan: null, messages: [] },
+      onboarding: {},
+    },
+  });
+
+  assert.equal(response.meta.source, "llm-fallback");
+  assert.equal(response.meta.fallbackReason, "daily-coach-limit");
+  assert.match(response.reply, /10회를 모두 사용했어/);
 }
 
 console.log("coach-service tests passed");

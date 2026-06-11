@@ -60,7 +60,7 @@ python3 -m http.server 4173
 - `STORE_ASSETS.md`: 스토어 아이콘과 런치 자산 체크리스트
 - `vercel.json`: Vercel 정적 배포와 PWA 헤더 설정
 
-Vercel에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를 프로젝트로 연결하면 `vercel.json`이 `npm run mobile:prepare`로 `www` 번들을 만들고 그 폴더만 공개합니다. 최종 테스트 URL이나 운영 URL을 공유하기 전에는 `PRODUCTION_URLS.md`를 따라 공개 페이지를 확인합니다.
+Vercel에 배포할 때는 이 폴더(`/Users/taewoo/Desktop/app/run-nerds`)를 프로젝트로 연결하면 `vercel.json`이 `npm run mobile:prepare`로 `www` 번들을 만들고 그 폴더만 공개합니다. 최종 테스트 URL이나 운영 URL을 공유하기 전에는 `PRODUCTION_URLS.md`를 따라 공개 페이지를 확인합니다. 가족/내부 테스터에게 공유하는 최종 후보 URL과 설치·테스트 절차는 `FAMILY_TESTING.md`에 정리되어 있습니다.
 
 ## 모바일 앱 빌드
 
@@ -100,6 +100,7 @@ npm run native:doctor
 - Edge Function 환경변수에 `OPENAI_API_KEY`를 설정하면 LLM 코치가 응답합니다.
 - `OPENAI_API_KEY`가 없거나 응답이 실패하면 기존 로컬 코치 엔진으로 자동 fallback됩니다.
 - 선택적으로 `OPENAI_MODEL`을 설정할 수 있으며, 기본값은 `gpt-5.2`입니다.
+- LLM 코치 호출은 사용자당 하루 10회(`COACH_DAILY_LIMIT`, Asia/Seoul 자정 기준)로 제한되며, 한도를 넘으면 로컬 코치 엔진으로 안내와 함께 fallback됩니다.
 - 코칭 판단 근거는 `COACHING_KNOWLEDGE.md`에 정리했고, Edge Function 프롬프트는 이 원칙을 매 요청에 포함합니다.
 - 정적 앱 배포와 Supabase Edge Function 배포는 별개입니다. `supabase/functions/coach/index.ts`를 바꾸면 정적 사이트를 다시 배포하는 것만으로는 LLM 프롬프트가 바뀌지 않으므로 `coach` Edge Function도 별도로 배포해야 합니다.
 - 스토어 제출 전 백엔드 점검은 `BACKEND_RELEASE.md`를 따릅니다.

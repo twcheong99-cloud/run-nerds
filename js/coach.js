@@ -1,11 +1,5 @@
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+import { DAY_LABELS } from "./config.js";
+import { escapeHtml } from "./html.js";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const PLAN_DAY_TO_WEEKDAY = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
@@ -64,6 +58,7 @@ function getCoachSourceLabel(source) {
 }
 
 function getCoachDiagnosticLabel(detail) {
+  if (detail === "daily-coach-limit") return "오늘 한도 사용 완료";
   if (detail === "coach-contract-unverified") return "계약 미확인";
   if (detail === "missing-structured-change") return "변경안 없음";
   if (detail === "no-effective-change") return "변경 없음";
@@ -73,6 +68,7 @@ function getCoachDiagnosticLabel(detail) {
 }
 
 function getCoachDiagnosticTone(detail) {
+  if (detail === "daily-coach-limit") return "warning";
   if (detail === "coach-contract-unverified") return "warning";
   if (detail === "missing-structured-change" || detail === "no-effective-change") return "danger";
   if (detail && detail !== "none") return "neutral";

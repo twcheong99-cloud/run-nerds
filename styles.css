@@ -1446,6 +1446,72 @@ textarea:focus {
   line-height: 1.65;
 }
 
+.coach-plan-note {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid rgba(122, 255, 152, 0.14);
+  background: rgba(122, 255, 152, 0.035);
+}
+
+.coach-plan-note-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.coach-plan-note-head strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
+.coach-plan-note-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.coach-plan-note-metrics div,
+.coach-plan-note-body article {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid rgba(122, 255, 152, 0.1);
+  background: rgba(2, 4, 3, 0.18);
+}
+
+.coach-plan-note-metrics span,
+.coach-plan-note-body span {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--pixel-font);
+  font-size: 0.44rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.coach-plan-note-metrics strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.coach-plan-note-body {
+  display: grid;
+  gap: 8px;
+}
+
+.coach-plan-note-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
 .next-goal-mode {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2184,6 +2250,7 @@ textarea:focus {
   .calendar,
   .replan-results,
   .plan-stats,
+  .coach-plan-note-metrics,
   .onboarding-grid,
   .choice-grid,
   .next-goal-mode,

@@ -17,7 +17,8 @@ const entries = [
   "service-worker.js",
   "assets",
   "fonts",
-  "js"
+  "js",
+  "vendor"
 ];
 
 async function copyEntry(entry) {

@@ -38,6 +38,7 @@ type CoachResponse = {
 
 type CoachConcern = "pain" | "fatigue" | "schedule" | "race" | "general";
 const COACH_CONTRACT_VERSION = "coach-contract-v3";
+const COACH_DAILY_LIMIT = Number(Deno.env.get("COACH_DAILY_LIMIT") || "10");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -180,6 +181,47 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+async function getAuthenticatedUserId(req: Request, supabaseUrl: string, serviceRoleKey: string): Promise<string> {
+  const authorization = req.headers.get("Authorization") || "";
+  const userJwt = authorization.replace(/^Bearer\s+/i, "").trim();
+  if (!userJwt || userJwt === serviceRoleKey) return "";
+
+  const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${userJwt}`,
+    },
+  });
+  if (!userResponse.ok) return "";
+
+  const user = await userResponse.json();
+  return String(user?.id || "");
+}
+
+// Returns the call count consumed today, -1 when the daily limit is exhausted.
+// Fails open (returns 0) when the usage infrastructure itself is unavailable,
+// so a missing table never blocks coaching; the error is logged for follow-up.
+async function consumeDailyCoachCall(userId: string, supabaseUrl: string, serviceRoleKey: string): Promise<number> {
+  const rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/consume_coach_call`, {
+    method: "POST",
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_user_id: userId, p_daily_limit: COACH_DAILY_LIMIT }),
+  });
+
+  if (!rpcResponse.ok) {
+    const detail = await rpcResponse.text();
+    console.error("consume_coach_call failed; allowing request", rpcResponse.status, detail);
+    return 0;
+  }
+
+  const count = Number(await rpcResponse.json());
+  return Number.isFinite(count) ? count : 0;
+}
+
 function detectConcern(message: string): CoachConcern {
   const text = String(message || "").trim().toLowerCase();
   if (text === "pain" || text === "fatigue" || text === "schedule" || text === "race" || text === "general") return text;
@@ -248,9 +290,25 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "OPENAI_API_KEY is not configured" }, 503);
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) {
+    return jsonResponse({ error: "Coach service is not configured" }, 503);
+  }
+
+  const userId = await getAuthenticatedUserId(req, supabaseUrl, serviceRoleKey);
+  if (!userId) {
+    return jsonResponse({ error: "Missing authenticated user token" }, 401);
+  }
+
   const payload = await req.json() as CoachRequest;
   const message = String(payload.message || "").trim();
   if (!message) return jsonResponse({ error: "message is required" }, 400);
+
+  const usedCalls = await consumeDailyCoachCall(userId, supabaseUrl, serviceRoleKey);
+  if (usedCalls < 0) {
+    return jsonResponse({ error: "daily-coach-limit", limit: COACH_DAILY_LIMIT }, 429);
+  }
 
   const llmResponse = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",

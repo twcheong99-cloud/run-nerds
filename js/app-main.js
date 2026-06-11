@@ -1,4 +1,4 @@
-import { createDefaultOnboarding, defaultCheckin, defaultProfile, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./config.js";
+import { APP_ORIGIN, createDefaultOnboarding, defaultCheckin, defaultProfile, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./config.js";
 import { buildPlan, mergePlanWithTrainingHistory } from "./plan.js";
 import { buildInitialPlanningProfileFromOnboarding, getOnboardingSteps, renderOnboarding, shouldShowOnboarding, validateOnboardingStep } from "./onboarding.js";
 import { renderHome } from "./home.js";
@@ -732,7 +732,14 @@ async function handleSignup(event) {
     return;
   }
   const pulse = runSystemPulse(["creating runner profile...", "syncing workspace..."], "계정 준비가 끝났어요", { duration: 1600 });
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name },
+      emailRedirectTo: `${APP_ORIGIN}/`,
+    },
+  });
   if (error) {
     await pulse;
     return setAuthFeedback(error.message, "warning");

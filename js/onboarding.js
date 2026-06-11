@@ -1,4 +1,5 @@
 import { ONBOARDING_TEMP_DISABLED } from "./config.js";
+import { escapeHtml } from "./html.js";
 
 export function hasPrimaryGoal(state) {
   return Boolean(state.onboarding?.completedAt && state.onboarding?.initialPlanningProfile);
@@ -47,10 +48,10 @@ function renderStepBody(stepId, draft) {
   ]);
   if (stepId === "goal-detail" && draft.goalType === "race") return `
     <div class="onboarding-grid">
-      <label>목표 대회 이름<input name="raceName" value="${draft.raceName}" placeholder="예: 서울하프마라톤" /></label>
+      <label>목표 대회 이름<input name="raceName" value="${escapeHtml(draft.raceName)}" placeholder="예: 서울하프마라톤" /></label>
       <label>대회 종목<select name="raceType"><option value="10k" ${draft.raceType === "10k" ? "selected" : ""}>10K</option><option value="half" ${draft.raceType === "half" ? "selected" : ""}>하프</option><option value="full" ${draft.raceType === "full" ? "selected" : ""}>풀</option></select></label>
-      <label>대회 날짜<input name="raceDate" type="date" value="${draft.raceDate}" /></label>
-      <label>목표 기록<input name="raceGoalTime" value="${draft.raceGoalTime}" placeholder="예: 하프 1:45" /></label>
+      <label>대회 날짜<input name="raceDate" type="date" value="${escapeHtml(draft.raceDate)}" /></label>
+      <label>목표 기록<input name="raceGoalTime" value="${escapeHtml(draft.raceGoalTime)}" placeholder="예: 하프 1:45" /></label>
     </div>`;
   if (stepId === "goal-detail") return `<div class="onboarding-stack">${renderChoiceCards("nonRaceFocus", draft.nonRaceFocus, [
     { value: "consistency", title: "CONSISTENCY", copy: "규칙적으로 달리는 루틴부터 만들고 싶어요." },
@@ -58,19 +59,19 @@ function renderStepBody(stepId, draft) {
     { value: "comeback", title: "COMEBACK", copy: "쉬었던 흐름을 무리 없이 다시 만들고 싶어요." },
   ])}<label>프로그램 기간<select name="programDurationWeeks"><option value="6" ${draft.programDurationWeeks === "6" ? "selected" : ""}>6주</option><option value="8" ${draft.programDurationWeeks === "8" ? "selected" : ""}>8주</option><option value="12" ${draft.programDurationWeeks === "12" ? "selected" : ""}>12주</option><option value="16" ${draft.programDurationWeeks === "16" ? "selected" : ""}>16주</option></select></label></div>`;
   if (stepId === "training-load") return `<div class="onboarding-grid"><label>주간 러닝 가능 횟수<select name="availableTrainingDays"><option value="2" ${draft.availableTrainingDays === "2" ? "selected" : ""}>주 2회</option><option value="3" ${draft.availableTrainingDays === "3" ? "selected" : ""}>주 3회</option><option value="4" ${draft.availableTrainingDays === "4" ? "selected" : ""}>주 4회</option><option value="5" ${draft.availableTrainingDays === "5" ? "selected" : ""}>주 5회</option><option value="6" ${draft.availableTrainingDays === "6" ? "selected" : ""}>주 6회</option></select></label></div>`;
-  if (stepId === "latest-run") return `<div class="onboarding-grid"><label>가장 최근 러닝 날짜<input name="latestRunDate" type="date" value="${draft.latestRunDate}" /></label><label>가장 최근 러닝 거리(km)<input name="latestRunDistance" type="number" min="0" step="0.1" value="${draft.latestRunDistance}" /></label><label>평균 페이스<input name="latestRunAvgPace" value="${draft.latestRunAvgPace}" placeholder="예: 5:48/km" /></label><label>평균 심박(optional)<input name="latestRunAvgHeartRate" type="number" min="0" step="1" value="${draft.latestRunAvgHeartRate}" /></label><label>RPE(optional)<select name="latestRunRpe"><option value="" ${draft.latestRunRpe === "" ? "selected" : ""}>선택 안 함</option>${["3","4","5","6","7","8","9"].map((v) => `<option value="${v}" ${draft.latestRunRpe === v ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>`;
+  if (stepId === "latest-run") return `<div class="onboarding-grid"><label>가장 최근 러닝 날짜<input name="latestRunDate" type="date" value="${escapeHtml(draft.latestRunDate)}" /></label><label>가장 최근 러닝 거리(km)<input name="latestRunDistance" type="number" min="0" step="0.1" value="${escapeHtml(draft.latestRunDistance)}" /></label><label>평균 페이스<input name="latestRunAvgPace" value="${escapeHtml(draft.latestRunAvgPace)}" placeholder="예: 5:48/km" /></label><label>평균 심박(optional)<input name="latestRunAvgHeartRate" type="number" min="0" step="1" value="${escapeHtml(draft.latestRunAvgHeartRate)}" /></label><label>RPE(optional)<select name="latestRunRpe"><option value="" ${draft.latestRunRpe === "" ? "selected" : ""}>선택 안 함</option>${["3","4","5","6","7","8","9"].map((v) => `<option value="${v}" ${draft.latestRunRpe === v ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>`;
   if (stepId === "latest-run-feel") return `<div class="onboarding-stack">${renderChoiceCards("latestRunDifficulty", draft.latestRunDifficulty, [
     { value: "smooth", title: "SMOOTH", copy: "생각보다 여유 있었고 회복 부담도 크지 않았어요." },
     { value: "manageable", title: "MANAGEABLE", copy: "약간 무거웠지만 대체로 계획 범위 안이었어요." },
     { value: "hard", title: "HARD", copy: "평소보다 분명히 힘들었고 회복이 더 필요했어요." },
-  ])}<label>러닝 후 느낌 메모<textarea name="latestRunFeeling" rows="3">${draft.latestRunFeeling}</textarea></label></div>`;
-  if (stepId === "history") return `<div class="onboarding-stack"><div class="onboarding-grid"><label>4주 전 거리(km)<input name="mileageWeek1" type="number" min="0" step="1" value="${draft.recentMileage4Weeks[0] || ""}" /></label><label>3주 전 거리(km)<input name="mileageWeek2" type="number" min="0" step="1" value="${draft.recentMileage4Weeks[1] || ""}" /></label><label>2주 전 거리(km)<input name="mileageWeek3" type="number" min="0" step="1" value="${draft.recentMileage4Weeks[2] || ""}" /></label><label>지난주 거리(km)<input name="mileageWeek4" type="number" min="0" step="1" value="${draft.recentMileage4Weeks[3] || ""}" /></label></div><label>주간 평균 러닝 횟수(optional)<input name="recentWeeklyFrequency" type="number" min="0" step="1" value="${draft.recentWeeklyFrequency}" /></label></div>`;
-  if (stepId === "pbs") return `<div class="onboarding-grid"><label>5K PB<input name="pbFiveK" value="${draft.pbs.fiveK}" /></label><label>10K PB<input name="pbTenK" value="${draft.pbs.tenK}" /></label><label>하프 PB<input name="pbHalf" value="${draft.pbs.half}" /></label><label>풀 PB<input name="pbFull" value="${draft.pbs.full}" /></label></div>`;
+  ])}<label>러닝 후 느낌 메모<textarea name="latestRunFeeling" rows="3">${escapeHtml(draft.latestRunFeeling)}</textarea></label></div>`;
+  if (stepId === "history") return `<div class="onboarding-stack"><div class="onboarding-grid"><label>4주 전 거리(km)<input name="mileageWeek1" type="number" min="0" step="1" value="${escapeHtml(draft.recentMileage4Weeks[0] || "")}" /></label><label>3주 전 거리(km)<input name="mileageWeek2" type="number" min="0" step="1" value="${escapeHtml(draft.recentMileage4Weeks[1] || "")}" /></label><label>2주 전 거리(km)<input name="mileageWeek3" type="number" min="0" step="1" value="${escapeHtml(draft.recentMileage4Weeks[2] || "")}" /></label><label>지난주 거리(km)<input name="mileageWeek4" type="number" min="0" step="1" value="${escapeHtml(draft.recentMileage4Weeks[3] || "")}" /></label></div><label>주간 평균 러닝 횟수(optional)<input name="recentWeeklyFrequency" type="number" min="0" step="1" value="${escapeHtml(draft.recentWeeklyFrequency)}" /></label></div>`;
+  if (stepId === "pbs") return `<div class="onboarding-grid"><label>5K PB<input name="pbFiveK" value="${escapeHtml(draft.pbs.fiveK)}" /></label><label>10K PB<input name="pbTenK" value="${escapeHtml(draft.pbs.tenK)}" /></label><label>하프 PB<input name="pbHalf" value="${escapeHtml(draft.pbs.half)}" /></label><label>풀 PB<input name="pbFull" value="${escapeHtml(draft.pbs.full)}" /></label></div>`;
   if (stepId === "condition") return `<div class="onboarding-stack">${renderChoiceCards("bodyCondition", draft.bodyCondition, [
     { value: "good", title: "GOOD", copy: "컨디션이 비교적 안정적이고 훈련을 받아들일 여지가 있어요." },
     { value: "normal", title: "NORMAL", copy: "보통 수준입니다. 무리하지 않는 조정이 필요해요." },
     { value: "cautious", title: "CAUTIOUS", copy: "피로나 통증 신호가 있어 보수적으로 가야 해요." },
-  ])}<label>통증 / 불편 부위<textarea name="painArea" rows="2">${draft.painArea}</textarea></label><label>몸 상태 메모<textarea name="bodyConditionNote" rows="3">${draft.bodyConditionNote}</textarea></label></div>`;
+  ])}<label>통증 / 불편 부위<textarea name="painArea" rows="2">${escapeHtml(draft.painArea)}</textarea></label><label>몸 상태 메모<textarea name="bodyConditionNote" rows="3">${escapeHtml(draft.bodyConditionNote)}</textarea></label></div>`;
   if (stepId === "coaching-style") return `<div class="onboarding-stack">${renderChoiceCards("coachingStyle", draft.coachingStyle, [
     { value: "gentle", title: "GENTLE", copy: "부담을 줄이고 차분하게 설명해주는 스타일이 좋아요." },
     { value: "balanced", title: "BALANCED", copy: "따뜻하지만 분명하게, 이유를 같이 설명해주는 코치가 좋아요." },
@@ -92,7 +93,7 @@ function renderSummary(draft) {
     ["몸 상태", `${draft.bodyCondition} · ${draft.painArea || "통증 없음"} · ${draft.bodyConditionNote || "추가 메모 없음"}`],
     ["코치 스타일", draft.coachingStyle],
   ];
-  return lines.map(([label, value]) => `<div class="summary-line"><strong>${label}</strong><span>${value}</span></div>`).join("");
+  return lines.map(([label, value]) => `<div class="summary-line"><strong>${label}</strong><span>${escapeHtml(value)}</span></div>`).join("");
 }
 
 export function renderOnboarding(ctx) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "run-nerds-final-candidate-v21";
+const CACHE_NAME = "run-nerds-final-candidate-v22";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -22,9 +22,11 @@ const APP_SHELL = [
   "./js/config.js",
   "./js/goal-lifecycle.js",
   "./js/home.js",
+  "./js/html.js",
   "./js/onboarding.js",
   "./js/plan.js",
   "./js/theme-select.js",
+  "./vendor/supabase-js-2.108.1.js",
   "./fonts/IBMPlexMono-Regular.ttf",
   "./fonts/IBMPlexMono-SemiBold.ttf",
   "./fonts/IBMPlexSansKR-Bold.ttf",

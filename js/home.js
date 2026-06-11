@@ -1,6 +1,7 @@
 import { formatStatus } from "./plan.js";
 import { renderCoachTab } from "./coach.js";
 import { getGoalDate, getNonRaceGoalLabel, hasFinishedRaceGoal, normalizeGoalLifecycle } from "./goal-lifecycle.js";
+import { escapeHtml } from "./html.js";
 
 export function getTodayDayId() {
   return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()];
@@ -117,15 +118,6 @@ function renderTabs({ dom, state }) {
   dom.homeView.classList.toggle("hidden", activeTab !== "home");
   dom.profileView.classList.toggle("hidden", activeTab !== "profile");
   dom.tabButtons.forEach((button) => button.classList.toggle("active", button.dataset.tab === activeTab));
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 function formatRaceType(type) {
@@ -301,6 +293,59 @@ function hasActiveTemporarySchedule(checkin, profile) {
   const profileLongRunDay = String(profile?.longRunDay || "").trim();
   const hasTemporaryLongRunDay = Boolean(temporaryLongRunDay && temporaryLongRunDay !== profileLongRunDay);
   return hasTemporaryAvailableDays || hasTemporaryPreferredDays || hasTemporaryLongRunDay;
+}
+
+function getSessionTypeLabel(type) {
+  if (type === "quality") return "핵심 자극";
+  if (type === "long") return "롱런";
+  if (type === "easy") return "이지런";
+  if (type === "recovery") return "회복 조깅";
+  if (type === "mobility") return "보강/가동성";
+  return "휴식";
+}
+
+function buildCoachPlanNote(state) {
+  const plan = state.plan || [];
+  const meta = state.planMeta || {};
+  const season = meta.season || {};
+  const stats = meta.stats || {};
+  const quality = plan.find((session) => session.type === "quality");
+  const longRun = plan.find((session) => session.type === "long");
+  const runDays = stats.runDays || plan.filter((session) => ["easy", "quality", "long", "recovery"].includes(session.type)).length;
+  const plannedMileage = stats.plannedMileage || plan.reduce((sum, session) => sum + (Number.parseInt(session.distance, 10) || 0), 0);
+  const phaseLabel = season.label || "이번 주 계획";
+  const phaseReason = season.reason || meta.summary || "현재 목표, 주간 가능 횟수, 최근 컨디션을 기준으로 무리 없이 반복 가능한 주간 리듬을 잡았습니다.";
+  const longRunText = longRun
+    ? `${longRun.day}요일 ${longRun.title}은 시즌의 지구력 축입니다. ${longRun.purpose}`
+    : "이번 주는 롱런보다 회복과 기본 리듬을 우선합니다.";
+  const qualityText = quality
+    ? `${quality.day}요일 ${quality.title}은 기록을 바로 증명하는 훈련이 아니라 목표 리듬에 몸을 적응시키는 자극입니다. ${quality.purpose}`
+    : "이번 주에는 강한 품질 세션을 두지 않고 피로 흡수와 안전한 반복성을 우선합니다.";
+  const expectedEffect = season.phase === "race-week"
+    ? "기대효과는 새 체력을 만드는 것보다 피로를 낮추고 레이스 당일 실행력을 보존하는 것입니다."
+    : season.phase === "taper"
+      ? "기대효과는 누적 피로를 줄이면서도 짧은 목표 리듬을 남겨 대회 전 감각을 유지하는 것입니다."
+      : season.phase === "post-race"
+        ? "기대효과는 레이스 자극을 흡수하고 통증/피로 신호를 확인해 다음 목표로 넘어갈 여지를 만드는 것입니다."
+        : season.phase === "specific-build"
+          ? "기대효과는 롱런과 목표 리듬을 점진적으로 키워 대회 거리의 지속 능력과 후반 안정감을 만드는 것입니다."
+          : "기대효과는 과한 한 번의 훈련보다 반복 가능한 볼륨, 회복 리듬, 기본 지구력을 쌓는 것입니다.";
+
+  return {
+    phaseLabel,
+    phaseReason,
+    metrics: [
+      ["주간 구조", `러닝 ${runDays}일 · 약 ${plannedMileage}km`],
+      ["핵심 세션", quality ? `${quality.day} ${quality.title}` : "강도 없음"],
+      ["롱런", longRun ? `${longRun.day} ${longRun.title}` : "없음"],
+    ],
+    bullets: [
+      ["왜 이렇게 짰나", phaseReason],
+      [quality ? getSessionTypeLabel(quality.type) : "강도 배치", qualityText],
+      [longRun ? getSessionTypeLabel(longRun.type) : "롱런 배치", longRunText],
+      ["장기 기대효과", expectedEffect],
+    ],
+  };
 }
 
 function setActivityLogOpen(isOpen) {
@@ -494,19 +539,19 @@ export function renderTodayWorkout(ctx) {
   state.selectedDayId = session.id;
   dom.todayFocusBadge.textContent = `${session.day} focus`;
   dom.todayWorkoutCard.innerHTML = `
-    <p class="today-title">${session.title}</p>
-    <p class="today-subtitle">${session.subtitle}</p>
+    <p class="today-title">${escapeHtml(session.title)}</p>
+    <p class="today-subtitle">${escapeHtml(session.subtitle)}</p>
     <div class="today-metrics">
-      <div class="today-metric"><div class="today-metric-label">DISTANCE</div><div class="today-metric-value">${session.distance}</div></div>
-      <div class="today-metric"><div class="today-metric-label">DURATION</div><div class="today-metric-value">${session.duration}</div></div>
-      <div class="today-metric"><div class="today-metric-label">INTENSITY</div><div class="today-metric-value">${session.intensity}</div></div>
+      <div class="today-metric"><div class="today-metric-label">DISTANCE</div><div class="today-metric-value">${escapeHtml(session.distance)}</div></div>
+      <div class="today-metric"><div class="today-metric-label">DURATION</div><div class="today-metric-value">${escapeHtml(session.duration)}</div></div>
+      <div class="today-metric"><div class="today-metric-label">INTENSITY</div><div class="today-metric-value">${escapeHtml(session.intensity)}</div></div>
     </div>
     <div class="session-detail">
       <p class="detail-kicker">SESSION DETAIL</p>
-      <strong>오늘의 목적</strong><br />${session.purpose}
+      <strong>오늘의 목적</strong><br />${escapeHtml(session.purpose)}
       <p class="detail-kicker">BLOCKS</p>
-      <ul class="block-list">${session.blocks.map((block) => `<li>${block}</li>`).join("")}</ul>
-      <strong>성공 기준</strong><br />${session.success}
+      <ul class="block-list">${(session.blocks || []).map((block) => `<li>${escapeHtml(block)}</li>`).join("")}</ul>
+      <strong>성공 기준</strong><br />${escapeHtml(session.success)}
     </div>
     <div class="today-actions">
       <button type="button" class="status-btn ${session.status === "complete" ? "active complete" : ""}" data-status="complete">완료</button>
@@ -724,6 +769,7 @@ export function renderWeekMiniCalendar(ctx) {
   const weeklySummary = summarizeWeeklyActivity(state.activityLogs, today);
   const weeklyReviewKey = getWeeklyReviewKey(today);
   const shouldAskWeeklyReview = today.getDay() === 1 && !state.activityLogs?.[weeklyReviewKey] && typeof saveWeeklyReview === "function";
+  const coachPlanNote = buildCoachPlanNote(state);
   const getCompactLabel = (session) => {
     if (session.type === "rest") return "휴식";
     if (session.type === "mobility") return "보강";
@@ -735,6 +781,31 @@ export function renderWeekMiniCalendar(ctx) {
   };
   dom.weekSummaryBadge.textContent = `${completedCount}/${state.plan.length} complete${hasTemporarySchedule ? " · temporary" : season?.label ? ` · ${season.label}` : ""}`;
   dom.weekMiniCalendar.innerHTML = `
+    <section class="coach-plan-note" aria-label="코치 계획 노트">
+      <div class="coach-plan-note-head">
+        <div>
+          <span class="mini-day-name">coach plan</span>
+          <strong>${escapeHtml(coachPlanNote.phaseLabel)}</strong>
+        </div>
+        <span class="badge neutral">${escapeHtml(state.planMeta?.source || "local-coach-engine")}</span>
+      </div>
+      <div class="coach-plan-note-metrics">
+        ${coachPlanNote.metrics.map(([label, value]) => `
+          <div>
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+          </div>
+        `).join("")}
+      </div>
+      <div class="coach-plan-note-body">
+        ${coachPlanNote.bullets.map(([label, value]) => `
+          <article>
+            <span>${escapeHtml(label)}</span>
+            <p>${escapeHtml(value)}</p>
+          </article>
+        `).join("")}
+      </div>
+    </section>
     ${shouldAskWeeklyReview ? `
       <form class="weekly-review-card" id="weeklyReviewForm">
         <span class="mini-day-name">weekly review</span>
@@ -774,11 +845,11 @@ export function renderWeekMiniCalendar(ctx) {
     ${state.plan.map((session) => `
     <article class="mini-day-card ${session.id === todayId ? "today" : ""} status-${escapeHtml(session.status || "planned")}">
       <div class="mini-day-head">
-        <span class="mini-day-name">${session.day}</span>
-        <span class="badge neutral">${formatStatus(session.status)}</span>
+        <span class="mini-day-name">${escapeHtml(session.day)}</span>
+        <span class="badge neutral">${escapeHtml(formatStatus(session.status))}</span>
       </div>
-      <p class="mini-day-title">${getCompactLabel(session)}</p>
-      <p class="mini-day-copy">${getSessionMeta(session)}</p>
+      <p class="mini-day-title">${escapeHtml(getCompactLabel(session))}</p>
+      <p class="mini-day-copy">${escapeHtml(getSessionMeta(session))}</p>
     </article>
   `).join("")}
   `;
@@ -801,4 +872,5 @@ export const __homeTest = {
   isFreshCheckin,
   summarizeWeeklyActivity,
   getWeeklyReviewKey,
+  buildCoachPlanNote,
 };

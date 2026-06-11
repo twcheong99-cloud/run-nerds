@@ -351,6 +351,11 @@ assertIncludes("supabase-setup.sql", "enable row level security", "Supabase RLS 
 assertIncludes("supabase-setup.sql", "profiles_select_own", "profile owner select policy");
 assertIncludes("supabase-setup.sql", "workspace_select_own", "workspace owner select policy");
 assertIncludes("supabase/functions/coach/index.ts", "coach-contract-v3", "coach contract version");
+assertIncludes("supabase/functions/coach/index.ts", "getAuthenticatedUserId", "coach user token verification");
+assertIncludes("supabase/functions/coach/index.ts", "consume_coach_call", "coach daily limit consumption");
+assertIncludes("supabase-setup.sql", "coach_daily_usage", "coach daily usage table");
+assertIncludes("supabase-setup.sql", "consume_coach_call", "coach daily limit function");
+assertIncludes("js/coach-service.js", "daily-coach-limit", "client daily limit fallback");
 assertIncludes("supabase/functions/delete-account/index.ts", "SUPABASE_SERVICE_ROLE_KEY", "delete-account service role secret");
 assertIncludes("supabase/functions/delete-account/index.ts", 'payload.confirm !== "DELETE"', "delete-account confirmation guard");
 assertIncludes("supabase/functions/delete-account/index.ts", "/auth/v1/admin/users", "delete-account auth deletion endpoint");

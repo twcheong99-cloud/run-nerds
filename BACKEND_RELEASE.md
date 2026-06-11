@@ -48,10 +48,12 @@ Set Edge Function secrets in Supabase, not in frontend files:
 supabase secrets set OPENAI_API_KEY=... --project-ref jnlexemtrjgwskzwybim
 supabase secrets set OPENAI_MODEL=gpt-5.2 --project-ref jnlexemtrjgwskzwybim
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=... --project-ref jnlexemtrjgwskzwybim
+supabase secrets set COACH_DAILY_LIMIT=10 --project-ref jnlexemtrjgwskzwybim
 ```
 
 `OPENAI_MODEL` is optional. If `OPENAI_API_KEY` is missing or the Edge Function fails, the app should fall back to the local coach path.
 `SUPABASE_SERVICE_ROLE_KEY` is required only inside Supabase Edge Functions and must never be bundled into the app.
+`COACH_DAILY_LIMIT` is optional and defaults to 10 LLM coach calls per user per day (Asia/Seoul day boundary). The `coach` function rejects requests without a valid authenticated user token and returns HTTP 429 with `daily-coach-limit` once the limit is exhausted; the app then falls back to the local coach engine with a Korean limit notice.
 
 ## Database schema and RLS
 
@@ -61,13 +63,16 @@ Required tables:
 
 - `public.profiles`
 - `public.runner_workspaces`
+- `public.coach_daily_usage` (coach LLM call quota, written only by the `consume_coach_call` function via the service role)
 
 Required RLS behavior:
 
 - RLS enabled on `profiles`
 - RLS enabled on `runner_workspaces`
+- RLS enabled on `coach_daily_usage` with no client policies (service role only)
 - Authenticated users can select/insert/update only their own profile row.
 - Authenticated users can select/insert/update only their own workspace row.
+- `public.consume_coach_call` is executable only by the service role.
 
 Do not disable RLS to make testing easier. If reviewer login fails, fix Auth/demo account setup instead.
 
@@ -93,6 +98,8 @@ Test these coach paths on the production Supabase project:
 - Confirming an apply action updates the app-facing proposal contract.
 - Pain/injury language returns conservative safety guidance and does not diagnose.
 - Edge Function unavailable or failing path falls back without blocking the app.
+- A request without a valid user token returns 401 and never reaches the LLM.
+- The 11th LLM coach call in one Asia/Seoul day returns 429 `daily-coach-limit`, and the app shows the Korean limit notice with the local coach fallback.
 
 Test these account deletion paths on the production Supabase project:
 

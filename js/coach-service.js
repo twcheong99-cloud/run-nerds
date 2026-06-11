@@ -729,6 +729,20 @@ function buildFallbackReply({ message, state, reason }) {
   };
 }
 
+function isDailyCoachLimitError(error) {
+  return error?.context?.status === 429;
+}
+
+async function getDailyCoachLimitFromError(error) {
+  try {
+    const body = await error.context.clone().json();
+    const limit = Number(body?.limit);
+    return Number.isFinite(limit) && limit > 0 ? limit : 10;
+  } catch {
+    return 10;
+  }
+}
+
 async function describeCoachError(error) {
   const status = error?.context?.status ? `status ${error.context.status}` : "";
   let body = "";
@@ -774,6 +788,14 @@ export async function requestCoachReply({ supabase, authSession, message, state 
     }
     return normalized;
   } catch (error) {
+    if (isDailyCoachLimitError(error)) {
+      const limit = await getDailyCoachLimitFromError(error);
+      const limited = buildFallbackReply({ message, state, reason: "daily-coach-limit" });
+      return {
+        ...limited,
+        reply: `오늘 AI 코치와 나눌 수 있는 대화 ${limit}회를 모두 사용했어. 내일 다시 이어가자. 지금은 내장 코치 엔진으로 도와줄게.\n\n${limited.reply}`,
+      };
+    }
     const reason = await describeCoachError(error);
     console.warn("Coach service fallback", reason, error);
     return buildFallbackReply({
